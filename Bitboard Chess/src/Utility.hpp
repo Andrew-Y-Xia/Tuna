@@ -20,14 +20,4 @@ template <typename T> int sgn(T val) {
 
 char num_to_char(int input);
 
-void print_move(Move move, bool reg = false);
-
-void print_cords(Cords c);
-
-int increment_to_index(Cords c);
-
-Cords index_to_increment(int i);
-
-void debug_print_moves(std::forward_list<Move> moves);
-
 #endif /* Utility_hpp */

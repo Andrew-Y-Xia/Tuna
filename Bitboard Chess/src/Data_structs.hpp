@@ -23,6 +23,10 @@ enum square_mappings {
 };
 
 
+namespace Bitboard {
+void print_BB(U64 b);
+}
+
 
 
 #endif /* Data_structs_hpp */

@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1A1F57E2602555600E15AA0 /* ResourcePath.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1A1F57D2602555600E15AA0 /* ResourcePath.mm */; };
-		A1A1F5812602555600E15AA0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1A1F5802602555600E15AA0 /* main.cpp */; };
+		A161478E262F989B0025D16D /* ResourcePath.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1A1F57D2602555600E15AA0 /* ResourcePath.mm */; };
+		A161478F262F989B0025D16D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1A1F5802602555600E15AA0 /* main.cpp */; };
+		A1614790262F989B0025D16D /* Board.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC86580A2629BF7D00FFB5D7 /* Board.cpp */; };
+		A1614791262F989B0025D16D /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC86580E2629BF8F00FFB5D7 /* Utility.cpp */; };
+		A1614792262F989B0025D16D /* Search.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC8658062629BF2700FFB5D7 /* Search.cpp */; };
+		A1614793262F989B0025D16D /* Data_structs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC8658122629C00C00FFB5D7 /* Data_structs.cpp */; };
 		A1A1F5C5260277B600E15AA0 /* Chess_pdt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5B9260277B500E15AA0 /* Chess_pdt60.png */; };
 		A1A1F5C6260277B600E15AA0 /* Chess_rdt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5BA260277B500E15AA0 /* Chess_rdt60.png */; };
 		A1A1F5C7260277B600E15AA0 /* Chess_nlt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5BB260277B500E15AA0 /* Chess_nlt60.png */; };
@@ -21,20 +25,17 @@
 		A1A1F5CE260277B600E15AA0 /* Chess_rlt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C2260277B600E15AA0 /* Chess_rlt60.png */; };
 		A1A1F5CF260277B600E15AA0 /* Chess_plt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C3260277B600E15AA0 /* Chess_plt60.png */; };
 		A1A1F5D0260277B600E15AA0 /* Chess_qdt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C4260277B600E15AA0 /* Chess_qdt60.png */; };
-		CC8658082629BF2700FFB5D7 /* Search.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC8658062629BF2700FFB5D7 /* Search.cpp */; };
-		CC86580C2629BF7D00FFB5D7 /* Board.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC86580A2629BF7D00FFB5D7 /* Board.cpp */; };
-		CC8658102629BF8F00FFB5D7 /* Utility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC86580E2629BF8F00FFB5D7 /* Utility.cpp */; };
-		CC8658142629C00C00FFB5D7 /* Data_structs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC8658122629C00C00FFB5D7 /* Data_structs.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A1614782262F91F30025D16D /* Bitboard Chess.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = "Bitboard Chess.plist"; path = "../../../Bitboard Chess.plist"; sourceTree = "<group>"; };
 		A164B2C32627A3BB00160CF7 /* ctpl_stl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ctpl_stl.h; sourceTree = "<group>"; };
 		A1A1F5782602555600E15AA0 /* Bitboard Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bitboard Chess.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1A1F57C2602555600E15AA0 /* SFML Chess-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "SFML Chess-Info.plist"; path = "../SFML Chess-Info.plist"; sourceTree = "<group>"; };
+		A1A1F57C2602555600E15AA0 /* Bitboard Chess-info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Bitboard Chess-info.plist"; path = "../Bitboard Chess-info.plist"; sourceTree = "<group>"; };
 		A1A1F57D2602555600E15AA0 /* ResourcePath.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ResourcePath.mm; sourceTree = "<group>"; };
 		A1A1F57F2602555600E15AA0 /* ResourcePath.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ResourcePath.hpp; sourceTree = "<group>"; };
 		A1A1F5802602555600E15AA0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		A1A1F5942602584D00E15AA0 /* SFML Chess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "SFML Chess.entitlements"; sourceTree = "<group>"; };
+		A1A1F5942602584D00E15AA0 /* Bitboard Chess.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Bitboard Chess.entitlements"; sourceTree = "<group>"; };
 		A1A1F5B9260277B500E15AA0 /* Chess_pdt60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Chess_pdt60.png; sourceTree = "<group>"; };
 		A1A1F5BA260277B500E15AA0 /* Chess_rdt60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Chess_rdt60.png; sourceTree = "<group>"; };
 		A1A1F5BB260277B500E15AA0 /* Chess_nlt60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Chess_nlt60.png; sourceTree = "<group>"; };
@@ -72,7 +73,7 @@
 		A1A1F56E2602555600E15AA0 = {
 			isa = PBXGroup;
 			children = (
-				A1A1F57A2602555600E15AA0 /* SFML Chess */,
+				A1A1F57A2602555600E15AA0 /* Bitboard Chess */,
 				A1A1F5792602555600E15AA0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,21 +86,21 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A1A1F57A2602555600E15AA0 /* SFML Chess */ = {
+		A1A1F57A2602555600E15AA0 /* Bitboard Chess */ = {
 			isa = PBXGroup;
 			children = (
-				A1A1F5942602584D00E15AA0 /* SFML Chess.entitlements */,
+				A1A1F5942602584D00E15AA0 /* Bitboard Chess.entitlements */,
 				CC86581E2629EAC900FFB5D7 /* src */,
 				A1A1F5822602555600E15AA0 /* Resources */,
 				A1A1F57B2602555600E15AA0 /* Supporting Files */,
 			);
-			path = "SFML Chess";
+			path = "Bitboard Chess";
 			sourceTree = "<group>";
 		};
 		A1A1F57B2602555600E15AA0 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				A1A1F57C2602555600E15AA0 /* SFML Chess-Info.plist */,
+				A1A1F57C2602555600E15AA0 /* Bitboard Chess-info.plist */,
 			);
 			path = "Supporting Files";
 			sourceTree = "<group>";
@@ -139,6 +140,7 @@
 				CC8658132629C00C00FFB5D7 /* Data_structs.hpp */,
 				CC8658182629D1C200FFB5D7 /* depend.hpp */,
 				A164B2C32627A3BB00160CF7 /* ctpl_stl.h */,
+				A1614782262F91F30025D16D /* Bitboard Chess.plist */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -243,12 +245,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1A1F5812602555600E15AA0 /* main.cpp in Sources */,
-				CC8658082629BF2700FFB5D7 /* Search.cpp in Sources */,
-				CC8658142629C00C00FFB5D7 /* Data_structs.cpp in Sources */,
-				CC8658102629BF8F00FFB5D7 /* Utility.cpp in Sources */,
-				CC86580C2629BF7D00FFB5D7 /* Board.cpp in Sources */,
-				A1A1F57E2602555600E15AA0 /* ResourcePath.mm in Sources */,
+				A161478E262F989B0025D16D /* ResourcePath.mm in Sources */,
+				A161478F262F989B0025D16D /* main.cpp in Sources */,
+				A1614790262F989B0025D16D /* Board.cpp in Sources */,
+				A1614791262F989B0025D16D /* Utility.cpp in Sources */,
+				A1614792262F989B0025D16D /* Search.cpp in Sources */,
+				A1614793262F989B0025D16D /* Data_structs.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -354,11 +356,11 @@
 		A1A1F58E2602555600E15AA0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "SFML Chess/SFML Chess.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Bitboard Chess/Bitboard Chess.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = "SFML Chess/SFML Chess-Info.plist";
+				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
@@ -369,11 +371,11 @@
 		A1A1F58F2602555600E15AA0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "SFML Chess/SFML Chess.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Bitboard Chess/Bitboard Chess.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = "SFML Chess/SFML Chess-Info.plist";
+				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				OTHER_CODE_SIGN_FLAGS = "--deep";

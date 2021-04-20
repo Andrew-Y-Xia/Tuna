@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:/Users/andy/Documents/GitHub/Bitboard Chess/Bitboard Chess.xcodeproj">
+      location = "group:../Bitboard Chess">
+   </FileRef>
+   <FileRef
+      location = "self:">
    </FileRef>
 </Workspace>

@@ -33,7 +33,7 @@
 #define a_file          0x0101010101010101
 #define h_file          0x8080808080808080
 #define first_rank      0x00000000000000FF
-#define eight_rank      0xFF00000000000000
+#define eighth_rank     0xFF00000000000000
 #define a1_h8_diagonal  0x8040201008040201
 #define a8_h1_diagonal  0x0102040810204080
 #define light_squares   0x55AA55AA55AA55AA
