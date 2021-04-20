@@ -29,7 +29,7 @@
 
 /* Begin PBXFileReference section */
 		A164B2C32627A3BB00160CF7 /* ctpl_stl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ctpl_stl.h; sourceTree = "<group>"; };
-		A1A1F5782602555600E15AA0 /* SFML Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SFML Chess.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1A1F5782602555600E15AA0 /* Bitboard Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bitboard Chess.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1A1F57C2602555600E15AA0 /* SFML Chess-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "SFML Chess-Info.plist"; path = "../SFML Chess-Info.plist"; sourceTree = "<group>"; };
 		A1A1F57D2602555600E15AA0 /* ResourcePath.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ResourcePath.mm; sourceTree = "<group>"; };
 		A1A1F57F2602555600E15AA0 /* ResourcePath.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ResourcePath.hpp; sourceTree = "<group>"; };
@@ -80,7 +80,7 @@
 		A1A1F5792602555600E15AA0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A1A1F5782602555600E15AA0 /* SFML Chess.app */,
+				A1A1F5782602555600E15AA0 /* Bitboard Chess.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -146,9 +146,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A1A1F5772602555600E15AA0 /* SFML Chess */ = {
+		A1A1F5772602555600E15AA0 /* Bitboard Chess */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1A1F58D2602555600E15AA0 /* Build configuration list for PBXNativeTarget "SFML Chess" */;
+			buildConfigurationList = A1A1F58D2602555600E15AA0 /* Build configuration list for PBXNativeTarget "Bitboard Chess" */;
 			buildPhases = (
 				A1A1F5732602555600E15AA0 /* Sources */,
 				A1A1F5742602555600E15AA0 /* Frameworks */,
@@ -159,9 +159,9 @@
 			);
 			dependencies = (
 			);
-			name = "SFML Chess";
+			name = "Bitboard Chess";
 			productName = "SFML Chess";
-			productReference = A1A1F5782602555600E15AA0 /* SFML Chess.app */;
+			productReference = A1A1F5782602555600E15AA0 /* Bitboard Chess.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -178,7 +178,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A1A1F5722602555600E15AA0 /* Build configuration list for PBXProject "SFML Chess" */;
+			buildConfigurationList = A1A1F5722602555600E15AA0 /* Build configuration list for PBXProject "Bitboard Chess" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -191,7 +191,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A1A1F5772602555600E15AA0 /* SFML Chess */,
+				A1A1F5772602555600E15AA0 /* Bitboard Chess */,
 			);
 		};
 /* End PBXProject section */
@@ -384,7 +384,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1A1F5722602555600E15AA0 /* Build configuration list for PBXProject "SFML Chess" */ = {
+		A1A1F5722602555600E15AA0 /* Build configuration list for PBXProject "Bitboard Chess" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1A1F58B2602555600E15AA0 /* Debug */,
@@ -393,7 +393,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1A1F58D2602555600E15AA0 /* Build configuration list for PBXNativeTarget "SFML Chess" */ = {
+		A1A1F58D2602555600E15AA0 /* Build configuration list for PBXNativeTarget "Bitboard Chess" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1A1F58E2602555600E15AA0 /* Debug */,
