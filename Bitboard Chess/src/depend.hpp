@@ -18,6 +18,8 @@
 #include <vector>
 #include <sparsehash/dense_hash_map>
 #include <stdint.h>
+#include <nmmintrin.h>
+#include <immintrin.h>
 
 #define WIDTH 1024
 #define SCALE 1.3
@@ -39,6 +41,12 @@
 #define light_squares   0x55AA55AA55AA55AA
 #define dark_squares    0xAA55AA55AA55AA55
 
+#define EmptyBoard    0x0000000000000000
+#define UniverseBoard 0xffffffffffffffff
+
 typedef uint64_t U64;
+
+#define bitscan_forward(a) _tzcnt_u64(a)
+#define bitscan_reverse(a) (63 - _lzcnt_u64(a))
 
 #endif /* depend_hpp */

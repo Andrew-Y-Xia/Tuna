@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10FB66D2630D36B00B141DE /* Bitboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A10FB66B2630D36B00B141DE /* Bitboard.cpp */; };
 		A161478E262F989B0025D16D /* ResourcePath.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1A1F57D2602555600E15AA0 /* ResourcePath.mm */; };
 		A161478F262F989B0025D16D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1A1F5802602555600E15AA0 /* main.cpp */; };
 		A1614790262F989B0025D16D /* Board.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC86580A2629BF7D00FFB5D7 /* Board.cpp */; };
@@ -28,6 +29,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A10FB66B2630D36B00B141DE /* Bitboard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Bitboard.cpp; sourceTree = "<group>"; };
+		A10FB66C2630D36B00B141DE /* Bitboard.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Bitboard.hpp; sourceTree = "<group>"; };
 		A1614782262F91F30025D16D /* Bitboard Chess.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = "Bitboard Chess.plist"; path = "../../../Bitboard Chess.plist"; sourceTree = "<group>"; };
 		A164B2C32627A3BB00160CF7 /* ctpl_stl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ctpl_stl.h; sourceTree = "<group>"; };
 		A1A1F5782602555600E15AA0 /* Bitboard Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bitboard Chess.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +141,8 @@
 				CC8658072629BF2700FFB5D7 /* Search.hpp */,
 				CC8658122629C00C00FFB5D7 /* Data_structs.cpp */,
 				CC8658132629C00C00FFB5D7 /* Data_structs.hpp */,
+				A10FB66B2630D36B00B141DE /* Bitboard.cpp */,
+				A10FB66C2630D36B00B141DE /* Bitboard.hpp */,
 				CC8658182629D1C200FFB5D7 /* depend.hpp */,
 				A164B2C32627A3BB00160CF7 /* ctpl_stl.h */,
 				A1614782262F91F30025D16D /* Bitboard Chess.plist */,
@@ -246,6 +251,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A161478E262F989B0025D16D /* ResourcePath.mm in Sources */,
+				A10FB66D2630D36B00B141DE /* Bitboard.cpp in Sources */,
 				A161478F262F989B0025D16D /* main.cpp in Sources */,
 				A1614790262F989B0025D16D /* Board.cpp in Sources */,
 				A1614791262F989B0025D16D /* Utility.cpp in Sources */,
@@ -360,10 +366,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
+				OTHER_CPLUSPLUSFLAGS = "-march=native";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -375,10 +383,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				OTHER_CODE_SIGN_FLAGS = "--deep";
+				OTHER_CPLUSPLUSFLAGS = "-march=native";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

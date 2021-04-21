@@ -15,5 +15,37 @@
 #include "Utility.hpp"
 
 
+class Board {
+private:
+    // Handles board posititions:
+    U64 Bitboards[8];
+    
+    
+    // 0 is white, 1 is black
+    int current_turn;
+   
+    // Castling states:
+    bool white_can_castle_queenside: 1;
+    bool white_can_castle_kingside: 1;
+    bool black_can_castle_queenside: 1;
+    bool black_can_castle_kingside: 1;
+    
+    int en_passant_square;
+    
+    // Move counters
+    int halfmove_counter;
+    int fullmove_counter;
+    
+    // Incrementally updated move values
+    int black_piece_values, white_piece_values;
+    
+public:
+    Board();
+    Board(std::string str);
+    void read_FEN(std::string str);
+    void print_board();
+};
+
+
 
 #endif /* Board_hpp */

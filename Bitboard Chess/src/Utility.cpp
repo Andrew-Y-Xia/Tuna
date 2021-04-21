@@ -41,3 +41,9 @@ char num_to_char(int input) {
     }
     return c;
 }
+
+
+int cords_to_index(int x, int y) {
+    return 8*(7-y) + x;
+}
+

@@ -22,10 +22,16 @@ enum square_mappings {
   a8, b8, c8, d8, e8, f8, g8, h8
 };
 
-
-namespace Bitboard {
-void print_BB(U64 b);
-}
+enum Enum_BoardBB {
+    WhitePieces = 0,
+    BlackPieces,
+    Kings,
+    Queens,
+    Rooks,
+    Bishops,
+    Knights,
+    Pawns
+};
 
 
 
