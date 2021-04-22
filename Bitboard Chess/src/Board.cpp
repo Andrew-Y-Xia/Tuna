@@ -48,10 +48,15 @@ void Board::read_FEN(std::string str) {
 //                    std::cout << "y increment" << '\n';
             }
             else {
-                if (!isdigit(*it)) {
+                if (isdigit(*it)) {
+                    int blanks = *it - '0';
+                    x += blanks;
+                }
+                else {
                     if (isupper(*it)) {
                         // Set to white
                         Bitboards[WhitePieces] |= one << cords_to_index(x, y);
+                        std::cout << x << ' ' << y << '\n';
                     }
                     else {
                         // Set to black
