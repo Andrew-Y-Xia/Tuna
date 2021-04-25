@@ -8,6 +8,9 @@
 
 #include "Bitboard.hpp"
 
+U64 rays[4][64];
+U64 king_paths[64];
+
 
 /**
  * generalized bitScan
@@ -41,5 +44,26 @@ void print_ls1bs(U64 x) {
         print_BB(ls1b);
         std::cout << '\n';
         x &= x-1; // reset LS1B
+    }
+}
+
+
+void init_bitboard_utils() {
+    init_king_paths();
+}
+
+
+void init_king_paths() {
+    for (int index = a1; index <= h8; index++) {
+        Cords c = index_to_cords(index);
+        U64 mask = EmptyBoard;
+        for (int y = -1; y < 2; y++) {
+            for (int x = -1; x < 2; x++) {
+                if (!(x == 0 && y == 0) && is_within_bounds(c.x + x, c.y + y)) {
+                    mask |= C64(1) << cords_to_index(c.x + x, c.y + y);
+                }
+            }
+        }
+        king_paths[index] = mask;
     }
 }

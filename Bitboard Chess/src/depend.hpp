@@ -44,6 +44,7 @@
 #define EmptyBoard    0x0000000000000000
 #define UniverseBoard 0xffffffffffffffff
 
+#define C64(constantU64) constantU64##ULL
 typedef uint64_t U64;
 
 #define bitscan_forward(a) _tzcnt_u64(a)

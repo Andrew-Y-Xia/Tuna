@@ -47,3 +47,19 @@ int cords_to_index(int x, int y) {
     return 8*(7-y) + x;
 }
 
+
+Cords index_to_cords(int index) {
+    Cords c;
+    c.x = index % 8;
+    c.y = 7 - (index / 8);
+    return c;
+}
+
+
+void print_cords(Cords c) {
+    std::cout << "Cords{" << c.x << ", " << c.y << '}';
+}
+
+bool is_within_bounds(int x, int y) {
+    return (0 <= x && x <= 7 && 0 <= y && y <= 7);
+}

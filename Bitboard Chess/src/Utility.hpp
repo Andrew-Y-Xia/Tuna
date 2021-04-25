@@ -22,5 +22,11 @@ char num_to_char(int input);
 
 int cords_to_index(int x, int y);
 
+Cords index_to_cords(int index);
+
+void print_cords(Cords c);
+
+bool is_within_bounds(int x, int y);
+
 
 #endif /* Utility_hpp */

@@ -19,8 +19,11 @@
 
 
 int main() {
+    init_bitboard_utils();
+    
     Board board("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
     board.print_board();
     
+
     return 0;
 }

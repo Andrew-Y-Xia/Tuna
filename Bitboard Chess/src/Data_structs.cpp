@@ -8,4 +8,16 @@
 
 #include "Data_structs.hpp"
 
-
+bool Cords::operator==(const Cords c2) {
+    return (this->x == c2.x && this->y == c2.y);
+}
+bool Cords::operator!=(const Cords c2) {
+    return !(*this == c2);
+}
+Cords::Cords() {
+    x = -1;
+    y = -1;
+}
+Cords::Cords(int a, int b) {
+    x = a; y = b;
+}

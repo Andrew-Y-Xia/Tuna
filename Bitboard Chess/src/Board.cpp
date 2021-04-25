@@ -24,7 +24,6 @@ Board::Board(std::string str) {
 
 
 void Board::read_FEN(std::string str) {
-    const U64 one = 1;
     
     for (int i = WhitePieces; i <= Pawns; i++) {
         Bitboards[i] = EmptyBoard;
@@ -55,32 +54,31 @@ void Board::read_FEN(std::string str) {
                 else {
                     if (isupper(*it)) {
                         // Set to white
-                        Bitboards[WhitePieces] |= one << cords_to_index(x, y);
-                        std::cout << x << ' ' << y << '\n';
+                        Bitboards[WhitePieces] |= C64(1) << cords_to_index(x, y);
                     }
                     else {
                         // Set to black
-                        Bitboards[BlackPieces] |= one << cords_to_index(x, y);
+                        Bitboards[BlackPieces] |= C64(1) << cords_to_index(x, y);
                     }
 
                     switch ((char) tolower(*it)) {
                         case 'r':
-                            Bitboards[Rooks] |= one << cords_to_index(x, y);
+                            Bitboards[Rooks] |= C64(1) << cords_to_index(x, y);
                             break;
                         case 'b':
-                            Bitboards[Bishops] |= one << cords_to_index(x, y);
+                            Bitboards[Bishops] |= C64(1) << cords_to_index(x, y);
                             break;
                         case 'n':
-                            Bitboards[Knights] |= one << cords_to_index(x, y);
+                            Bitboards[Knights] |= C64(1) << cords_to_index(x, y);
                             break;
                         case 'k':
-                            Bitboards[Kings] |= one << cords_to_index(x, y);
+                            Bitboards[Kings] |= C64(1) << cords_to_index(x, y);
                             break;
                         case 'q':
-                            Bitboards[Queens] |= one << cords_to_index(x, y);
+                            Bitboards[Queens] |= C64(1) << cords_to_index(x, y);
                             break;
                         case 'p':
-                            Bitboards[Pawns] |= one << cords_to_index(x, y);
+                            Bitboards[Pawns] |= C64(1) << cords_to_index(x, y);
                             break;
                         default:
                             std::cout << "This should not have been reached. Invalid piece: " << (char) tolower(*it) <<'\n';
