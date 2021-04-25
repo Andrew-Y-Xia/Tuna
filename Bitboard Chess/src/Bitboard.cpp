@@ -10,6 +10,7 @@
 
 U64 rays[4][64];
 U64 king_paths[64];
+U64 knight_paths[64];
 
 
 /**
@@ -50,6 +51,7 @@ void print_ls1bs(U64 x) {
 
 void init_bitboard_utils() {
     init_king_paths();
+    init_knight_paths();
 }
 
 
@@ -65,5 +67,25 @@ void init_king_paths() {
             }
         }
         king_paths[index] = mask;
+    }
+}
+
+
+void init_knight_paths() {
+    for (int index = a1; index <= h8; index++) {
+        Cords c = index_to_cords(index);
+        U64 mask = EmptyBoard;
+        for (int i = -1; i < 2; i += 2) {
+            for (int j = -1; j < 2; j += 2) {
+                
+                if (is_within_bounds(c.x + i * 2, c.y + j * 1)) {
+                    mask |= C64(1) << cords_to_index(c.x + i * 2, c.y + j * 1);
+                }
+                if (is_within_bounds(c.x + j * 1, c.y + i * 2)) {
+                    mask |= C64(1) << cords_to_index(c.x + j * 1, c.y + i * 2);
+                }
+            }
+        }
+        knight_paths[index] = mask;
     }
 }
