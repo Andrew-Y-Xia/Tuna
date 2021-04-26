@@ -230,19 +230,33 @@ unsigned int Board::find_piece_captured(int index) {
 // MOVE GENERATION BEGIN
 
 void Board::generate_moves(std::vector<Move>& moves) {
+    generate_king_moves(moves);
     generate_knight_moves(moves);
 }
 
+
+void Board::generate_king_moves(std::vector<Move>& moves) {
+    U64 king = Bitboards[Kings] & Bitboards[current_turn];
+    
+    int from_index = bitscan_forward(king);
+    U64 move_targets = king_paths[from_index] & ~Bitboards[current_turn];
+    
+    if (move_targets) do {
+        int to_index = bitscan_forward(move_targets);
+        moves.push_back(Move(from_index, to_index, 0, 0, 1, find_piece_captured(to_index)));
+    } while (move_targets &= move_targets - 1);
+}
+
+
 void Board::generate_knight_moves(std::vector<Move>& moves) {
-    U64 friendly_pieces = Bitboards[current_turn];
-    U64 knights = Bitboards[Knights] & friendly_pieces;
+    U64 knights = Bitboards[Knights] & Bitboards[current_turn];
     
     if (knights) do {
         int from_index = bitscan_forward(knights);
-        U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
+        U64 move_targets = knight_paths[from_index] & ~Bitboards[current_turn];
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
-            moves.push_back(Move(from_index, to_index, 0, 0, 4, find_piece_captured(to_index)));
+            moves.push_back(Move(from_index, to_index, 0, 0, 5, find_piece_captured(to_index)));
         } while (move_targets &= move_targets - 1);
         
     } while (knights &= knights - 1);

@@ -48,7 +48,9 @@ public:
     unsigned int find_piece_captured(int index);
     
     void generate_moves(std::vector<Move>& moves);
+    void generate_king_moves(std::vector<Move>& moves);
     void generate_knight_moves(std::vector<Move>& moves);
+    
 };
 
 
