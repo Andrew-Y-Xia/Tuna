@@ -28,5 +28,7 @@ void print_cords(Cords c);
 
 bool is_within_bounds(int x, int y);
 
+void print_move(Move move);
+
 
 #endif /* Utility_hpp */

@@ -57,4 +57,47 @@ struct Cords {
 };
 
 
+
+struct Move {
+private:
+    unsigned int move_data;
+    /* Move contents:
+     bits 0-5: move_from
+     bits 6-11: move_to
+     bits 12-13: special_move_flag: Normal(0), Promotion(1), En_passant(2), Castling(3)
+     bits 14-15: promote_to: Knight(0), Bishop(1), Rook(2), Queen(3)
+     bits 16-18: piece_moved: King(0), Queen(1), Rook(2), Bishop(3), Knight(4), Pawn(5)
+     bits 19-21: piece_captured: None(0), Queen(1), Rook(2), Bishop(3), Knight(4), Pawn(5)
+     bits 22-31: move score
+     
+    */
+public:
+    Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
+    
+    void operator=(Move& a);
+    bool operator==(Move& a);
+    bool operator!=(Move& a);
+    
+    
+    unsigned int get_from() const;
+    unsigned int get_to() const;
+    unsigned int get_special_flag() const;
+    unsigned int get_promote_to() const;
+    unsigned int get_piece_moved() const;
+    unsigned int get_piece_captured() const;
+    unsigned int get_move_score() const;
+    
+    void set_from(unsigned int from);
+    void set_to(unsigned int to);
+    void set_special_flag(unsigned int flag);
+    void set_promote_to(unsigned int piece);
+    void set_piece_moved(unsigned int piece);
+    void set_piece_captured(unsigned int piece);
+    void set_move_score(unsigned int score);
+    
+    bool is_capture();
+
+};
+
+
 #endif /* Data_structs_hpp */
