@@ -231,10 +231,16 @@ unsigned int Board::find_piece_captured(int index) {
 
 void Board::generate_moves(std::vector<Move>& moves) {
     generate_king_moves(moves);
+    if (current_turn == 0) {
+        generate_pawn_movesW(moves);
+    }
+    else {
+        generate_pawn_movesB(moves);
+    }
     generate_knight_moves(moves);
 }
 
-
+// TODO: Castling
 void Board::generate_king_moves(std::vector<Move>& moves) {
     U64 king = Bitboards[Kings] & Bitboards[current_turn];
     
@@ -246,6 +252,153 @@ void Board::generate_king_moves(std::vector<Move>& moves) {
         moves.push_back(Move(from_index, to_index, 0, 0, 1, find_piece_captured(to_index)));
     } while (move_targets &= move_targets - 1);
 }
+
+// TODO: En-passant
+void Board::generate_pawn_movesW(std::vector<Move>& moves) {
+    
+    U64 pawns = Bitboards[Pawns] & Bitboards[WhitePieces];
+    
+    if (pawns) {
+        // East attacks:
+        U64 east_attacks = ((pawns << 9) & ~a_file) & Bitboards[BlackPieces];
+        // filter out promotions
+        U64 east_promotion_attacks = east_attacks & eighth_rank;
+        U64 east_regular_attacks = east_attacks & ~eighth_rank;
+        
+        
+        // West attacks:
+        U64 west_attacks = ((pawns << 7) & ~h_file) & Bitboards[BlackPieces];
+        U64 west_promotion_attacks = west_attacks & eighth_rank;
+        U64 west_regular_attacks = west_attacks & ~eighth_rank;
+        
+        
+        
+        // Serialize into moves:
+        if (east_regular_attacks) do {
+            int to_index = bitscan_forward(east_regular_attacks);
+            moves.push_back(Move(to_index-9, to_index, 0, 0, 6, find_piece_captured(to_index)));
+        } while (east_regular_attacks &= east_regular_attacks - 1);
+        
+        if (east_promotion_attacks) do {
+            int to_index = bitscan_forward(east_promotion_attacks);
+            moves.push_back(Move(to_index-9, to_index, 1, 0, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-9, to_index, 1, 1, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-9, to_index, 1, 2, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-9, to_index, 1, 3, 6, find_piece_captured(to_index)));
+        } while (east_promotion_attacks &= east_promotion_attacks - 1);
+        
+        if (west_regular_attacks) do {
+            int to_index = bitscan_forward(west_regular_attacks);
+            moves.push_back(Move(to_index-7, to_index, 0, 0, 6, find_piece_captured(to_index)));
+        } while (west_regular_attacks &= west_regular_attacks - 1);
+        
+        if (west_promotion_attacks) do {
+            int to_index = bitscan_forward(west_promotion_attacks);
+            moves.push_back(Move(to_index-7, to_index, 1, 0, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-7, to_index, 1, 1, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-7, to_index, 1, 2, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-7, to_index, 1, 3, 6, find_piece_captured(to_index)));
+        } while (west_promotion_attacks &= west_promotion_attacks - 1);
+        
+        
+        // Quiet moves:
+        U64 pawn_regular_pushes = ((pawns << 8) & ~eighth_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        
+        
+        if (pawn_regular_pushes) do {
+            int to_index = bitscan_forward(pawn_regular_pushes);
+            moves.push_back(Move(to_index-8, to_index, 0, 0, 6, 0));
+        } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
+        
+        if (pawn_double_pushes) do {
+            int to_index = bitscan_forward(pawn_double_pushes);
+            moves.push_back(Move(to_index-16, to_index, 0, 0, 6, 0));
+        } while (pawn_double_pushes &= pawn_double_pushes - 1);
+        
+        if (pawn_promotion_pushes) do {
+            int to_index = bitscan_forward(pawn_promotion_pushes);
+            moves.push_back(Move(to_index-8, to_index, 1, 0, 6, 0));
+            moves.push_back(Move(to_index-8, to_index, 1, 1, 6, 0));
+            moves.push_back(Move(to_index-8, to_index, 1, 2, 6, 0));
+            moves.push_back(Move(to_index-8, to_index, 1, 3, 6, 0));
+        } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+    }
+}
+
+void Board::generate_pawn_movesB(std::vector<Move>& moves) {
+    U64 pawns = Bitboards[Pawns] & Bitboards[BlackPieces];
+    
+    if (pawns) {
+        // East attacks:
+        U64 east_attacks = ((pawns >> 7) & ~a_file) & Bitboards[WhitePieces];
+        // filter out promotions
+        U64 east_promotion_attacks = east_attacks & first_rank;
+        U64 east_regular_attacks = east_attacks & ~first_rank;
+        
+        
+        // West attacks:
+        U64 west_attacks = ((pawns >> 9) & ~h_file) & Bitboards[WhitePieces];
+        U64 west_promotion_attacks = west_attacks & first_rank;
+        U64 west_regular_attacks = west_attacks & ~first_rank;
+        
+
+        
+        // Serialize into moves:
+        if (east_regular_attacks) do {
+            int to_index = bitscan_forward(east_regular_attacks);
+            moves.push_back(Move(to_index+7, to_index, 0, 0, 6, find_piece_captured(to_index)));
+        } while (east_regular_attacks &= east_regular_attacks - 1);
+        
+        if (east_promotion_attacks) do {
+            int to_index = bitscan_forward(east_promotion_attacks);
+            moves.push_back(Move(to_index+7, to_index, 1, 0, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+7, to_index, 1, 1, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+7, to_index, 1, 2, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+7, to_index, 1, 3, 6, find_piece_captured(to_index)));
+        } while (east_promotion_attacks &= east_promotion_attacks - 1);
+        
+        if (west_regular_attacks) do {
+            int to_index = bitscan_forward(west_regular_attacks);
+            moves.push_back(Move(to_index+9, to_index, 0, 0, 6, find_piece_captured(to_index)));
+        } while (west_regular_attacks &= west_regular_attacks - 1);
+        
+        if (west_promotion_attacks) do {
+            int to_index = bitscan_forward(west_promotion_attacks);
+            moves.push_back(Move(to_index+9, to_index, 1, 0, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+9, to_index, 1, 1, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+9, to_index, 1, 2, 6, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+9, to_index, 1, 3, 6, find_piece_captured(to_index)));
+        } while (west_promotion_attacks &= west_promotion_attacks - 1);
+        
+        
+        // Quiet moves:
+        U64 pawn_regular_pushes = ((pawns >> 8) & ~first_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        
+        
+        if (pawn_regular_pushes) do {
+            int to_index = bitscan_forward(pawn_regular_pushes);
+            moves.push_back(Move(to_index+8, to_index, 0, 0, 6, 0));
+        } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
+        
+        if (pawn_double_pushes) do {
+            int to_index = bitscan_forward(pawn_double_pushes);
+            moves.push_back(Move(to_index+16, to_index, 0, 0, 6, 0));
+        } while (pawn_double_pushes &= pawn_double_pushes - 1);
+        
+        if (pawn_promotion_pushes) do {
+            int to_index = bitscan_forward(pawn_promotion_pushes);
+            moves.push_back(Move(to_index+8, to_index, 1, 0, 6, 0));
+            moves.push_back(Move(to_index+8, to_index, 1, 1, 6, 0));
+            moves.push_back(Move(to_index+8, to_index, 1, 2, 6, 0));
+            moves.push_back(Move(to_index+8, to_index, 1, 3, 6, 0));
+        } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+    }
+}
+
 
 
 void Board::generate_knight_moves(std::vector<Move>& moves) {

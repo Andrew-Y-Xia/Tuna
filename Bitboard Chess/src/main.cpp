@@ -21,16 +21,19 @@
 int main() {
     init_bitboard_utils();
     
-    Board board("r1bqkb1r/pppp1ppp/2n2n2/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1");
+    Board board("r1bqkb1r/pPp3pp/5p2/1B2NnP1/8/P7/1Pp2P1P/RNBQK2R b KQkq - 0 1");
     board.print_board();
     
     std::cout << '\n';
     std::vector<Move> moves;
     moves.reserve(256);
     board.generate_moves(moves);
+    
+    
     for (auto it = moves.begin(); it != moves.end(); ++it) {
         print_move(*it);
     }
+    
 
     return 0;
 }
