@@ -61,13 +61,16 @@ struct Cords {
 struct Move {
 private:
     unsigned int move_data;
-    /* Move contents:
+    /*
+     
+     Move contents:
+     
      bits 0-5: move_from
      bits 6-11: move_to
      bits 12-13: special_move_flag: Normal(0), Promotion(1), En_passant(2), Castling(3)
      bits 14-15: promote_to: Knight(0), Bishop(1), Rook(2), Queen(3)
-     bits 16-18: piece_moved: King(0), Queen(1), Rook(2), Bishop(3), Knight(4), Pawn(5)
-     bits 19-21: piece_captured: None(0), Queen(1), Rook(2), Bishop(3), Knight(4), Pawn(5)
+     bits 16-18: piece_moved: None(0), King(1), Queen(2), Rook(3), Bishop(4), Knight(5), Pawn(6)
+     bits 19-21: piece_captured: None(0), King(1), Queen(2), Rook(3), Bishop(4), Knight(5), Pawn(6)
      bits 22-31: move score
      
     */

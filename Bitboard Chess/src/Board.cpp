@@ -191,3 +191,62 @@ void Board::print_board() {
     std::cout << "\n\nPawns:\n";
     print_BB(Bitboards[Pawns]);
 }
+
+
+unsigned int Board::find_piece_captured(int index) {
+    // This function does not check if the capture is illegal, make sure to &~friendly_pieces beforehand.
+    // Also, it doesn't check king captures
+    
+    /*
+    U64 bit = C64(1) << index;
+    return 2 * ((Bitboards[Queens] & bit) != 0) + 3 * ((Bitboards[Rooks] & bit) != 0) + 4 * ((Bitboards[Bishops] & bit) != 0) + 5 * ((Bitboards[Knights] & bit) != 0) + 6 * ((Bitboards[Pawns] & bit) != 0);
+     */
+
+    U64 bit = C64(1) << index;
+    if (!(Bitboards[!current_turn] & bit)) {
+        return 0;
+    }
+    else if (Bitboards[Pawns] & bit) {
+        return 6;
+    }
+    else if (Bitboards[Knights] & bit) {
+        return 5;
+    }
+    else if (Bitboards[Bishops] & bit) {
+        return 4;
+    }
+    else if (Bitboards[Rooks] & bit) {
+        return 3;
+    }
+    else if (Bitboards[Queens] & bit) {
+        return 2;
+    }
+    else {
+        return 0;
+    }
+}
+
+
+// MOVE GENERATION BEGIN
+
+void Board::generate_moves(std::vector<Move>& moves) {
+    generate_knight_moves(moves);
+}
+
+void Board::generate_knight_moves(std::vector<Move>& moves) {
+    U64 friendly_pieces = Bitboards[current_turn];
+    U64 knights = Bitboards[Knights] & friendly_pieces;
+    
+    if (knights) do {
+        int from_index = bitscan_forward(knights);
+        U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
+        if (move_targets) do {
+            int to_index = bitscan_forward(move_targets);
+            moves.push_back(Move(from_index, to_index, 0, 0, 4, find_piece_captured(to_index)));
+        } while (move_targets &= move_targets - 1);
+        
+    } while (knights &= knights - 1);
+}
+
+
+// MOVE GENERATION END
