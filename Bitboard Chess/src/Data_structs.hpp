@@ -35,10 +35,14 @@ enum Enum_BoardBB {
 
 
 enum Directions {
-    North,
+    North = 0,
+    NorthEast,
     East,
+    SouthEast,
     South,
-    West
+    SouthWest,
+    West,
+    NorthWest
 };
 
 
