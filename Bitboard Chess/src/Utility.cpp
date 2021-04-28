@@ -64,12 +64,19 @@ bool is_within_bounds(int x, int y) {
     return (0 <= x && x <= 7 && 0 <= y && y <= 7);
 }
 
-void print_move(Move move) {
-    std::cout << "\n\n\nFrom index: " << move.get_from() << '\n';
-    std::cout << "To index: " << move.get_to() << '\n';
-    std::cout << "Special move flag: " << move.get_special_flag() << '\n';
-    std::cout << "Promote to piece: " << move.get_promote_to() << '\n';
-    std::cout << "Piece moved: " << move.get_piece_moved() << '\n';
-    std::cout << "Piece captured: " << move.get_piece_captured() << '\n';
-    std::cout << "Move score: " << move.get_move_score() << '\n';
+void print_move(Move move, bool reg) {
+    if (!reg) {
+        std::cout << "\n\n\nFrom index: " << move.get_from() << '\n';
+        std::cout << "To index: " << move.get_to() << '\n';
+        std::cout << "Special move flag: " << move.get_special_flag() << '\n';
+        std::cout << "Promote to piece: " << move.get_promote_to() << '\n';
+        std::cout << "Piece moved: " << move.get_piece_moved() << '\n';
+        std::cout << "Piece captured: " << move.get_piece_captured() << '\n';
+        std::cout << "Move score: " << move.get_move_score() << '\n';
+    }
+    else {
+        Cords from_c = index_to_cords(move.get_from());
+        Cords to_c = index_to_cords(move.get_to());
+        std::cout << num_to_char(from_c.x) << 8 - from_c.y << num_to_char(to_c.x) << 8 - to_c.y;
+    }
 }

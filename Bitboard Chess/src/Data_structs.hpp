@@ -57,6 +57,26 @@ struct Cords {
 };
 
 
+#define MOVE_NORMAL 0
+#define MOVE_PROMOTION 1
+#define MOVE_ENPASSANT 2
+#define MOVE_CASTLING 3
+
+#define PROMOTE_TO_KNIGHT 0
+#define PROMOTE_TO_BISHOP 1
+#define PROMOTE_TO_ROOK 2
+#define PROMOTE_TO_QUEEN 3
+
+#define PIECE_NONE 0
+#define PIECE_EXTRA 1
+#define PIECE_KING 2
+#define PIECE_QUEEN 3
+#define PIECE_ROOK 4
+#define PIECE_BISHOP 5
+#define PIECE_KNIGHT 6
+#define PIECE_PAWN 7
+
+
 
 struct Move {
 private:
@@ -69,8 +89,8 @@ private:
      bits 6-11: move_to
      bits 12-13: special_move_flag: Normal(0), Promotion(1), En_passant(2), Castling(3)
      bits 14-15: promote_to: Knight(0), Bishop(1), Rook(2), Queen(3)
-     bits 16-18: piece_moved: None(0), King(1), Queen(2), Rook(3), Bishop(4), Knight(5), Pawn(6)
-     bits 19-21: piece_captured: None(0), King(1), Queen(2), Rook(3), Bishop(4), Knight(5), Pawn(6)
+     bits 16-18: piece_moved: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
+     bits 19-21: piece_captured: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
      bits 22-31: move score
      
     */

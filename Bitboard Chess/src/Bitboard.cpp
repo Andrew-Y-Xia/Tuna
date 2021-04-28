@@ -152,7 +152,7 @@ void init_rays() {
     }
     
     U64 wes = first_rank ^ (C64(1) << 7);
-    for (int f=0; f < 8; f++, wes = westOne(wes)) {
+    for (int f=7; f >= 0; f--, wes = westOne(wes)) {
         U64 we = wes;
         for (int r8 = 0; r8 < 64; r8 += 8, we <<= 8) {
             rays[West][r8+f] = we;
