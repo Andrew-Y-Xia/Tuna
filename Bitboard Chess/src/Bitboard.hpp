@@ -16,6 +16,7 @@
 extern U64 rays[8][64];
 extern U64 king_paths[64];
 extern U64 knight_paths[64];
+extern U64 pawn_attacks[2][64];
 
 U64 eastOne (U64 b);
 U64 noEaOne (U64 b);
@@ -33,9 +34,8 @@ void print_ls1bs(U64 x);
 void init_bitboard_utils();
 
 void init_king_paths();
-
 void init_knight_paths();
-
 void init_rays();
+void init_pawn_attacks();
 
 #endif /* Bitboard_hpp */

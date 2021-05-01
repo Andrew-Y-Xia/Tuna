@@ -11,6 +11,7 @@
 U64 rays[8][64];
 U64 king_paths[64];
 U64 knight_paths[64];
+U64 pawn_attacks[2][64];
 
 
 U64 eastOne (U64 b) {return (b << 1) & ~a_file;}
@@ -61,6 +62,7 @@ void init_bitboard_utils() {
     init_king_paths();
     init_knight_paths();
     init_rays();
+    init_pawn_attacks();
 }
 
 
@@ -158,4 +160,13 @@ void init_rays() {
             rays[West][r8+f] = we;
         }
     }
+}
+
+void init_pawn_attacks() {
+    // 1st rank and 8th rank pawn attacks are actually essential 
+    for (int index = a1; index <= h8; index++) {
+        pawn_attacks[WhitePieces][index] = (((C64(1) << index) << 9) & ~a_file) | (((C64(1) << index) << 7) & ~h_file);
+        pawn_attacks[BlackPieces][index] = (((C64(1) << index) >> 9) & ~h_file) | (((C64(1) << index) >> 7) & ~a_file);
+    }
+    
 }
