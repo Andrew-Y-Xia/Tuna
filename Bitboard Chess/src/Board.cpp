@@ -491,4 +491,37 @@ void Board::generate_queen_moves(std::vector<Move>& moves) {
 }
 
 
+// Legality section
+
+U64 Board::attacks_to(int index) {
+    // Important: this function does not factor in king attacks
+    U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
+    U64 enemy_knights = Bitboards[Knights] & Bitboards[!current_turn];
+    U64 enemy_bishops_queens = (Bitboards[Bishops] | Bitboards[Queens]) & Bitboards[!current_turn];
+    U64 enemy_rooks_queens = (Bitboards[Rooks] | Bitboards[Queens]) & Bitboards[!current_turn];
+    
+    return (pawn_attacks[current_turn][index] & enemy_pawns)
+         | (knight_paths[index] & enemy_knights)
+         | (bishop_attacks(index) & enemy_bishops_queens)
+         | (rook_attacks(index) & enemy_rooks_queens)
+    ;
+}
+
+int Board::is_attacked(int index) {
+    // Important: this function does not factor in king attacks
+    U64 enemy_king = Bitboards[Kings] & Bitboards[!current_turn];
+    U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
+    U64 enemy_knights = Bitboards[Knights] & Bitboards[!current_turn];
+    U64 enemy_bishops_queens = (Bitboards[Bishops] | Bitboards[Queens]) & Bitboards[!current_turn];
+    U64 enemy_rooks_queens = (Bitboards[Rooks] | Bitboards[Queens]) & Bitboards[!current_turn];
+    
+    return  (pawn_attacks[current_turn][index] & enemy_pawns)
+         || (knight_paths[index] & enemy_knights)
+         || (bishop_attacks(index) & enemy_bishops_queens)
+         || (rook_attacks(index) & enemy_rooks_queens)
+         || (king_paths[index] & enemy_king)
+    ;
+}
+
+
 // MOVE GENERATION END

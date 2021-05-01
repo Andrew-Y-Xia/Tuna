@@ -62,6 +62,12 @@ public:
     void generate_rook_moves(std::vector<Move>& moves);
     void generate_queen_moves(std::vector<Move>& moves);
     
+    // Legality portion
+    U64 attacks_to(int index);
+    int is_attacked(int index);
+    int calculate_block_masks(U64 king_attackers);
+    void calculate_pins();
+
 };
 
 
