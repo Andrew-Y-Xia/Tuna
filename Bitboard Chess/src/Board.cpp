@@ -227,26 +227,26 @@ unsigned int Board::find_piece_captured(int index) {
 }
 
 
-U64 Board::get_positive_ray_attacks(int from_square, Directions dir) {
+U64 Board::get_positive_ray_attacks(int from_square, Directions dir, U64 occ) {
     U64 attacks = rays[dir][from_square];
-    U64 blockers = attacks & (Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+    U64 blockers = attacks & occ;
     int blocker = bitscan_forward(blockers | C64(0x8000000000000000));
     return attacks ^ rays[dir][blocker];
 }
 
-U64 Board::get_negative_ray_attacks(int from_square, Directions dir) {
+U64 Board::get_negative_ray_attacks(int from_square, Directions dir, U64 occ) {
     U64 attacks = rays[dir][from_square];
-    U64 blockers = attacks & (Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+    U64 blockers = attacks & occ;
     int blocker = bitscan_reverse(blockers | C64(1));
     return attacks ^ rays[dir][blocker];
 }
 
-U64 Board::bishop_attacks(int from_index) {
-    return get_positive_ray_attacks(from_index, NorthEast) | get_positive_ray_attacks(from_index, NorthWest) | get_negative_ray_attacks(from_index, SouthEast) | get_negative_ray_attacks(from_index, SouthWest);
+U64 Board::bishop_attacks(int from_index, U64 occ) {
+    return get_positive_ray_attacks(from_index, NorthEast, occ) | get_positive_ray_attacks(from_index, NorthWest, occ) | get_negative_ray_attacks(from_index, SouthEast, occ) | get_negative_ray_attacks(from_index, SouthWest, occ);
 }
 
-U64 Board::rook_attacks(int from_index) {
-    return get_positive_ray_attacks(from_index, North) | get_positive_ray_attacks(from_index, East) | get_negative_ray_attacks(from_index, South) | get_negative_ray_attacks(from_index, West);
+U64 Board::rook_attacks(int from_index, U64 occ) {
+    return get_positive_ray_attacks(from_index, North, occ) | get_positive_ray_attacks(from_index, East, occ) | get_negative_ray_attacks(from_index, South, occ) | get_negative_ray_attacks(from_index, West, occ);
 }
 
 U64 Board::in_between_mask(int from_index, int to_index) {
@@ -261,13 +261,17 @@ U64 Board::in_between_mask(int from_index, int to_index) {
 
 
 void Board::generate_moves(std::vector<Move>& moves) {
-    U64 king_attackers;
+    U64 king_attackers, bishop_pinned, rook_pinned;
     int num_attackers;
     U64 block_masks = 0;
     
+    int pinners[8];
     
-    generate_king_moves(moves);
-    king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & Bitboards[current_turn]));
+    U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces];
+    U64 friendly_pieces = Bitboards[current_turn];
+    
+    generate_king_moves(moves, occ, friendly_pieces);
+    king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ);
     num_attackers = _mm_popcnt_u64(king_attackers);
     
     if (num_attackers == 1) {
@@ -276,38 +280,42 @@ void Board::generate_moves(std::vector<Move>& moves) {
     else if (num_attackers > 1) {
         return;
     }
+    
+    
+    bishop_pinned = calculate_bishop_pins(pinners, occ, friendly_pieces);
+    rook_pinned = calculate_rook_pins(pinners, occ, friendly_pieces);
 
     if (current_turn == 0) {
-        generate_pawn_movesW(moves, block_masks);
+        generate_pawn_movesW(moves, block_masks, occ, friendly_pieces);
     }
     else {
-        generate_pawn_movesB(moves, block_masks);
+        generate_pawn_movesB(moves, block_masks, occ, friendly_pieces);
     }
-    generate_knight_moves(moves, block_masks);
-    generate_bishop_moves(moves, block_masks);
-    generate_rook_moves(moves, block_masks);
-    generate_queen_moves(moves, block_masks);
+    generate_knight_moves(moves, block_masks, occ, friendly_pieces);
+    generate_bishop_moves(moves, block_masks, occ, friendly_pieces);
+    generate_rook_moves(moves, block_masks, occ, friendly_pieces);
+    generate_queen_moves(moves, block_masks, occ, friendly_pieces);
 }
 
 // TODO: Castling
-void Board::generate_king_moves(std::vector<Move>& moves) {
-    U64 king = Bitboards[Kings] & Bitboards[current_turn];
+void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces) {
+    U64 king = Bitboards[Kings] & friendly_pieces;
     
     int from_index = bitscan_forward(king);
-    U64 move_targets = king_paths[from_index] & ~Bitboards[current_turn];
+    U64 move_targets = king_paths[from_index] & ~friendly_pieces;
     
     if (move_targets) do {
         int to_index = bitscan_forward(move_targets);
-        if (!is_attacked(to_index)) {
+        if (!is_attacked(to_index, occ)) {
             moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, 1, find_piece_captured(to_index)));
         }
     } while (move_targets &= move_targets - 1);
 }
 
 // TODO: En-passant
-void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks) {
+void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces) {
     
-    U64 pawns = Bitboards[Pawns] & Bitboards[WhitePieces];
+    U64 pawns = Bitboards[Pawns] & friendly_pieces;
     
     if (pawns) {
         // East attacks:
@@ -359,11 +367,11 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         
         
         // Quiet moves:
-        U64 pawn_regular_pushes = ((pawns << 8) & ~eighth_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_regular_pushes = ((pawns << 8) & ~eighth_rank) & ~(occ);
         pawn_regular_pushes &= block_check_masks;
-        U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
         pawn_double_pushes &= block_check_masks;
-        U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
         pawn_promotion_pushes &= block_check_masks;
         
         
@@ -387,8 +395,8 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
     }
 }
 
-void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks) {
-    U64 pawns = Bitboards[Pawns] & Bitboards[BlackPieces];
+void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces) {
+    U64 pawns = Bitboards[Pawns] & friendly_pieces;
     
     if (pawns) {
         // East attacks:
@@ -440,11 +448,11 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         
         
         // Quiet moves:
-        U64 pawn_regular_pushes = ((pawns >> 8) & ~first_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_regular_pushes = ((pawns >> 8) & ~first_rank) & ~(occ);
         pawn_regular_pushes &= block_check_masks;
-        U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(occ);
         pawn_double_pushes &= block_check_masks;
-        U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+        U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(occ);
         pawn_promotion_pushes &= block_check_masks;
         
         
@@ -470,12 +478,12 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
 
 
 
-void Board::generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks) {
-    U64 knights = Bitboards[Knights] & Bitboards[current_turn];
+void Board::generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces) {
+    U64 knights = Bitboards[Knights] & friendly_pieces;
     
     if (knights) do {
         int from_index = bitscan_forward(knights);
-        U64 move_targets = knight_paths[from_index] & ~Bitboards[current_turn];
+        U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
         move_targets &= block_check_masks;
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
@@ -486,13 +494,13 @@ void Board::generate_knight_moves(std::vector<Move>& moves, U64 block_check_mask
 }
 
 
-void Board::generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks) {
-    U64 bishops = Bitboards[Bishops] & Bitboards[current_turn];
+void Board::generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces) {
+    U64 bishops = Bitboards[Bishops] & friendly_pieces;
     
     if (bishops) do {
         int from_index = bitscan_forward(bishops);
-        U64 move_targets = bishop_attacks(from_index);
-        move_targets &= ~Bitboards[current_turn];
+        U64 move_targets = bishop_attacks(from_index, occ);
+        move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
         if (move_targets) do {
@@ -503,13 +511,13 @@ void Board::generate_bishop_moves(std::vector<Move>& moves, U64 block_check_mask
     } while (bishops &= bishops - 1);
 }
 
-void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks) {
-    U64 rooks = Bitboards[Rooks] & Bitboards[current_turn];
+void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces) {
+    U64 rooks = Bitboards[Rooks] & friendly_pieces;
     
     if (rooks) do {
         int from_index = bitscan_forward(rooks);
-        U64 move_targets = rook_attacks(from_index);
-        move_targets &= ~Bitboards[current_turn];
+        U64 move_targets = rook_attacks(from_index, occ);
+        move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
         
@@ -521,13 +529,13 @@ void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks)
     } while (rooks &= rooks - 1);
 }
 
-void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks) {
-    U64 queens = Bitboards[Queens] & Bitboards[current_turn];
+void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces) {
+    U64 queens = Bitboards[Queens] & friendly_pieces;
     
     if (queens) do {
         int from_index = bitscan_forward(queens);
-        U64 move_targets = bishop_attacks(from_index) | rook_attacks(from_index);
-        move_targets &= ~Bitboards[current_turn];
+        U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
+        move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
         if (move_targets) do {
@@ -541,7 +549,7 @@ void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks
 
 // Legality section
 
-U64 Board::attacks_to(int index) {
+U64 Board::attacks_to(int index, U64 occ) {
     // Important: this function does not factor in king attacks
     U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
     U64 enemy_knights = Bitboards[Knights] & Bitboards[!current_turn];
@@ -550,12 +558,12 @@ U64 Board::attacks_to(int index) {
     
     return (pawn_attacks[current_turn][index] & enemy_pawns)
          | (knight_paths[index] & enemy_knights)
-         | (bishop_attacks(index) & enemy_bishops_queens)
-         | (rook_attacks(index) & enemy_rooks_queens)
+         | (bishop_attacks(index, occ) & enemy_bishops_queens)
+         | (rook_attacks(index, occ) & enemy_rooks_queens)
     ;
 }
 
-int Board::is_attacked(int index) {
+int Board::is_attacked(int index, U64 occ) {
     // Important: this function does not factor in king attacks
     U64 enemy_king = Bitboards[Kings] & Bitboards[!current_turn];
     U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
@@ -565,8 +573,8 @@ int Board::is_attacked(int index) {
     
     return  (pawn_attacks[current_turn][index] & enemy_pawns)
          || (knight_paths[index] & enemy_knights)
-         || (bishop_attacks(index) & enemy_bishops_queens)
-         || (rook_attacks(index) & enemy_rooks_queens)
+         || (bishop_attacks(index, occ) & enemy_bishops_queens)
+         || (rook_attacks(index, occ) & enemy_rooks_queens)
          || (king_paths[index] & enemy_king)
     ;
 }
@@ -584,6 +592,14 @@ U64 Board::calculate_block_masks(U64 king_attacker) {
         block_mask = in_between_mask(king_index, attacker_index);
     }
     return block_mask | capture_mask;
+}
+
+U64 Board::calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces) {
+    int king_index = bitscan_forward(Bitboards[Kings] & Bitboards[current_turn]);
+}
+
+U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
+    
 }
 
 

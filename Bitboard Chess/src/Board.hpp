@@ -47,28 +47,31 @@ public:
     
     unsigned int find_piece_captured(int index);
     
-    U64 get_positive_ray_attacks(int from_square, Directions dir);
-    U64 get_negative_ray_attacks(int from_square, Directions dir);
+    U64 get_positive_ray_attacks(int from_square, Directions dir, U64 occ);
+    U64 get_negative_ray_attacks(int from_square, Directions dir, U64 occ);
     
-    U64 bishop_attacks(int from_index);
-    U64 rook_attacks(int from_index);
+    U64 bishop_attacks(int from_index, U64 occ);
+    U64 rook_attacks(int from_index, U64 occ);
+    U64 xray_bishop_attacks(int from_index, U64 occ, U64 blockers);
+    U64 xray_rook_attacks(int from_index, U64 occ, U64 blockers);
     
     U64 in_between_mask(int from_index, int to_index);
     
     void generate_moves(std::vector<Move>& moves);
-    void generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks);
-    void generate_pawn_movesB(std::vector<Move>&, U64 block_check_masks);
-    void generate_king_moves(std::vector<Move>& moves);
-    void generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks);
-    void generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks);
-    void generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks);
-    void generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks);
+    void generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces);
+    void generate_pawn_movesB(std::vector<Move>&, U64 block_check_masks, U64 occ, U64 friendly_pieces);
+    void generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces);
+    void generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces);
+    void generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces);
+    void generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces);
+    void generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces);
     
     // Legality portion
-    U64 attacks_to(int index);
-    int is_attacked(int index);
+    U64 attacks_to(int index, U64 occ);
+    int is_attacked(int index, U64 occ);
     U64 calculate_block_masks(U64 king_attacker);
-    void calculate_pins();
+    U64 calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces);
+    U64 calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces);
 };
 
 
