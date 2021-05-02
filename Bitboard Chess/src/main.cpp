@@ -21,7 +21,7 @@
 int main() {
     init_bitboard_utils();
     
-    Board board("rnb1kbnr/pppp1pp1/8/4p3/4q3/5p2/PPPPB2P/RNBQK1NR w KQkq - 0 1");
+    Board board("rnb1kbnr/pppp1pp1/8/2B1p3/4q3/P1B2pP1/1PPPP3/RN1QK1NR b KQkq - 0 1");
 //    board.print_board();
     
     std::cout << '\n';
