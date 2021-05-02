@@ -53,21 +53,22 @@ public:
     U64 bishop_attacks(int from_index);
     U64 rook_attacks(int from_index);
     
+    U64 in_between_mask(int from_index, int to_index);
+    
     void generate_moves(std::vector<Move>& moves);
-    void generate_pawn_movesW(std::vector<Move>& moves);
-    void generate_pawn_movesB(std::vector<Move>& moves);
+    void generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks);
+    void generate_pawn_movesB(std::vector<Move>&, U64 block_check_masks);
     void generate_king_moves(std::vector<Move>& moves);
-    void generate_knight_moves(std::vector<Move>& moves);
-    void generate_bishop_moves(std::vector<Move>& moves);
-    void generate_rook_moves(std::vector<Move>& moves);
-    void generate_queen_moves(std::vector<Move>& moves);
+    void generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks);
+    void generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks);
+    void generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks);
+    void generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks);
     
     // Legality portion
     U64 attacks_to(int index);
     int is_attacked(int index);
-    int calculate_block_masks(U64 king_attackers);
+    U64 calculate_block_masks(U64 king_attacker);
     void calculate_pins();
-
 };
 
 

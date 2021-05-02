@@ -12,6 +12,8 @@ U64 rays[8][64];
 U64 king_paths[64];
 U64 knight_paths[64];
 U64 pawn_attacks[2][64];
+Directions direction_between[64][64];
+
 
 
 U64 eastOne (U64 b) {return (b << 1) & ~a_file;}
@@ -63,6 +65,7 @@ void init_bitboard_utils() {
     init_knight_paths();
     init_rays();
     init_pawn_attacks();
+    init_direction_between();
 }
 
 
@@ -168,5 +171,40 @@ void init_pawn_attacks() {
         pawn_attacks[WhitePieces][index] = (((C64(1) << index) << 9) & ~a_file) | (((C64(1) << index) << 7) & ~h_file);
         pawn_attacks[BlackPieces][index] = (((C64(1) << index) >> 9) & ~h_file) | (((C64(1) << index) >> 7) & ~a_file);
     }
-    
+}
+
+void init_direction_between() {
+    for (int from_index = a1; from_index <= h8; from_index++ ) {
+        for (int to_index = a1; to_index <= h8; to_index++) {
+            Cords from_c = index_to_cords(from_index);
+            Cords to_c = index_to_cords(to_index);
+            int d_x = sgn(to_c.x - from_c.x);
+            int d_y = sgn(to_c.y - from_c.y);
+            
+            if (d_x == -1 && d_y == -1) {
+                direction_between[from_index][to_index] = NorthWest;
+            }
+            else if (d_x == -1 && d_y == 0) {
+                direction_between[from_index][to_index] = West;
+            }
+            else if (d_x == -1 && d_y == 1) {
+                direction_between[from_index][to_index] = SouthWest;
+            }
+            else if (d_x == 0 && d_y == -1) {
+                direction_between[from_index][to_index] = North;
+            }
+            else if (d_x == 0 && d_y == 1) {
+                direction_between[from_index][to_index] = South;
+            }
+            else if (d_x == 1 && d_y == -1) {
+                direction_between[from_index][to_index] = NorthEast;
+            }
+            else if (d_x == 1 && d_y == 0) {
+                direction_between[from_index][to_index] = East;
+            }
+            else if (d_x == 1 && d_y == 1) {
+                direction_between[from_index][to_index] = SouthEast;
+            }
+        }
+    }
 }

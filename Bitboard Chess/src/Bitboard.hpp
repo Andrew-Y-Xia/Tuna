@@ -17,6 +17,7 @@ extern U64 rays[8][64];
 extern U64 king_paths[64];
 extern U64 knight_paths[64];
 extern U64 pawn_attacks[2][64];
+extern Directions direction_between[64][64];
 
 U64 eastOne (U64 b);
 U64 noEaOne (U64 b);
@@ -37,5 +38,6 @@ void init_king_paths();
 void init_knight_paths();
 void init_rays();
 void init_pawn_attacks();
+void init_direction_between();
 
 #endif /* Bitboard_hpp */

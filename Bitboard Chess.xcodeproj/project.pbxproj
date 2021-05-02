@@ -367,6 +367,7 @@
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_UNROLL_LOOPS = NO;
 				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
@@ -384,6 +385,7 @@
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_UNROLL_LOOPS = NO;
 				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
