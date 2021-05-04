@@ -326,7 +326,7 @@ void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_
     } while (move_targets &= move_targets - 1);
 }
 
-// TODO: En-passant
+
 void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
@@ -435,6 +435,26 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         }
         
     } while (pinned_pawn_attacks &= pinned_pawn_attacks - 1);
+    
+    // En Passant:
+    if (en_passant_square != -1) {
+    
+        U64 en_passant_pawn_source = pawns & pawn_attacks[BlackPieces][en_passant_square];
+    
+        if (en_passant_pawn_source) do {
+            int from_index = bitscan_forward(en_passant_pawn_source);
+            moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+        } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
+    
+        // En Passant pins:
+        U64 positive_diag_rays_from_king = rays[NorthWest][king_index] | rays[NorthEast][king_index];
+        U64 en_passants_along_pin_path = positive_diag_rays_from_king & (C64(1) << en_passant_square);
+        U64 pinned_en_passant = Bitboards[Pawns] & bishop_pinned & pawn_attacks[BlackPieces][en_passant_square];
+
+        if (pinned_en_passant && en_passants_along_pin_path) {
+            moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+        }
+    }
 }
 
 void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
@@ -544,6 +564,26 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         }
         
     } while (pinned_pawn_attacks &= pinned_pawn_attacks - 1);
+    
+    // En Passant:
+    if (en_passant_square != -1) {
+    
+        U64 en_passant_pawn_source = pawns & pawn_attacks[WhitePieces][en_passant_square];
+    
+        if (en_passant_pawn_source) do {
+            int from_index = bitscan_forward(en_passant_pawn_source);
+            moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+        } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
+    
+        // En Passant pins:
+        U64 negative_diag_rays_from_king = rays[SouthWest][king_index] | rays[SouthEast][king_index];
+        U64 en_passants_along_pin_path = negative_diag_rays_from_king & (C64(1) << en_passant_square);
+        U64 pinned_en_passant = Bitboards[Pawns] & bishop_pinned & pawn_attacks[WhitePieces][en_passant_square];
+
+        if (pinned_en_passant && en_passants_along_pin_path) {
+            moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+        }
+    }
 }
 
 
@@ -676,7 +716,7 @@ U64 Board::attacks_to(int index, U64 occ) {
 }
 
 int Board::is_attacked(int index, U64 occ) {
-    // Important: this function does not factor in king attacks
+    // Important: this function factors in king attacks
     U64 enemy_king = Bitboards[Kings] & Bitboards[!current_turn];
     U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
     U64 enemy_knights = Bitboards[Knights] & Bitboards[!current_turn];
