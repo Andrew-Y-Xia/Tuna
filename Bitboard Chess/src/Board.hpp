@@ -58,7 +58,7 @@ public:
     U64 in_between_mask(int from_index, int to_index);
     
     void generate_moves(std::vector<Move>& moves);
-    void generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_piecess);
+    void generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers);
     void generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
     void generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
     void generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned);

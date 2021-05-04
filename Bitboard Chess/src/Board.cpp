@@ -284,9 +284,11 @@ void Board::generate_moves(std::vector<Move>& moves) {
     U64 friendly_pieces = Bitboards[current_turn];
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
     
-    generate_king_moves(moves, occ, friendly_pieces);
     king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ);
     num_attackers = _mm_popcnt_u64(king_attackers);
+    
+    
+    generate_king_moves(moves, occ, friendly_pieces, king_index, num_attackers);
     
     if (num_attackers == 1) {
         block_masks = calculate_block_masks(king_attackers);
@@ -311,20 +313,40 @@ void Board::generate_moves(std::vector<Move>& moves) {
     generate_queen_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
 }
 
-// TODO: Castling
-void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces) {
+
+void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
     U64 king = Bitboards[Kings] & friendly_pieces;
     
-    int from_index = bitscan_forward(king);
-    U64 move_targets = king_paths[from_index] & ~friendly_pieces;
+    U64 move_targets = king_paths[king_index] & ~friendly_pieces;
+    
+    if (current_turn == 0) {
+        if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) && !is_attacked(2, occ)) {
+            moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
+        }
+    
+        if (white_can_castle_kingside && !num_attackers && !(C64(0x60) & occ) && !is_attacked(5, occ) && !is_attacked(6, occ)) {
+            moves.push_back(Move(4, 6, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
+        }
+    }
+    else {
+        if (black_can_castle_queenside && !num_attackers && !(C64(0xE00000000000000) & occ) && !is_attacked(59, occ) && !is_attacked(58, occ)) {
+            moves.push_back(Move(60, 58, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
+        }
+    
+        if (black_can_castle_kingside && !num_attackers && !(C64(0x6000000000000000) & occ) && !is_attacked(61, occ) && !is_attacked(62, occ)) {
+            moves.push_back(Move(60, 62, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
+        }
+    }
+
     
     if (move_targets) do {
         int to_index = bitscan_forward(move_targets);
         if (!is_attacked(to_index, occ)) {
-            moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, 1, find_piece_captured(to_index)));
+            moves.push_back(Move(king_index, to_index, MOVE_NORMAL, 0, 1, find_piece_captured(to_index)));
         }
     } while (move_targets &= move_targets - 1);
 }
+
 
 
 void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {

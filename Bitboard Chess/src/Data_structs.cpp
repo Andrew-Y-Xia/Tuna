@@ -25,8 +25,8 @@ Cords::Cords(int a, int b) {
 
 // Move BEGIN
 
-Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score) {
-    move_data = (from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x3) << 12) | ((promotion_piece & 0x3) << 14) | ((piece_moved & 0x7) << 16) | ((piece_captured & 0x7) << 19) | ((score & 0x3FF) << 22);
+Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece_or_castle_type, unsigned int piece_moved, unsigned int piece_captured, unsigned int score) {
+    move_data = (from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x3) << 12) | ((promotion_piece_or_castle_type & 0x3) << 14) | ((piece_moved & 0x7) << 16) | ((piece_captured & 0x7) << 19) | ((score & 0x3FF) << 22);
 }
 
 void Move::operator=(Move& a) {
@@ -49,6 +49,9 @@ unsigned int Move::get_special_flag() const {
     return (move_data >> 12) & 0x3;
 }
 unsigned int Move::get_promote_to() const {
+    return (move_data >> 14) & 0x3;
+}
+unsigned int Move::get_castle_type() const {
     return (move_data >> 14) & 0x3;
 }
 unsigned int Move::get_piece_moved() const {
@@ -76,6 +79,10 @@ void Move::set_special_flag(unsigned int flag) {
 void Move::set_promote_to(unsigned int piece) {
     move_data &= ~(0x3 << 14);
     move_data |= (piece & 0x3) << 14;
+}
+void Move::set_castle_type(unsigned int castle_type) {
+    move_data &= ~(0x3 << 14);
+    move_data |= (castle_type & 0x3) << 14;
 }
 void Move::set_piece_moved(unsigned int piece) {
     move_data &= ~(0x7 << 16);

@@ -67,6 +67,9 @@ struct Cords {
 #define PROMOTE_TO_ROOK 2
 #define PROMOTE_TO_QUEEN 3
 
+#define CASTLE_TYPE_KINGSIDE 0
+#define CASTLE_TYPE_QUEENSIDE 1
+
 #define PIECE_NONE 0
 #define PIECE_EXTRA 1
 #define PIECE_KING 2
@@ -89,6 +92,7 @@ private:
      bits 6-11: move_to
      bits 12-13: special_move_flag: Normal(0), Promotion(1), En_passant(2), Castling(3)
      bits 14-15: promote_to: Knight(0), Bishop(1), Rook(2), Queen(3)
+           union castle_type: Kingside(0), Queenside(1)
      bits 16-18: piece_moved: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
      bits 19-21: piece_captured: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
      bits 22-31: move score
@@ -106,6 +110,7 @@ public:
     unsigned int get_to() const;
     unsigned int get_special_flag() const;
     unsigned int get_promote_to() const;
+    unsigned int get_castle_type() const;
     unsigned int get_piece_moved() const;
     unsigned int get_piece_captured() const;
     unsigned int get_move_score() const;
@@ -114,6 +119,7 @@ public:
     void set_to(unsigned int to);
     void set_special_flag(unsigned int flag);
     void set_promote_to(unsigned int piece);
+    void set_castle_type(unsigned int piece);
     void set_piece_moved(unsigned int piece);
     void set_piece_captured(unsigned int piece);
     void set_move_score(unsigned int score);
