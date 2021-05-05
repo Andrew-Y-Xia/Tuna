@@ -25,10 +25,10 @@ private:
     int current_turn;
    
     // Castling states:
-    bool white_can_castle_queenside: 1;
-    bool white_can_castle_kingside: 1;
-    bool black_can_castle_queenside: 1;
-    bool black_can_castle_kingside: 1;
+    bool white_can_castle_queenside;
+    bool white_can_castle_kingside;
+    bool black_can_castle_queenside;
+    bool black_can_castle_kingside;
     
     int en_passant_square;
     
@@ -38,6 +38,8 @@ private:
     
     // Incrementally updated move values
     int black_piece_values, white_piece_values;
+    
+    std::vector<move_data> move_stack;
     
 public:
     Board();
@@ -57,6 +59,7 @@ public:
     
     U64 in_between_mask(int from_index, int to_index);
     
+    // Move generation:
     void generate_moves(std::vector<Move>& moves);
     void generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers);
     void generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
@@ -72,6 +75,13 @@ public:
     U64 calculate_block_masks(U64 king_attacker);
     U64 calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces);
     U64 calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces);
+    
+    // Move generation end
+    
+    void make_move(Move move);
+    void unmake_move();
+    
+    long Perft(int depth);
 };
 
 

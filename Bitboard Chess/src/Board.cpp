@@ -204,25 +204,25 @@ unsigned int Board::find_piece_captured(int index) {
 
     U64 bit = C64(1) << index;
     if (!(Bitboards[!current_turn] & bit)) {
-        return 0;
+        return PIECE_NONE;
     }
     else if (Bitboards[Pawns] & bit) {
-        return 6;
+        return PIECE_PAWN;
     }
     else if (Bitboards[Knights] & bit) {
-        return 5;
+        return PIECE_KNIGHT;
     }
     else if (Bitboards[Bishops] & bit) {
-        return 4;
+        return PIECE_BISHOP;
     }
     else if (Bitboards[Rooks] & bit) {
-        return 3;
+        return PIECE_ROOK;
     }
     else if (Bitboards[Queens] & bit) {
-        return 2;
+        return PIECE_QUEEN;
     }
     else {
-        return 0;
+        return PIECE_NONE;
     }
 }
 
@@ -342,7 +342,7 @@ void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_
     if (move_targets) do {
         int to_index = bitscan_forward(move_targets);
         if (!is_attacked(to_index, occ)) {
-            moves.push_back(Move(king_index, to_index, MOVE_NORMAL, 0, 1, find_piece_captured(to_index)));
+            moves.push_back(Move(king_index, to_index, MOVE_NORMAL, 0, PIECE_KING, find_piece_captured(to_index)));
         }
     } while (move_targets &= move_targets - 1);
 }
@@ -798,6 +798,196 @@ U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
         pinner &= pinner - 1;
     }
     return pinned;
+}
+
+
+void Board::make_move(Move move) {
+    move_data move_data = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square};
+    move_stack.push_back(move_data);
+    
+    // Actual act of making move:
+    int move_from_index = move.get_from();
+    int move_to_index = move.get_to();
+    U64 from_bb = C64(1) << move_from_index;
+    U64 to_bb = C64(1) << move_to_index;
+    
+
+    
+    // Set out the captured squares first
+    if (move.get_piece_captured() != PIECE_NONE) {
+        Bitboards[move.get_piece_captured()] ^= to_bb;
+        Bitboards[!current_turn] ^= to_bb;
+    }
+    // Flip the occupacy of the from square and to square
+    Bitboards[current_turn] ^= from_bb | to_bb;
+    Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
+    
+    
+    // Special move handling now:
+    
+    switch (move.get_special_flag()) {
+        case MOVE_NORMAL: {
+            break;
+        }
+        case MOVE_CASTLING: {
+            U64 side_mask = (!current_turn * first_rank) | (current_turn * eighth_rank);
+            U64 castle_bits = ((a_file | (a_file << 3)) * move.get_castle_type()) | ((h_file | a_file << 5) * !move.get_castle_type());
+            castle_bits &= side_mask;
+            Bitboards[current_turn] ^= castle_bits;
+            Bitboards[Rooks] ^= castle_bits;
+            break;
+        }
+        case MOVE_ENPASSANT: {
+            U64 side_mask = (!current_turn * (first_rank << 32)) | (current_turn * (eighth_rank << 24));
+            U64 delete_square = (rays[North][move_to_index] | rays[South][move_to_index]) & side_mask;
+            Bitboards[!current_turn] ^= delete_square;
+            Bitboards[Pawns] ^= delete_square;
+            break;
+        }
+        case MOVE_PROMOTION: {
+            Bitboards[Pawns] ^= to_bb;
+            Bitboards[move.get_promote_to() + 3] ^= to_bb;
+            break;
+        }
+    }
+    
+    // Set en_passant square
+    if (move.get_piece_moved() == PIECE_PAWN && abs(move_from_index - move_to_index) == 16) {
+        if (current_turn == 0) {
+            en_passant_square = move_to_index - 8;
+        }
+        else {
+            en_passant_square = move_to_index + 8;
+        }
+    }
+    else {
+        en_passant_square = -1;
+    }
+    
+    // Check to see if castling is invalidated
+
+    // see if rook was captured/moved
+    if (move.get_piece_captured() != PIECE_NONE) {
+        switch (move_to_index) {
+            case 56:
+                black_can_castle_queenside = false;
+                break;
+            case 63:
+                black_can_castle_kingside = false;
+                break;
+            case 0:
+                white_can_castle_queenside = false;
+                break;
+            case 7:
+                white_can_castle_kingside = false;
+                break;
+        }
+    }
+
+
+    // Check if king moves
+    if (move.get_piece_moved() == PIECE_KING) {
+        if (current_turn == 1) {
+            black_can_castle_kingside = false;
+            black_can_castle_queenside = false;
+        }
+        else {
+            white_can_castle_kingside = false;
+            white_can_castle_queenside = false;
+        }
+    }
+    
+    // Switch turns:
+    
+    current_turn = !current_turn;
+    
+}
+
+void Board::unmake_move() {
+    
+    current_turn = !current_turn;
+    
+    move_data last_move = move_stack.back();
+    Move move = last_move.move;
+    
+    white_can_castle_queenside = last_move.white_can_castle_queenside;
+    white_can_castle_kingside = last_move.white_can_castle_kingside;
+    black_can_castle_queenside = last_move.black_can_castle_queenside;
+    black_can_castle_kingside = last_move.black_can_castle_kingside;
+    
+    en_passant_square = last_move.en_passant_square;
+    
+    // Actual act of making move:
+    int move_from_index = move.get_from();
+    int move_to_index = move.get_to();
+    U64 from_bb = C64(1) << move_from_index;
+    U64 to_bb = C64(1) << move_to_index;
+    
+    
+    // Set back the captured squares first
+    if (move.get_piece_captured() != PIECE_NONE) {
+        Bitboards[move.get_piece_captured()] ^= to_bb;
+        Bitboards[!current_turn] ^= to_bb;
+    }
+    
+
+    
+    // Flip the occupacy of the from square and to square
+    Bitboards[current_turn] ^= from_bb | to_bb;
+    Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
+
+    
+    // Special move handling now:
+    
+    switch (move.get_special_flag()) {
+        case MOVE_NORMAL: {
+            break;
+        }
+        case MOVE_CASTLING: {
+            U64 side_mask = (!current_turn * first_rank) | (current_turn * eighth_rank);
+            U64 castle_bits = ((a_file | (a_file << 3)) * move.get_castle_type()) | ((h_file | a_file << 5) * !move.get_castle_type());
+            castle_bits &= side_mask;
+            Bitboards[current_turn] ^= castle_bits;
+            Bitboards[Rooks] ^= castle_bits;
+            break;
+        }
+        case MOVE_ENPASSANT: {
+            U64 side_mask = (!current_turn * (first_rank << 32)) | (current_turn * (eighth_rank << 24));
+            U64 delete_square = (rays[North][move_to_index] | rays[South][move_to_index]) & side_mask;
+            Bitboards[!current_turn] ^= delete_square;
+            Bitboards[Pawns] ^= delete_square;
+            break;
+        }
+        case MOVE_PROMOTION: {
+            Bitboards[Pawns] ^= to_bb;
+            Bitboards[move.get_promote_to() + 3] ^= to_bb;
+            break;
+        }
+    }
+    
+    move_stack.pop_back();
+}
+
+long Board::Perft(int depth /* assuming >= 1 */) {
+    long nodes = 0;
+    int n_moves = 0;
+
+    std::vector<Move> moves;
+    moves.reserve(256);
+    generate_moves(moves);
+    n_moves = moves.size();
+
+    if (depth == 0) {
+//        print_board();
+        return 1;
+    }
+
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        make_move(*it);
+        nodes += Perft(depth - 1);
+        unmake_move();
+    }
+    return nodes;
 }
 
 

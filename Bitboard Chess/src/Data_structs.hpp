@@ -62,10 +62,10 @@ struct Cords {
 #define MOVE_ENPASSANT 2
 #define MOVE_CASTLING 3
 
-#define PROMOTE_TO_KNIGHT 0
-#define PROMOTE_TO_BISHOP 1
-#define PROMOTE_TO_ROOK 2
-#define PROMOTE_TO_QUEEN 3
+#define PROMOTE_TO_KNIGHT 3
+#define PROMOTE_TO_BISHOP 2
+#define PROMOTE_TO_ROOK 1
+#define PROMOTE_TO_QUEEN 0
 
 #define CASTLE_TYPE_KINGSIDE 0
 #define CASTLE_TYPE_QUEENSIDE 1
@@ -91,7 +91,7 @@ private:
      bits 0-5: move_from
      bits 6-11: move_to
      bits 12-13: special_move_flag: Normal(0), Promotion(1), En_passant(2), Castling(3)
-     bits 14-15: promote_to: Knight(0), Bishop(1), Rook(2), Queen(3)
+     bits 14-15: promote_to: Queen(0), Rook(1), Bishop(2), Knight(3)
            union castle_type: Kingside(0), Queenside(1)
      bits 16-18: piece_moved: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
      bits 19-21: piece_captured: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
@@ -126,6 +126,18 @@ public:
     
     bool is_capture();
 
+};
+
+
+struct move_data {
+    Move move;
+    
+    bool white_can_castle_queenside;
+    bool white_can_castle_kingside;
+    bool black_can_castle_queenside;
+    bool black_can_castle_kingside;
+    
+    int en_passant_square;
 };
 
 

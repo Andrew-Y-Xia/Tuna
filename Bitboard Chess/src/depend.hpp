@@ -32,17 +32,17 @@
 #define ROOK_VALUE 50
 #define QUEEN_VALUE 90
 
-#define a_file          0x0101010101010101
-#define h_file          0x8080808080808080
-#define first_rank      0x00000000000000FF
-#define eighth_rank     0xFF00000000000000
-#define a1_h8_diagonal  0x8040201008040201
-#define a8_h1_diagonal  0x0102040810204080
-#define light_squares   0x55AA55AA55AA55AA
-#define dark_squares    0xAA55AA55AA55AA55
+#define a_file          0x0101010101010101##ULL
+#define h_file          0x8080808080808080##ULL
+#define first_rank      0x00000000000000FF##ULL
+#define eighth_rank     0xFF00000000000000##ULL
+#define a1_h8_diagonal  0x8040201008040201##ULL
+#define a8_h1_diagonal  0x0102040810204080##ULL
+#define light_squares   0x55AA55AA55AA55AA##ULL
+#define dark_squares    0xAA55AA55AA55AA55##ULL
 
-#define EmptyBoard    0x0000000000000000
-#define UniverseBoard 0xffffffffffffffff
+#define EmptyBoard    0x0000000000000000##ULL
+#define UniverseBoard 0xffffffffffffffff##ULL
 
 #define C64(constantU64) constantU64##ULL
 typedef uint64_t U64;
