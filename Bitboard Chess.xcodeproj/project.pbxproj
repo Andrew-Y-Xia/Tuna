@@ -366,7 +366,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_UNROLL_LOOPS = NO;
 				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
@@ -384,7 +384,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = LG2BZY39AX;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_UNROLL_LOOPS = NO;
 				INFOPLIST_FILE = "Bitboard Chess/Bitboard Chess-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";

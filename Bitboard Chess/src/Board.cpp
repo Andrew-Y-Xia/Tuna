@@ -315,8 +315,7 @@ void Board::generate_moves(std::vector<Move>& moves) {
 
 
 void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
-    U64 king = Bitboards[Kings] & friendly_pieces;
-    
+
     U64 move_targets = king_paths[king_index] & ~friendly_pieces;
     
     if (current_turn == 0) {
@@ -338,10 +337,11 @@ void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_
         }
     }
 
+    U64 occ_without_friendly_king = occ ^ (C64(1) << king_index);
     
     if (move_targets) do {
         int to_index = bitscan_forward(move_targets);
-        if (!is_attacked(to_index, occ)) {
+        if (!is_attacked(to_index, occ_without_friendly_king)) {
             moves.push_back(Move(king_index, to_index, MOVE_NORMAL, 0, PIECE_KING, find_piece_captured(to_index)));
         }
     } while (move_targets &= move_targets - 1);
@@ -406,9 +406,10 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         U64 north_of_king = rays[North][king_index];
         
         U64 pawn_regular_pushes = (((pawns | (north_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) & ~(occ);
-        pawn_regular_pushes &= block_check_masks;
-        
         U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
+                
+        pawn_regular_pushes &= block_check_masks;
+        pawn_double_pushes &= block_check_masks;
         
         U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
         pawn_promotion_pushes &= block_check_masks;
@@ -534,10 +535,11 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         // Add Southern rook pins (only type of pin that pawn_push can move in)
         U64 south_of_king = rays[South][king_index];
         
-        U64 pawn_regular_pushes = (((pawns | (south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~eighth_rank) & ~(occ);
-        pawn_regular_pushes &= block_check_masks;
-        
+        U64 pawn_regular_pushes = (((pawns | (south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~first_rank) & ~(occ);
         U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(occ);
+        
+        pawn_regular_pushes &= block_check_masks;
+        pawn_double_pushes &= block_check_masks;
         
         U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(occ);
         pawn_promotion_pushes &= block_check_masks;
@@ -677,7 +679,7 @@ void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks,
     
     if (rooks_rook_pinned) do {
         int from_index = bitscan_forward(rooks_rook_pinned);
-        U64 move_targets = bishop_attacks(from_index, occ);
+        U64 move_targets = rook_attacks(from_index, occ);
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
 
@@ -691,7 +693,7 @@ void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks,
 
 void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 queens = Bitboards[Queens] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
-    U64 queens_pinned = Bitboards[Queens] & rook_pinned & bishop_pinned;
+    U64 queens_pinned = Bitboards[Queens] & (rook_pinned | bishop_pinned);
     
     if (queens) do {
         int from_index = bitscan_forward(queens);
@@ -708,7 +710,7 @@ void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks
     
     if (queens_pinned) do {
         int from_index = bitscan_forward(queens_pinned);
-        U64 move_targets = bishop_attacks(from_index, occ);
+        U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
 
@@ -814,7 +816,7 @@ void Board::make_move(Move move) {
 
     
     // Set out the captured squares first
-    if (move.get_piece_captured() != PIECE_NONE) {
+    if (move.get_piece_captured() != PIECE_NONE && move.get_special_flag() != MOVE_ENPASSANT) {
         Bitboards[move.get_piece_captured()] ^= to_bb;
         Bitboards[!current_turn] ^= to_bb;
     }
@@ -838,8 +840,13 @@ void Board::make_move(Move move) {
             break;
         }
         case MOVE_ENPASSANT: {
-            U64 side_mask = (!current_turn * (first_rank << 32)) | (current_turn * (eighth_rank << 24));
-            U64 delete_square = (rays[North][move_to_index] | rays[South][move_to_index]) & side_mask;
+            U64 delete_square;
+            if (current_turn == 0) {
+                delete_square = C64(1) << (move_to_index - 8);
+            }
+            else {
+                delete_square = C64(1) << (move_to_index + 8);
+            }
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
             break;
@@ -883,6 +890,20 @@ void Board::make_move(Move move) {
                 break;
         }
     }
+    switch (move_from_index) {
+        case 56:
+            black_can_castle_queenside = false;
+            break;
+        case 63:
+            black_can_castle_kingside = false;
+            break;
+        case 0:
+            white_can_castle_queenside = false;
+            break;
+        case 7:
+            white_can_castle_kingside = false;
+            break;
+    }
 
 
     // Check if king moves
@@ -925,7 +946,7 @@ void Board::unmake_move() {
     
     
     // Set back the captured squares first
-    if (move.get_piece_captured() != PIECE_NONE) {
+    if (move.get_piece_captured() != PIECE_NONE && move.get_special_flag() != MOVE_ENPASSANT) {
         Bitboards[move.get_piece_captured()] ^= to_bb;
         Bitboards[!current_turn] ^= to_bb;
     }
@@ -952,8 +973,13 @@ void Board::unmake_move() {
             break;
         }
         case MOVE_ENPASSANT: {
-            U64 side_mask = (!current_turn * (first_rank << 32)) | (current_turn * (eighth_rank << 24));
-            U64 delete_square = (rays[North][move_to_index] | rays[South][move_to_index]) & side_mask;
+            U64 delete_square;
+            if (current_turn == 0) {
+                delete_square = C64(1) << (move_to_index - 8);
+            }
+            else {
+                delete_square = C64(1) << (move_to_index + 8);
+            }
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
             break;
@@ -969,6 +995,12 @@ void Board::unmake_move() {
 }
 
 long Board::Perft(int depth /* assuming >= 1 */) {
+    
+    if (depth == 0) {
+//        print_board();
+        return 1;
+    }
+    
     long nodes = 0;
     int n_moves = 0;
 
@@ -977,10 +1009,6 @@ long Board::Perft(int depth /* assuming >= 1 */) {
     generate_moves(moves);
     n_moves = moves.size();
 
-    if (depth == 0) {
-//        print_board();
-        return 1;
-    }
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {
         make_move(*it);

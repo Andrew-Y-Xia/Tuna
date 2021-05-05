@@ -78,5 +78,21 @@ void print_move(Move move, bool reg) {
         Cords from_c = index_to_cords(move.get_from());
         Cords to_c = index_to_cords(move.get_to());
         std::cout << num_to_char(from_c.x) << 8 - from_c.y << num_to_char(to_c.x) << 8 - to_c.y;
+        if (move.get_special_flag() == MOVE_PROMOTION) {
+            switch (move.get_promote_to()) {
+                case PROMOTE_TO_QUEEN:
+                    std::cout << 'q';
+                    break;
+                case PROMOTE_TO_ROOK:
+                    std::cout << 'r';
+                    break;
+                case PROMOTE_TO_BISHOP:
+                    std::cout << 'b';
+                    break;
+                case PROMOTE_TO_KNIGHT:
+                    std::cout << 'n';
+                    break;
+            }
+        }
     }
 }
