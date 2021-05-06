@@ -34,17 +34,23 @@ int main() {
 
     auto t1 = std::chrono::high_resolution_clock::now();
     
-    /*
+    long nodes;
     for (auto it = moves.begin(); it != moves.end(); ++it) {
+        long node;
         print_move(*it, true);
 //        board.print_board();
         board.make_move(*it);
-        std::cout << ": " << board.Perft(3) << std::endl;
+        node = board.Perft(6);
+        std::cout << ": " << node << std::endl;
+        nodes += node;
         board.unmake_move();
     }
-     */
+    std::cout << "\n\nNodes searched: " << nodes;
+    
 
-    std::cout << board.Perft(6);
+//    std::cout << board.Perft(8);
+    
+    
 
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms_double = t2 - t1;

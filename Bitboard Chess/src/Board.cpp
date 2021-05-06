@@ -353,7 +353,7 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
     
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
-    if (pawns) {
+    if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
         // East attacks:
         U64 east_attacks = ((pawns << 9) & ~a_file) & Bitboards[BlackPieces];
         east_attacks &= block_check_masks;
@@ -403,9 +403,9 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         // Quiet moves:
         
         // Add Northern rook pins (only type of pin that pawn_push can move in)
-        U64 north_of_king = rays[North][king_index];
+        U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
         
-        U64 pawn_regular_pushes = (((pawns | (north_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) & ~(occ);
+        U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) & ~(occ);
         U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
                 
         pawn_regular_pushes &= block_check_masks;
@@ -460,12 +460,21 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
     } while (pinned_pawn_attacks &= pinned_pawn_attacks - 1);
     
     // En Passant:
-    if (en_passant_square != -1) {
-    
+    if (en_passant_square != -1 && (((C64(1) << en_passant_square) & block_check_masks) || (C64(1) << (en_passant_square - 8) & block_check_masks))) {
         U64 en_passant_pawn_source = pawns & pawn_attacks[BlackPieces][en_passant_square];
+        
     
         if (en_passant_pawn_source) do {
             int from_index = bitscan_forward(en_passant_pawn_source);
+            
+            // Find if en_passant square has the possibility of being pinned:
+            if ((C64(1) << from_index) & (rays[East][king_index] | rays[West][king_index])) {
+                U64 occ_minus_ep_pawns = occ ^ ((C64(1) << (en_passant_square - 8)) | (C64(1) << from_index));
+                if ((get_negative_ray_attacks(king_index, West, occ_minus_ep_pawns) | get_positive_ray_attacks(king_index, East, occ_minus_ep_pawns)) & (Bitboards[Rooks] | Bitboards[Queens]) & Bitboards[!current_turn]) {
+                    continue;
+                }
+            }
+
             moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
         } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
     
@@ -473,6 +482,7 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         U64 positive_diag_rays_from_king = rays[NorthWest][king_index] | rays[NorthEast][king_index];
         U64 en_passants_along_pin_path = positive_diag_rays_from_king & (C64(1) << en_passant_square);
         U64 pinned_en_passant = Bitboards[Pawns] & bishop_pinned & pawn_attacks[BlackPieces][en_passant_square];
+        pinned_en_passant &= block_check_masks;
 
         if (pinned_en_passant && en_passants_along_pin_path) {
             moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
@@ -483,7 +493,7 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
 void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
-    if (pawns) {
+    if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
         // East attacks:
         U64 east_attacks = ((pawns >> 7) & ~a_file) & Bitboards[WhitePieces];
         east_attacks &= block_check_masks;
@@ -533,9 +543,9 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         // Quiet moves:
         
         // Add Southern rook pins (only type of pin that pawn_push can move in)
-        U64 south_of_king = rays[South][king_index];
+        U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
         
-        U64 pawn_regular_pushes = (((pawns | (south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~first_rank) & ~(occ);
+        U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~first_rank) & ~(occ);
         U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(occ);
         
         pawn_regular_pushes &= block_check_masks;
@@ -590,12 +600,20 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
     } while (pinned_pawn_attacks &= pinned_pawn_attacks - 1);
     
     // En Passant:
-    if (en_passant_square != -1) {
-    
+    if (en_passant_square != -1 && (((C64(1) << en_passant_square) & block_check_masks) || (C64(1) << (en_passant_square + 8) & block_check_masks))) {
         U64 en_passant_pawn_source = pawns & pawn_attacks[WhitePieces][en_passant_square];
     
         if (en_passant_pawn_source) do {
             int from_index = bitscan_forward(en_passant_pawn_source);
+            
+            // Find if en_passant square has the possibility of being pinned:
+            if ((C64(1) << from_index) & (rays[East][king_index] | rays[West][king_index])) {
+                U64 occ_minus_ep_pawns = occ ^ ((C64(1) << (en_passant_square + 8)) | (C64(1) << from_index));
+                if ((get_negative_ray_attacks(king_index, West, occ_minus_ep_pawns) | get_positive_ray_attacks(king_index, East, occ_minus_ep_pawns)) & (Bitboards[Rooks] | Bitboards[Queens]) & Bitboards[!current_turn]) {
+                    continue;
+                }
+            }
+            
             moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
         } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
     
@@ -603,6 +621,7 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         U64 negative_diag_rays_from_king = rays[SouthWest][king_index] | rays[SouthEast][king_index];
         U64 en_passants_along_pin_path = negative_diag_rays_from_king & (C64(1) << en_passant_square);
         U64 pinned_en_passant = Bitboards[Pawns] & bishop_pinned & pawn_attacks[WhitePieces][en_passant_square];
+        pinned_en_passant &= block_check_masks;
 
         if (pinned_en_passant && en_passants_along_pin_path) {
             moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
