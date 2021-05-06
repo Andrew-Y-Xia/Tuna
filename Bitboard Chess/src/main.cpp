@@ -21,7 +21,7 @@
 int main() {
     init_bitboard_utils();
     
-    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0");
 //    board.print_board();
     
     std::cout << '\n';
@@ -40,7 +40,7 @@ int main() {
         print_move(*it, true);
 //        board.print_board();
         board.make_move(*it);
-        node = board.Perft(6);
+        node = board.Perft(4);
         std::cout << ": " << node << std::endl;
         nodes += node;
         board.unmake_move();

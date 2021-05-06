@@ -199,14 +199,44 @@ unsigned int Board::find_piece_captured(int index) {
     
     /*
     U64 bit = C64(1) << index;
-    return 2 * ((Bitboards[Queens] & bit) != 0) + 3 * ((Bitboards[Rooks] & bit) != 0) + 4 * ((Bitboards[Bishops] & bit) != 0) + 5 * ((Bitboards[Knights] & bit) != 0) + 6 * ((Bitboards[Pawns] & bit) != 0);
-     */
+    return PIECE_QUEEN * ((Bitboards[Queens] & bit) != 0) + PIECE_ROOK * ((Bitboards[Rooks] & bit) != 0) + PIECE_BISHOP * ((Bitboards[Bishops] & bit) != 0) + PIECE_KNIGHT * ((Bitboards[Knights] & bit) != 0) + PIECE_PAWN * ((Bitboards[Pawns] & bit) != 0);
+    */
 
     U64 bit = C64(1) << index;
     if (!(Bitboards[!current_turn] & bit)) {
         return PIECE_NONE;
     }
     else if (Bitboards[Pawns] & bit) {
+        return PIECE_PAWN;
+    }
+    else if (Bitboards[Knights] & bit) {
+        return PIECE_KNIGHT;
+    }
+    else if (Bitboards[Bishops] & bit) {
+        return PIECE_BISHOP;
+    }
+    else if (Bitboards[Rooks] & bit) {
+        return PIECE_ROOK;
+    }
+    else if (Bitboards[Queens] & bit) {
+        return PIECE_QUEEN;
+    }
+    else {
+        return PIECE_NONE;
+    }
+}
+
+unsigned int Board::find_piece_captured_without_occ(int index) {
+    // This function does not check if the capture is illegal, make sure to &~friendly_pieces beforehand.
+    // Also, it doesn't check king captures
+    
+    /*
+    U64 bit = C64(1) << index;
+    return 2 * ((Bitboards[Queens] & bit) != 0) + 3 * ((Bitboards[Rooks] & bit) != 0) + 4 * ((Bitboards[Bishops] & bit) != 0) + 5 * ((Bitboards[Knights] & bit) != 0) + 6 * ((Bitboards[Pawns] & bit) != 0);
+     */
+
+    U64 bit = C64(1) << index;
+    if (Bitboards[Pawns] & bit) {
         return PIECE_PAWN;
     }
     else if (Bitboards[Knights] & bit) {
@@ -373,12 +403,12 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         // Serialize into moves:
         if (east_regular_attacks) do {
             int to_index = bitscan_forward(east_regular_attacks);
-            moves.push_back(Move(to_index-9, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-9, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured_without_occ(to_index)));
         } while (east_regular_attacks &= east_regular_attacks - 1);
         
         if (east_promotion_attacks) do {
             int to_index = bitscan_forward(east_promotion_attacks);
-            auto piece_captured = find_piece_captured(to_index);
+            auto piece_captured = find_piece_captured_without_occ(to_index);
             moves.push_back(Move(to_index-9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index-9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index-9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
@@ -387,12 +417,12 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         
         if (west_regular_attacks) do {
             int to_index = bitscan_forward(west_regular_attacks);
-            moves.push_back(Move(to_index-7, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index-7, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured_without_occ(to_index)));
         } while (west_regular_attacks &= west_regular_attacks - 1);
         
         if (west_promotion_attacks) do {
             int to_index = bitscan_forward(west_promotion_attacks);
-            auto piece_captured = find_piece_captured(to_index);
+            auto piece_captured = find_piece_captured_without_occ(to_index);
             moves.push_back(Move(to_index-7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index-7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index-7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
@@ -445,7 +475,7 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
         
         if (move_targets) {
             int to_index = bitscan_forward(move_targets);
-            auto piece_captured = find_piece_captured(to_index);
+            auto piece_captured = find_piece_captured_without_occ(to_index);
             if (from_index >= 48) {
                 moves.push_back(Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
                 moves.push_back(Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
@@ -513,12 +543,12 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         // Serialize into moves:
         if (east_regular_attacks) do {
             int to_index = bitscan_forward(east_regular_attacks);
-            moves.push_back(Move(to_index+7, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+7, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured_without_occ(to_index)));
         } while (east_regular_attacks &= east_regular_attacks - 1);
         
         if (east_promotion_attacks) do {
             int to_index = bitscan_forward(east_promotion_attacks);
-            auto piece_captured = find_piece_captured(to_index);
+            auto piece_captured = find_piece_captured_without_occ(to_index);
             moves.push_back(Move(to_index+7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index+7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index+7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
@@ -527,12 +557,12 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         
         if (west_regular_attacks) do {
             int to_index = bitscan_forward(west_regular_attacks);
-            moves.push_back(Move(to_index+9, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured(to_index)));
+            moves.push_back(Move(to_index+9, to_index, MOVE_NORMAL, 0, PIECE_PAWN, find_piece_captured_without_occ(to_index)));
         } while (west_regular_attacks &= west_regular_attacks - 1);
         
         if (west_promotion_attacks) do {
             int to_index = bitscan_forward(west_promotion_attacks);
-            auto piece_captured = find_piece_captured(to_index);
+            auto piece_captured = find_piece_captured_without_occ(to_index);
             moves.push_back(Move(to_index+9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index+9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
             moves.push_back(Move(to_index+9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
@@ -585,7 +615,7 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
         
         if (move_targets) {
             int to_index = bitscan_forward(move_targets);
-            auto piece_captured = find_piece_captured(to_index);
+            auto piece_captured = find_piece_captured_without_occ(to_index);
             if (from_index <= 7) {
                 moves.push_back(Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
                 moves.push_back(Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));

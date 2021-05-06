@@ -48,6 +48,7 @@ public:
     void print_board();
     
     unsigned int find_piece_captured(int index);
+    unsigned int find_piece_captured_without_occ(int index);
     
     U64 get_positive_ray_attacks(int from_square, Directions dir, U64 occ);
     U64 get_negative_ray_attacks(int from_square, Directions dir, U64 occ);
