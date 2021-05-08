@@ -25,6 +25,9 @@ Cords::Cords(int a, int b) {
 
 // Move BEGIN
 
+Move::Move() {
+    move_data = 0;
+}
 Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece_or_castle_type, unsigned int piece_moved, unsigned int piece_captured, unsigned int score) {
     move_data = (from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x3) << 12) | ((promotion_piece_or_castle_type & 0x3) << 14) | ((piece_moved & 0x7) << 16) | ((piece_captured & 0x7) << 19) | ((score & 0x3FF) << 22);
 }

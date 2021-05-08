@@ -99,6 +99,7 @@ private:
      
     */
 public:
+    Move();
     Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
     
     void operator=(Move& a);

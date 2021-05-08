@@ -16,10 +16,12 @@ extern int incre8[8];
 
 Board::Board() {
     read_FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    standard_setup();
 }
 
 Board::Board(std::string str) {
     read_FEN(str);
+    standard_setup();
 }
 
 
@@ -173,6 +175,14 @@ void Board::read_FEN(std::string str) {
     }
 }
 
+void Board::standard_setup() {
+    calculate_piece_values();
+}
+
+bool Board::get_current_turn() {
+    return current_turn;
+}
+
 void Board::print_board() {
     std::cout << "\n\n\n\nWhitePieces:\n";
     print_BB(Bitboards[WhitePieces]);
@@ -317,6 +327,7 @@ void Board::generate_moves(std::vector<Move>& moves) {
     king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ);
     num_attackers = _mm_popcnt_u64(king_attackers);
     
+    king_is_in_check = num_attackers >= 1;
     
     generate_king_moves(moves, occ, friendly_pieces, king_index, num_attackers);
     
@@ -996,6 +1007,7 @@ void Board::unmake_move() {
     
     // Set back the captured squares first
     if (move.get_piece_captured() != PIECE_NONE && move.get_special_flag() != MOVE_ENPASSANT) {
+        
         Bitboards[move.get_piece_captured()] ^= to_bb;
         Bitboards[!current_turn] ^= to_bb;
     }
@@ -1069,3 +1081,42 @@ long Board::Perft(int depth /* assuming >= 1 */) {
 
 
 // MOVE GENERATION END
+
+
+// EVALUATION BEGIN
+
+void Board::calculate_piece_values() {
+    U64 white_pieces = Bitboards[WhitePieces];
+    U64 black_pieces = Bitboards[BlackPieces];
+    piece_values[WhitePieces] =  PAWN_VALUE * _mm_popcnt_u64(Bitboards[Pawns] & white_pieces)
+                        + KNIGHT_VALUE * _mm_popcnt_u64(Bitboards[Knights] & white_pieces)
+                        + BISHOP_VALUE * _mm_popcnt_u64(Bitboards[Bishops] & white_pieces)
+                        + ROOK_VALUE * _mm_popcnt_u64(Bitboards[Rooks] & white_pieces)
+                        + QUEEN_VALUE * _mm_popcnt_u64(Bitboards[Queens] & white_pieces)
+    ;
+    piece_values[BlackPieces] =  PAWN_VALUE * _mm_popcnt_u64(Bitboards[Pawns] & black_pieces)
+                        + KNIGHT_VALUE * _mm_popcnt_u64(Bitboards[Knights] & black_pieces)
+                        + BISHOP_VALUE * _mm_popcnt_u64(Bitboards[Bishops] & black_pieces)
+                        + ROOK_VALUE * _mm_popcnt_u64(Bitboards[Rooks] & black_pieces)
+                        + QUEEN_VALUE * _mm_popcnt_u64(Bitboards[Queens] & black_pieces)
+    ;
+}
+
+void Board::print_piece_values() {
+    std::cout << "\nWhite Piece Values: " << piece_values[WhitePieces];
+    std::cout << "\nBlack Piece Values: " << piece_values[BlackPieces] << '\n';
+}
+
+int Board::static_eval() {
+    int eval = 0;
+
+    eval += piece_values[WhitePieces] - piece_values[BlackPieces];
+
+
+    eval *= current_turn * -1 + !current_turn;
+    return eval;
+}
+
+bool Board::is_king_in_check() {
+    return king_is_in_check;
+}

@@ -12,5 +12,16 @@
 #include "Board.hpp"
 #include "ctpl_stl.h"
 
+class Search {
+private:
+    Board board;
+public:
+    
+    Search(Board& b);
+    
+    int negamax(int depth, int alpha, int beta);
+    Move find_best_move(int depth);
+    
+};
 
 #endif /* Search_hpp */

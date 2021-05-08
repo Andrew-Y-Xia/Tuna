@@ -8,6 +8,7 @@
 #include "Utility.hpp"
 #include "Search.hpp"
 #include "Bitboard.hpp"
+#include "Evaluation.hpp"
 
 
 // Global vars:
@@ -20,9 +21,9 @@
 
 int main() {
     init_bitboard_utils();
+    init_eval_utils();
     
-    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0");
-//    board.print_board();
+    Board board("r1b1kb1r/pppp1ppp/5q2/4n3/3KP3/2N3PN/PPP4P/R1BQ1B1R b kq - 0 1");
     
     std::cout << '\n';
     std::vector<Move> moves;
@@ -30,9 +31,11 @@ int main() {
     board.generate_moves(moves);
     
 //    std::cout << '\n' << moves.size() << '\n';
-//    
+//
+    Search search(board);
 
     auto t1 = std::chrono::high_resolution_clock::now();
+    
     
     long nodes;
     for (auto it = moves.begin(); it != moves.end(); ++it) {
@@ -46,10 +49,12 @@ int main() {
         board.unmake_move();
     }
     std::cout << "\n\nNodes searched: " << nodes;
+     
     
 
 //    std::cout << board.Perft(8);
     
+//    print_move(search.find_best_move(5), true);
     
 
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -58,8 +63,6 @@ int main() {
     std::cout << "\nTime: " << ms_double.count() << "ms\n";
     
 //    board.print_board();
-    
-
     
     
 

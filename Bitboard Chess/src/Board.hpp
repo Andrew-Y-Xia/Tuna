@@ -13,6 +13,7 @@
 #include "Board.hpp"
 #include "Data_structs.hpp"
 #include "Utility.hpp"
+#include "Evaluation.hpp"
 
 
 class Board {
@@ -37,7 +38,10 @@ private:
     int fullmove_counter;
     
     // Incrementally updated move values
-    int black_piece_values, white_piece_values;
+    int piece_values[2];
+    
+    // This flag is not guaranteed to be correct! Guaranteed to be correct only after calling generate_moves()
+    bool king_is_in_check;
     
     std::vector<move_data> move_stack;
     
@@ -45,6 +49,10 @@ public:
     Board();
     Board(std::string str);
     void read_FEN(std::string str);
+    void standard_setup();
+    
+    bool get_current_turn();
+    
     void print_board();
     
     unsigned int find_piece_captured(int index);
@@ -83,6 +91,15 @@ public:
     void unmake_move();
     
     long Perft(int depth);
+    
+    // Evaluations utils
+    
+    void calculate_piece_values();
+    void print_piece_values();
+    int static_eval();
+    bool is_king_in_check();
+    
+    
 };
 
 

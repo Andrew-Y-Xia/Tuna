@@ -26,11 +26,6 @@
 #define OFFSET 2
 #define ASDF std::cout << "asdf" << std::endl
 
-#define PAWN_VALUE 10
-#define KNIGHT_VALUE 30
-#define BISHOP_VALUE 33
-#define ROOK_VALUE 50
-#define QUEEN_VALUE 90
 
 #define a_file          0x0101010101010101##ULL
 #define h_file          0x8080808080808080##ULL

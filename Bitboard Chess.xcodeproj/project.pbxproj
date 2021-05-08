@@ -26,6 +26,7 @@
 		A1A1F5CE260277B600E15AA0 /* Chess_rlt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C2260277B600E15AA0 /* Chess_rlt60.png */; };
 		A1A1F5CF260277B600E15AA0 /* Chess_plt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C3260277B600E15AA0 /* Chess_plt60.png */; };
 		A1A1F5D0260277B600E15AA0 /* Chess_qdt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C4260277B600E15AA0 /* Chess_qdt60.png */; };
+		CC9EAEE326447FCF007AC548 /* Evaluation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC9EAEE126447FCF007AC548 /* Evaluation.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +61,8 @@
 		CC8658122629C00C00FFB5D7 /* Data_structs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Data_structs.cpp; sourceTree = "<group>"; };
 		CC8658132629C00C00FFB5D7 /* Data_structs.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Data_structs.hpp; sourceTree = "<group>"; };
 		CC8658182629D1C200FFB5D7 /* depend.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = depend.hpp; sourceTree = "<group>"; };
+		CC9EAEE126447FCF007AC548 /* Evaluation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Evaluation.cpp; sourceTree = "<group>"; };
+		CC9EAEE226447FCF007AC548 /* Evaluation.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Evaluation.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,6 +133,7 @@
 		CC86581E2629EAC900FFB5D7 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				CC8658182629D1C200FFB5D7 /* depend.hpp */,
 				A1A1F57D2602555600E15AA0 /* ResourcePath.mm */,
 				A1A1F57F2602555600E15AA0 /* ResourcePath.hpp */,
 				A1A1F5802602555600E15AA0 /* main.cpp */,
@@ -143,7 +147,8 @@
 				CC8658132629C00C00FFB5D7 /* Data_structs.hpp */,
 				A10FB66B2630D36B00B141DE /* Bitboard.cpp */,
 				A10FB66C2630D36B00B141DE /* Bitboard.hpp */,
-				CC8658182629D1C200FFB5D7 /* depend.hpp */,
+				CC9EAEE126447FCF007AC548 /* Evaluation.cpp */,
+				CC9EAEE226447FCF007AC548 /* Evaluation.hpp */,
 				A164B2C32627A3BB00160CF7 /* ctpl_stl.h */,
 				A1614782262F91F30025D16D /* Bitboard Chess.plist */,
 			);
@@ -257,6 +262,7 @@
 				A1614791262F989B0025D16D /* Utility.cpp in Sources */,
 				A1614792262F989B0025D16D /* Search.cpp in Sources */,
 				A1614793262F989B0025D16D /* Data_structs.cpp in Sources */,
+				CC9EAEE326447FCF007AC548 /* Evaluation.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
