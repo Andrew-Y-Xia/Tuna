@@ -102,7 +102,6 @@ public:
     Move();
     Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
     
-    void operator=(Move& a);
     bool operator==(Move& a);
     bool operator!=(Move& a);
     
@@ -128,6 +127,8 @@ public:
     bool is_capture();
 
 };
+
+bool move_cmp(Move first, Move second);
 
 
 struct move_data {

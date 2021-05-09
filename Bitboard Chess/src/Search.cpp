@@ -6,7 +6,6 @@
 //  Copyright © 2021 Andy. All rights reserved.
 //
 
-#include "depend.hpp"
 #include "Search.hpp"
 
 Search::Search(Board& b) {
@@ -41,11 +40,12 @@ int Search::negamax(int depth, int alpha, int beta) {
         }
     }
     
-//    sort_moves(moves);
+    board.sort_moves(moves);
 
 
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {
+        nodes_searched++;
         board.make_move(*it);
         int eval = -negamax(depth - 1, -beta, -alpha);
         board.unmake_move();
@@ -59,14 +59,18 @@ int Search::negamax(int depth, int alpha, int beta) {
 }
 
 Move Search::find_best_move(int depth) {
+    nodes_searched = 0;
+    
     std::vector<Move> moves;
     moves.reserve(256);
     board.generate_moves(moves);
+    board.sort_moves(moves);
 
     Move best_move;
     int maxEval = -2000000;
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {
+        nodes_searched++;
         board.make_move(*it);
         int eval = -negamax(depth - 1, -2000000, -maxEval);
         board.unmake_move();
@@ -79,6 +83,7 @@ Move Search::find_best_move(int depth) {
             break;
         }
     }
-
+    
+    std::cout << "\nNodes searched: " << nodes_searched << '\n';
     return best_move;
 }

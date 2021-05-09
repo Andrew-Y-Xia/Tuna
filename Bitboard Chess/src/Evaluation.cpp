@@ -9,6 +9,7 @@
 #include "Evaluation.hpp"
 
 int piece_to_value[8];
+int piece_to_value_small[8];
 
 void init_eval_utils() {
     piece_to_value[PIECE_PAWN] = PAWN_VALUE;
@@ -16,4 +17,10 @@ void init_eval_utils() {
     piece_to_value[PIECE_BISHOP] = BISHOP_VALUE;
     piece_to_value[PIECE_ROOK] = ROOK_VALUE;
     piece_to_value[PIECE_QUEEN] = QUEEN_VALUE;
+    
+    piece_to_value_small[PIECE_PAWN] = PAWN_VALUE / 10;
+    piece_to_value_small[PIECE_KNIGHT] = KNIGHT_VALUE / 10;
+    piece_to_value_small[PIECE_BISHOP] = BISHOP_VALUE / 10;
+    piece_to_value_small[PIECE_ROOK] = ROOK_VALUE / 10;
+    piece_to_value_small[PIECE_QUEEN] = QUEEN_VALUE / 10;
 }

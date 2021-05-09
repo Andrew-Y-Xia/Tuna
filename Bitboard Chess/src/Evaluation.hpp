@@ -19,6 +19,7 @@
 #define QUEEN_VALUE 900
 
 extern int piece_to_value[8];
+extern int piece_to_value_small[8];
 
 
 void init_eval_utils();

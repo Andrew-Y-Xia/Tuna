@@ -5,9 +5,7 @@
 //  Created by Andrew Xia on 4/16/21.
 //  Copyright © 2021 Andy. All rights reserved.
 //
-#include "Utility.hpp"
 #include "Board.hpp"
-#include "Bitboard.hpp"
 
 extern sf::Texture textures[13];
 extern std::forward_list<sf::Sprite> sprites, promotion_sprites_white, promotion_sprites_black;
@@ -355,7 +353,7 @@ void Board::generate_moves(std::vector<Move>& moves) {
 }
 
 
-void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
+inline void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
 
     U64 move_targets = king_paths[king_index] & ~friendly_pieces;
     
@@ -390,7 +388,7 @@ void Board::generate_king_moves(std::vector<Move>& moves, U64 occ, U64 friendly_
 
 
 
-void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
@@ -531,7 +529,7 @@ void Board::generate_pawn_movesW(std::vector<Move>& moves, U64 block_check_masks
     }
 }
 
-void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
     if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
@@ -672,7 +670,7 @@ void Board::generate_pawn_movesB(std::vector<Move>& moves, U64 block_check_masks
 
 
 
-void Board::generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned) {
+inline void Board::generate_knight_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned) {
     U64 knights = Bitboards[Knights] & friendly_pieces & ~rook_pinned & ~bishop_pinned; // Knights can't move at all when pinned
     
     if (knights) do {
@@ -688,7 +686,7 @@ void Board::generate_knight_moves(std::vector<Move>& moves, U64 block_check_mask
 }
 
 
-void Board::generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_bishop_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 bishops = Bitboards[Bishops] & friendly_pieces & ~rook_pinned & ~bishop_pinned; // Bishops can't move when pinned by a rook
     U64 bishops_bishop_pinned = Bitboards[Bishops] & bishop_pinned;
     
@@ -719,7 +717,7 @@ void Board::generate_bishop_moves(std::vector<Move>& moves, U64 block_check_mask
     } while (bishops_bishop_pinned &= bishops_bishop_pinned - 1);
 }
 
-void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 rooks = Bitboards[Rooks] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 rooks_rook_pinned = Bitboards[Rooks] & rook_pinned;
     
@@ -751,7 +749,7 @@ void Board::generate_rook_moves(std::vector<Move>& moves, U64 block_check_masks,
     } while (rooks_rook_pinned &= rooks_rook_pinned - 1);
 }
 
-void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 queens = Bitboards[Queens] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 queens_pinned = Bitboards[Queens] & (rook_pinned | bishop_pinned);
     
@@ -785,7 +783,7 @@ void Board::generate_queen_moves(std::vector<Move>& moves, U64 block_check_masks
 
 // Legality section
 
-U64 Board::attacks_to(int index, U64 occ) {
+inline U64 Board::attacks_to(int index, U64 occ) {
     // Important: this function does not factor in king attacks
     U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
     U64 enemy_knights = Bitboards[Knights] & Bitboards[!current_turn];
@@ -799,7 +797,7 @@ U64 Board::attacks_to(int index, U64 occ) {
     ;
 }
 
-int Board::is_attacked(int index, U64 occ) {
+inline int Board::is_attacked(int index, U64 occ) {
     // Important: this function factors in king attacks
     U64 enemy_king = Bitboards[Kings] & Bitboards[!current_turn];
     U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
@@ -816,7 +814,7 @@ int Board::is_attacked(int index, U64 occ) {
 }
 
 
-U64 Board::calculate_block_masks(U64 king_attacker) {
+inline U64 Board::calculate_block_masks(U64 king_attacker) {
     U64 block_mask = 0;
     U64 capture_mask = king_attacker;
     
@@ -830,7 +828,7 @@ U64 Board::calculate_block_masks(U64 king_attacker) {
     return block_mask | capture_mask;
 }
 
-U64 Board::calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces) {
+inline U64 Board::calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces) {
     // Make sure to pass in int arr[8], otherwise segfault
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
     U64 pinner = xray_bishop_attacks(king_index, occ, friendly_pieces) & (Bitboards[Bishops] | Bitboards[Queens]) & Bitboards[!current_turn];
@@ -863,7 +861,7 @@ U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
 }
 
 
-void Board::make_move(Move move) {
+inline void Board::make_move(Move move) {
     move_data move_data = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square};
     move_stack.push_back(move_data);
     
@@ -879,6 +877,9 @@ void Board::make_move(Move move) {
     if (move.get_piece_captured() != PIECE_NONE && move.get_special_flag() != MOVE_ENPASSANT) {
         Bitboards[move.get_piece_captured()] ^= to_bb;
         Bitboards[!current_turn] ^= to_bb;
+        
+        // Take away the piece values for the side that pieces were captured
+        piece_values[!current_turn] -= piece_to_value[move.get_piece_captured()];
     }
     // Flip the occupacy of the from square and to square
     Bitboards[current_turn] ^= from_bb | to_bb;
@@ -909,11 +910,17 @@ void Board::make_move(Move move) {
             }
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
+            
+            // Take away the piece values for the side that pieces were captured
+            piece_values[!current_turn] -= piece_to_value[move.get_piece_captured()];
             break;
         }
         case MOVE_PROMOTION: {
             Bitboards[Pawns] ^= to_bb;
             Bitboards[move.get_promote_to() + 3] ^= to_bb;
+            
+            // Change the piece_values score accordingly
+            piece_values[current_turn] += piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
             break;
         }
     }
@@ -984,7 +991,7 @@ void Board::make_move(Move move) {
     
 }
 
-void Board::unmake_move() {
+inline void Board::unmake_move() {
     
     current_turn = !current_turn;
     
@@ -1010,6 +1017,9 @@ void Board::unmake_move() {
         
         Bitboards[move.get_piece_captured()] ^= to_bb;
         Bitboards[!current_turn] ^= to_bb;
+        
+        // Add back the piece values for the captured piece
+        piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
     }
     
 
@@ -1043,11 +1053,17 @@ void Board::unmake_move() {
             }
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
+            
+            // Add back the piece values for the captured piece
+            piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
             break;
         }
         case MOVE_PROMOTION: {
             Bitboards[Pawns] ^= to_bb;
             Bitboards[move.get_promote_to() + 3] ^= to_bb;
+            
+            // Change the piece_values score accordingly
+            piece_values[current_turn] -= piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
             break;
         }
     }
@@ -1083,6 +1099,42 @@ long Board::Perft(int depth /* assuming >= 1 */) {
 // MOVE GENERATION END
 
 
+// MOVE ORDERING BEGIN
+
+void Board::sort_moves(std::vector<Move>& moves) {
+    unsigned int score;
+
+    // Score all the moves
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        score = 512;
+        if (it->is_capture()) {
+            score += 70;
+            score += piece_to_value_small[it->get_piece_captured()] - piece_to_value_small[it->get_piece_moved()];
+        }
+        if (it->get_special_flag() == MOVE_PROMOTION) {
+            score += 100;
+        }
+        else if (it->get_special_flag() == MOVE_CASTLING) {
+            score += 60;
+        }
+        
+        // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
+        /*
+        if (pawn_attacks[current_turn][it->get_to()] & Bitboards[Pawns] & Bitboards[!current_turn]) {
+            score -= piece_to_value_small[it->get_piece_moved()];
+        }
+        */
+        
+        it->set_move_score(score);
+    }
+
+    std::sort(moves.begin(), moves.end(), move_cmp);
+}
+
+
+// MOVE ORDERING END
+
+
 // EVALUATION BEGIN
 
 void Board::calculate_piece_values() {
@@ -1113,7 +1165,7 @@ int Board::static_eval() {
     eval += piece_values[WhitePieces] - piece_values[BlackPieces];
 
 
-    eval *= current_turn * -1 + !current_turn;
+    eval *= current_turn == 0 ? 1 : -1;
     return eval;
 }
 

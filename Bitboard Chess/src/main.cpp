@@ -23,7 +23,7 @@ int main() {
     init_bitboard_utils();
     init_eval_utils();
     
-    Board board("r1b1kb1r/pppp1ppp/5q2/4n3/3KP3/2N3PN/PPP4P/R1BQ1B1R b kq - 0 1");
+    Board board("r3k2r/p1ppqpb1/Bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPB1PPP/R3K2R b KQkq - 0 0");
     
     std::cout << '\n';
     std::vector<Move> moves;
@@ -36,7 +36,7 @@ int main() {
 
     auto t1 = std::chrono::high_resolution_clock::now();
     
-    
+    /*
     long nodes;
     for (auto it = moves.begin(); it != moves.end(); ++it) {
         long node;
@@ -49,12 +49,13 @@ int main() {
         board.unmake_move();
     }
     std::cout << "\n\nNodes searched: " << nodes;
+     */
      
     
 
 //    std::cout << board.Perft(8);
     
-//    print_move(search.find_best_move(5), true);
+    print_move(search.find_best_move(4), true);
     
 
     auto t2 = std::chrono::high_resolution_clock::now();

@@ -10,6 +10,7 @@
 #define Board_hpp
 
 #include "depend.hpp"
+#include "Bitboard.hpp"
 #include "Board.hpp"
 #include "Data_structs.hpp"
 #include "Utility.hpp"
@@ -91,6 +92,10 @@ public:
     void unmake_move();
     
     long Perft(int depth);
+    
+    // Move ordering:
+    
+    void sort_moves(std::vector<Move>& moves);
     
     // Evaluations utils
     

@@ -15,6 +15,7 @@
 class Search {
 private:
     Board board;
+    unsigned int nodes_searched;
 public:
     
     Search(Board& b);

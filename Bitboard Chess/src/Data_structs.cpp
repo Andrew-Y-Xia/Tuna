@@ -32,9 +32,6 @@ Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int p
     move_data = (from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x3) << 12) | ((promotion_piece_or_castle_type & 0x3) << 14) | ((piece_moved & 0x7) << 16) | ((piece_captured & 0x7) << 19) | ((score & 0x3FF) << 22);
 }
 
-void Move::operator=(Move& a) {
-    move_data = a.move_data;
-}
 inline bool Move::operator==(Move& a) {
     return (move_data & 0xFFFF) == (move_data & 0xFFFF);
 }
@@ -102,6 +99,11 @@ void Move::set_move_score(unsigned int score) {
 
 bool Move::is_capture() {
     return move_data & (0x7 << 19);
+}
+
+
+bool move_cmp(Move first, Move second) {
+    return first.get_move_score() > second.get_move_score();
 }
 
 // Move END
