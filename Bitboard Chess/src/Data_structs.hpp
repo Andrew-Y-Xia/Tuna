@@ -102,6 +102,8 @@ public:
     Move();
     Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
     
+    unsigned int get_raw_data();
+    
     bool operator==(Move& a);
     bool operator!=(Move& a);
     
@@ -125,6 +127,8 @@ public:
     void set_move_score(unsigned int score);
     
     bool is_capture();
+    
+    bool first_twelfth_eq(Move& a);
 
 };
 
@@ -141,6 +145,42 @@ struct move_data {
     
     int en_passant_square;
 };
+
+
+namespace old {
+// What type of piece is it?
+enum piece_type {
+    Empty,
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King
+};
+
+enum move_type {
+    // Pawn moving two steps for initial move is not included since it can be treated like a normal move
+    Normal,
+    Promote_to_Queen,
+    Promote_to_Rook,
+    Promote_to_Bishop,
+    Promote_to_Knight,
+    En_Passant,
+    Castle_Queenside,
+    Castle_Kingside,
+    Illegal
+};
+
+
+struct Move {
+    Cords from_c;
+    Cords to_c;
+    
+    move_type type: 4;
+    int score: 8;
+};
+} // old
 
 
 #endif /* Data_structs_hpp */

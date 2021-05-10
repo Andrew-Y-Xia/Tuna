@@ -201,6 +201,42 @@ void Board::print_board() {
 }
 
 
+unsigned int Board::find_piece_occupying_sq(int index) {
+    
+    /*
+    U64 bit = C64(1) << index;
+    return PIECE_QUEEN * ((Bitboards[Queens] & bit) != 0) + PIECE_ROOK * ((Bitboards[Rooks] & bit) != 0) + PIECE_BISHOP * ((Bitboards[Bishops] & bit) != 0) + PIECE_KNIGHT * ((Bitboards[Knights] & bit) != 0) + PIECE_PAWN * ((Bitboards[Pawns] & bit) != 0);
+    */
+
+    U64 bit = C64(1) << index;
+    if (!((Bitboards[WhitePieces] | Bitboards[BlackPieces]) & bit)) {
+        return PIECE_NONE;
+    }
+    else if (Bitboards[Pawns] & bit) {
+        return PIECE_PAWN;
+    }
+    else if (Bitboards[Knights] & bit) {
+        return PIECE_KNIGHT;
+    }
+    else if (Bitboards[Bishops] & bit) {
+        return PIECE_BISHOP;
+    }
+    else if (Bitboards[Rooks] & bit) {
+        return PIECE_ROOK;
+    }
+    else if (Bitboards[Queens] & bit) {
+        return PIECE_QUEEN;
+    }
+    else if (Bitboards[Kings] & bit) {
+        return PIECE_KING;
+    }
+    else {
+        return PIECE_NONE;
+    }
+}
+
+
+
 unsigned int Board::find_piece_captured(int index) {
     // This function does not check if the capture is illegal, make sure to &~friendly_pieces beforehand.
     // Also, it doesn't check king captures
@@ -1171,4 +1207,89 @@ int Board::static_eval() {
 
 bool Board::is_king_in_check() {
     return king_is_in_check;
+}
+
+
+// USER INTERFACE BEGIN:
+// These are implementation specific functions
+
+Move Board::request_move(Move move) {
+    std::vector<Move> moves;
+    moves.reserve(256);
+    generate_moves(moves);
+    
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        if (it->first_twelfth_eq(move)) {
+            // Check if promotion lines up:
+            if (it->get_special_flag() == MOVE_PROMOTION) {
+                if (it->get_promote_to() == move.get_promote_to()) {
+                    make_move(*it);
+                    return *it;
+                }
+                continue;
+            }
+            else {
+                make_move(*it);
+                return *it;
+            }
+        }
+    }
+    move.set_piece_moved(PIECE_EXTRA);
+    return move;
+}
+
+bool Board::is_trying_to_promote(Move move) {
+    if (find_piece_occupying_sq(move.get_from()) != PIECE_PAWN) {
+        return false;
+    }
+    std::vector<Move> moves;
+    moves.reserve(256);
+    generate_moves(moves);
+    
+    if (current_turn == 0) {
+        for (auto it = moves.begin(); it != moves.end(); ++it) {
+            if (it->first_twelfth_eq(move) && move.get_to() >= 56) {
+                return true;
+            }
+        }
+    }
+    else {
+        for (auto it = moves.begin(); it != moves.end(); ++it) {
+            if (it->first_twelfth_eq(move) && move.get_to() <= 7) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void Board::set_texture_to_pieces() {
+    U64 occ = Bitboards[BlackPieces] | Bitboards[WhitePieces];
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            int index = cords_to_index(x, y);
+            if ((C64(1) << index) & occ) {
+                old::piece_type piece = converter::piece_type_to_old(find_piece_occupying_sq(index));
+                int color;
+                if ((C64(1) << index) & Bitboards[BlackPieces]) {
+                    color = 1;
+                }
+                else {
+                    color = 0;
+                }
+                
+                sf::Sprite sprite;
+                
+
+                set_single_texture(color, piece, sprite);
+
+
+                sprite.setOrigin(sf::Vector2f(30, 30));
+                sprite.setPosition(x * WIDTH/8 + WIDTH/16 - OFFSET, y * WIDTH/8 + WIDTH/16 - OFFSET);
+                sprite.setScale(sf::Vector2f(SCALE, SCALE));
+                sprites.push_front(sprite);
+            }
+        }
+    }
 }

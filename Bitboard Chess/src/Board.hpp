@@ -16,6 +16,8 @@
 #include "Utility.hpp"
 #include "Evaluation.hpp"
 
+void set_single_texture(int color, old::piece_type piece, sf::Sprite& sprite);
+
 
 class Board {
 private:
@@ -56,6 +58,7 @@ public:
     
     void print_board();
     
+    unsigned int find_piece_occupying_sq(int index);
     unsigned int find_piece_captured(int index);
     unsigned int find_piece_captured_without_occ(int index);
     
@@ -85,8 +88,8 @@ public:
     U64 calculate_block_masks(U64 king_attacker);
     U64 calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces);
     U64 calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces);
-    
     // Move generation end
+    
     
     void make_move(Move move);
     void unmake_move();
@@ -103,6 +106,13 @@ public:
     void print_piece_values();
     int static_eval();
     bool is_king_in_check();
+    
+    
+    // UI:
+    Move request_move(Move move);
+    bool is_trying_to_promote(Move move);
+    
+    void set_texture_to_pieces();
     
     
 };

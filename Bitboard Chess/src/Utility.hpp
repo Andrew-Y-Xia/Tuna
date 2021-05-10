@@ -31,4 +31,15 @@ bool is_within_bounds(int x, int y);
 void print_move(Move move, bool reg = false);
 
 
+namespace converter {
+
+old::piece_type piece_type_to_old(unsigned int piece);
+old::Move move_to_old(Move move);
+
+unsigned int old_piece_type_to_new(old::piece_type piece);
+Move old_move_to_new(old::Move old_move);
+
+}
+
+
 #endif /* Utility_hpp */
