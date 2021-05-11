@@ -225,12 +225,11 @@ void normal_move_sprite_handler(old::Move validated_move, sf::Sprite* sprite_bei
 
 int main() {
     
-    old::Move old_move = converter::move_to_old(Move(23, 56, 0, 0, PIECE_NONE, PIECE_NONE));
-    
-//    std::cout << old_move.from_c.x << ' ' << old_move.from_c.y << ' ' <<old_move.to_c.x << old_move.to_c.y;
-    
     init_bitboard_utils();
     init_eval_utils();
+    
+    
+    int AI_turn = 1;
     
     
     int frame_counter = 0;
@@ -275,10 +274,9 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("3n2nr/4Pqpp/2k5/8/8/8/2B3PP/6K1 w KQkq - 0 0");
+    Board board("3rQB1k/p5b1/2b4p/8/8/1P6/P4KpP/2R2B1R b - - 0 30");
     board.set_texture_to_pieces();
 
-    
     
     // run the program as long as the window is open
     while (window.isOpen())
@@ -291,13 +289,14 @@ int main() {
             if (event.type == sf::Event::Closed)
                 window.close();
             
-            if (board.get_current_turn() == 0) {
+            if (board.get_current_turn() != AI_turn) {
                 if (event.type == sf::Event::MouseButtonPressed)
                 {
                     if (event.mouseButton.button == sf::Mouse::Left && !sprite_being_dragged)
                     {
                         if (trying_to_promote) {
-                            int temp_index = locate_sprite_clicked_index(promotion_sprites_black, sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y, NULL);
+                            auto& promotion_sprites = board.get_current_turn() ? promotion_sprites_white : promotion_sprites_black;
+                            int temp_index = locate_sprite_clicked_index(promotion_sprites, sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y, NULL);
                             if (temp_index != -1) {
                                 switch (temp_index) {
                                     case 3:
@@ -409,9 +408,13 @@ int main() {
                 // Now, do the AI's move
                 
                 Search search(board);
-                Move new_move = search.find_best_move(6);
+                auto t1 = std::chrono::high_resolution_clock::now();
+                Move new_move = search.find_best_move(8);
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+                
                 print_move(new_move, true);
-                std::cout << '\n';
+                std::cout << "\nTime: " << ms_double.count() << "ms\n";
                 old::Move best_move = converter::move_to_old(new_move);
                 
                 

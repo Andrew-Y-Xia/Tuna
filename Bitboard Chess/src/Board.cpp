@@ -897,7 +897,7 @@ U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
 }
 
 
-inline void Board::make_move(Move move) {
+void Board::make_move(Move move) {
     move_data move_data = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square};
     move_stack.push_back(move_data);
     
@@ -1027,7 +1027,7 @@ inline void Board::make_move(Move move) {
     
 }
 
-inline void Board::unmake_move() {
+void Board::unmake_move() {
     
     current_turn = !current_turn;
     
@@ -1107,37 +1107,13 @@ inline void Board::unmake_move() {
     move_stack.pop_back();
 }
 
-long Board::Perft(int depth /* assuming >= 1 */) {
-    
-    if (depth == 0) {
-//        print_board();
-        return 1;
-    }
-    
-    long nodes = 0;
-    int n_moves = 0;
-
-    std::vector<Move> moves;
-    moves.reserve(256);
-    generate_moves(moves);
-    n_moves = moves.size();
-
-
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
-        make_move(*it);
-        nodes += Perft(depth - 1);
-        unmake_move();
-    }
-    return nodes;
-}
-
 
 // MOVE GENERATION END
 
 
 // MOVE ORDERING BEGIN
 
-void Board::sort_moves(std::vector<Move>& moves) {
+void Board::assign_move_scores(std::vector<Move>& moves) {
     unsigned int score;
 
     // Score all the moves
@@ -1156,13 +1132,17 @@ void Board::sort_moves(std::vector<Move>& moves) {
         
         // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
         /*
-        if (pawn_attacks[current_turn][it->get_to()] & Bitboards[Pawns] & Bitboards[!current_turn]) {
-            score -= piece_to_value_small[it->get_piece_moved()];
-        }
-        */
+         if (pawn_attacks[current_turn][it->get_to()] & Bitboards[Pawns] & Bitboards[!current_turn]) {
+         score -= piece_to_value_small[it->get_piece_moved()];
+         }
+         */
         
         it->set_move_score(score);
     }
+}
+
+void Board::sort_moves(std::vector<Move>& moves) {
+    assign_move_scores(moves);
 
     std::sort(moves.begin(), moves.end(), move_cmp);
 }

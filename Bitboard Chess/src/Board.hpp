@@ -94,7 +94,8 @@ public:
     void make_move(Move move);
     void unmake_move();
     
-    long Perft(int depth);
+
+    void assign_move_scores(std::vector<Move> &moves);
     
     // Move ordering:
     
