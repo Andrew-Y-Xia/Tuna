@@ -229,7 +229,7 @@ int main() {
     init_eval_utils();
     
     
-    int AI_turn = 1;
+    int AI_turn = 0;
     
     
     int frame_counter = 0;
@@ -274,7 +274,7 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("3rQB1k/p5b1/2b4p/8/8/1P6/P4KpP/2R2B1R b - - 0 30");
+    Board board("kb3R2/1p5r/5p2/1P1Q4/p5P1/q7/5P2/4RK2 w - - 1 0");
     board.set_texture_to_pieces();
 
     
@@ -403,75 +403,75 @@ int main() {
                     }
                 }
             }
+        }
+        
+        if (AI_turn == board.get_current_turn() && frame_counter > 2) {
+            // Now, do the AI's move
             
-            else if (frame_counter > 2) {
-                // Now, do the AI's move
-                
-                Search search(board);
-                auto t1 = std::chrono::high_resolution_clock::now();
-                Move new_move = search.find_best_move(8);
-                auto t2 = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::milli> ms_double = t2 - t1;
-                
-                print_move(new_move, true);
-                std::cout << "\nTime: " << ms_double.count() << "ms\n";
-                old::Move best_move = converter::move_to_old(new_move);
-                
-                
-                sf::Sprite* AI_sprite;
-                AI_sprite = locate_sprite_clicked(sprites, best_move.from_c.x * WIDTH/8 + WIDTH/16 - OFFSET, best_move.from_c.y * WIDTH/8 + WIDTH/16 - OFFSET);
-                normal_move_sprite_handler(best_move, AI_sprite);
-                
-                int castle_side_value, en_passant_side_value;
-                if (board.get_current_turn() == 1) {
-                    en_passant_side_value = 4;
-                    castle_side_value = 0;
-                }
-                else {
-                    en_passant_side_value = 3;
-                    castle_side_value = 7;
-                }
-                
-                switch (best_move.type) {
-                    case old::Castle_Kingside:
-                    case old::Castle_Queenside:
-                        // Castle handler
-                        castle_sprite_handler(castle_side_value, best_move);
-                        break;
-                    case old::En_Passant:
-                        // En Passant Handler
-                        en_passant_sprite_handler(en_passant_side_value, validated_move);
-                        break;
-                    case old::Promote_to_Knight:
-                    case old::Promote_to_Bishop:
-                    case old::Promote_to_Rook:
-                    case old::Promote_to_Queen: {
-                        sf::Sprite* sprite = locate_sprite_clicked(sprites, best_move.to_c.x * WIDTH/8 + WIDTH/16 - OFFSET, best_move.to_c.y * WIDTH/8 + WIDTH/16 - OFFSET);
-                        int promote_num;
-                        switch (best_move.type) {
-                            case old::Promote_to_Knight:
-                                promote_num = 3;
-                                break;
-                            case old::Promote_to_Bishop:
-                                promote_num = 2;
-                                break;
-                            case old::Promote_to_Rook:
-                                promote_num = 1;
-                                break;
-                            case old::Promote_to_Queen:
-                                promote_num = 0;
-                                break;
-                            default:
-                                std::cout << "Should not have been reached ai promotion handler";
-                        }
-                        set_single_promotion_texture(board.get_current_turn(), promote_num, *sprite);
-                    }
-                    default:
-                        break;
-                }
-                
-                board.request_move(converter::old_move_to_new(best_move));
+            Search search(board);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            Move new_move = search.find_best_move(8);
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+            
+            print_move(new_move, true);
+            std::cout << "\nTime: " << ms_double.count() << "ms\n";
+            old::Move best_move = converter::move_to_old(new_move);
+            
+            
+            sf::Sprite* AI_sprite;
+            AI_sprite = locate_sprite_clicked(sprites, best_move.from_c.x * WIDTH/8 + WIDTH/16 - OFFSET, best_move.from_c.y * WIDTH/8 + WIDTH/16 - OFFSET);
+            normal_move_sprite_handler(best_move, AI_sprite);
+            
+            int castle_side_value, en_passant_side_value;
+            if (board.get_current_turn() == 1) {
+                en_passant_side_value = 4;
+                castle_side_value = 0;
             }
+            else {
+                en_passant_side_value = 3;
+                castle_side_value = 7;
+            }
+            
+            switch (best_move.type) {
+                case old::Castle_Kingside:
+                case old::Castle_Queenside:
+                    // Castle handler
+                    castle_sprite_handler(castle_side_value, best_move);
+                    break;
+                case old::En_Passant:
+                    // En Passant Handler
+                    en_passant_sprite_handler(en_passant_side_value, validated_move);
+                    break;
+                case old::Promote_to_Knight:
+                case old::Promote_to_Bishop:
+                case old::Promote_to_Rook:
+                case old::Promote_to_Queen: {
+                    sf::Sprite* sprite = locate_sprite_clicked(sprites, best_move.to_c.x * WIDTH/8 + WIDTH/16 - OFFSET, best_move.to_c.y * WIDTH/8 + WIDTH/16 - OFFSET);
+                    int promote_num;
+                    switch (best_move.type) {
+                        case old::Promote_to_Knight:
+                            promote_num = 3;
+                            break;
+                        case old::Promote_to_Bishop:
+                            promote_num = 2;
+                            break;
+                        case old::Promote_to_Rook:
+                            promote_num = 1;
+                            break;
+                        case old::Promote_to_Queen:
+                            promote_num = 0;
+                            break;
+                        default:
+                            std::cout << "Should not have been reached ai promotion handler";
+                    }
+                    set_single_promotion_texture(board.get_current_turn(), promote_num, *sprite);
+                }
+                default:
+                    break;
+            }
+            
+            board.request_move(converter::old_move_to_new(best_move));
         }
 
         

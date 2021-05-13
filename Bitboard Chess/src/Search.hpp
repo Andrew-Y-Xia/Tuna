@@ -27,17 +27,17 @@ public:
 
 class Search {
 private:
-    Board board;
+    Board& board;
     unsigned int nodes_searched;
 public:
     
     Search(Board& b);
     
-    int negamax(int depth, int alpha, int beta);
-    Move find_best_move(int depth);
+    int negamax(unsigned int depth, int alpha, int beta);
+    Move find_best_move(unsigned int depth);
     
-    long perft(int depth);
-    long sort_perft(int depth);
+    long perft(unsigned int depth);
+    long sort_perft(unsigned int depth);
     
 };
 

@@ -11,7 +11,7 @@
 int piece_to_value[8];
 int piece_to_value_small[8];
 
-void init_eval_utils() {
+void init_piece_to_value() {
     piece_to_value[PIECE_PAWN] = PAWN_VALUE;
     piece_to_value[PIECE_KNIGHT] = KNIGHT_VALUE;
     piece_to_value[PIECE_BISHOP] = BISHOP_VALUE;
@@ -23,4 +23,13 @@ void init_eval_utils() {
     piece_to_value_small[PIECE_BISHOP] = BISHOP_VALUE / 10;
     piece_to_value_small[PIECE_ROOK] = ROOK_VALUE / 10;
     piece_to_value_small[PIECE_QUEEN] = QUEEN_VALUE / 10;
+}
+
+void init_piece_square_tables() {
+    
+}
+
+void init_eval_utils() {
+    init_piece_to_value();
+    init_piece_square_tables();
 }

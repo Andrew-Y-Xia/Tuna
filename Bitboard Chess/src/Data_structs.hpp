@@ -97,7 +97,11 @@ private:
      bits 19-21: piece_captured: None(0), Extra(1), King(2), Queen(3), Rook(4), Bishop(5), Knight(6), Pawn(7)
      bits 22-31: move score
      
+     When move score isn't needed:
+     
+     bits 22-27: depth
     */
+    
 public:
     Move();
     Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
@@ -116,6 +120,7 @@ public:
     unsigned int get_piece_moved() const;
     unsigned int get_piece_captured() const;
     unsigned int get_move_score() const;
+    unsigned int get_depth() const;
     
     void set_from(unsigned int from);
     void set_to(unsigned int to);
@@ -125,6 +130,7 @@ public:
     void set_piece_moved(unsigned int piece);
     void set_piece_captured(unsigned int piece);
     void set_move_score(unsigned int score);
+    void set_depth(unsigned int depth);
     
     bool is_capture();
     

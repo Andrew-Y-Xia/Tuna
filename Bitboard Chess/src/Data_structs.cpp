@@ -67,6 +67,9 @@ unsigned int Move::get_piece_captured() const {
 unsigned int Move::get_move_score() const {
     return (move_data >> 22) & 0x3FF;
 }
+unsigned int Move::get_depth() const {
+    return (move_data >> 22) & 0x3F;
+}
 
 void Move::set_from(unsigned int from) {
     move_data &= ~(0x3F);
@@ -99,6 +102,10 @@ void Move::set_piece_captured(unsigned int piece) {
 void Move::set_move_score(unsigned int score) {
     move_data &= ~(0x3FF << 22);
     move_data |= (score & 0x3FF) << 22;
+}
+void Move::set_depth(unsigned int depth) {
+    move_data &= ~(0x3F << 22);
+    move_data |= (depth & 0x3F) << 22;
 }
 
 bool Move::is_capture() {

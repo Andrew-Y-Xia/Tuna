@@ -48,6 +48,8 @@ private:
     
     std::vector<move_data> move_stack;
     
+    U64 z_key;
+    
 public:
     Board();
     Board(std::string str);

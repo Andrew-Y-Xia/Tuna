@@ -14,7 +14,7 @@
 
 #define PAWN_VALUE 100
 #define KNIGHT_VALUE 300
-#define BISHOP_VALUE 330
+#define BISHOP_VALUE 300
 #define ROOK_VALUE 500
 #define QUEEN_VALUE 900
 
@@ -23,5 +23,7 @@ extern int piece_to_value_small[8];
 
 
 void init_eval_utils();
+void init_piece_to_value();
+void init_piece_square_tables();
 
 #endif /* Evaluation_hpp */

@@ -16,7 +16,7 @@
 #include <ctype.h>
 #include <forward_list>
 #include <vector>
-#include <sparsehash/dense_hash_map>
+#include <sparsehash/sparse_hash_map>
 #include <stdint.h>
 #include <nmmintrin.h>
 #include <immintrin.h>

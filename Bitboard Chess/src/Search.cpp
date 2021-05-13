@@ -42,11 +42,10 @@ inline Move MovePicker::operator++() {
 
 
 
-Search::Search(Board& b) {
-    board = b;
-}
+Search::Search(Board& b) : board(b) {}
 
-int Search::negamax(int depth, int alpha, int beta) {
+
+int Search::negamax(unsigned int depth, int alpha, int beta) {
 
     /*
     if (has_been_checkmated(moves)) {
@@ -67,30 +66,17 @@ int Search::negamax(int depth, int alpha, int beta) {
     
     if (moves.size() == 0) {
         if (board.is_king_in_check()) {
-            return board.get_current_turn() == 0 ? -2000000 : 2000000;
+            return -2000000;
         }
         else {
             return 0;
         }
     }
     
-    board.sort_moves(moves);
-//    board.assign_move_scores(moves);
-
-    
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
-        nodes_searched++;
-        board.make_move(*it);
-        int eval = -negamax(depth - 1, -beta, -alpha);
-        board.unmake_move();
-        if (eval >= beta) {
-            return beta;
-        }
-        alpha = std::max(alpha, eval);
-    }
+//    board.sort_moves(moves);
+    board.assign_move_scores(moves);
     
     
-    /*
     MovePicker move_picker(moves);
     
     while (!move_picker.finished()) {
@@ -105,41 +91,25 @@ int Search::negamax(int depth, int alpha, int beta) {
         }
         alpha = std::max(alpha, eval);
     }
-    */
 
     return alpha;
 }
 
-Move Search::find_best_move(int depth) {
+Move Search::find_best_move(unsigned int depth) {
     nodes_searched = 0;
     
     std::vector<Move> moves;
     moves.reserve(256);
     board.generate_moves(moves);
-    board.sort_moves(moves);
-//    board.assign_move_scores(moves);
+    board.assign_move_scores(moves);
 
     Move best_move;
     int maxEval = -2000000;
     
     
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
-        nodes_searched++;
-        board.make_move(*it);
-        int eval = -negamax(depth - 1, -2000000, -maxEval);
-        board.unmake_move();
 
-        if (eval > maxEval) {
-            maxEval = eval;
-            best_move = *it;
-        }
-        if (eval >= 2000000) {
-            break;
-        }
-    }
     
     
-    /*
     MovePicker move_picker(moves);
     
     while (!move_picker.finished()) {
@@ -158,7 +128,6 @@ Move Search::find_best_move(int depth) {
             break;
         }
     }
-     */
     
     
     std::cout << "\nNodes searched: " << nodes_searched << '\n';
@@ -166,7 +135,7 @@ Move Search::find_best_move(int depth) {
 }
 
 
-long Search::perft(int depth) {
+long Search::perft(unsigned int depth) {
     
     if (depth == 0) {
 //        print_board();
@@ -190,7 +159,7 @@ long Search::perft(int depth) {
     return nodes;
 }
 
-long Search::sort_perft(int depth) {
+long Search::sort_perft(unsigned int depth) {
     
     if (depth == 0) {
 //        print_board();
