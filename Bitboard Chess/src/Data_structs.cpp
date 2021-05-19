@@ -36,10 +36,10 @@ unsigned int Move::get_raw_data() {
     return move_data;
 }
 
-inline bool Move::operator==(Move& a) {
+bool Move::operator==(Move& a) {
     return (move_data & 0xFFFF) == (a.get_raw_data() & 0xFFFF);
 }
-inline bool Move::operator!=(Move& a) {
+bool Move::operator!=(Move& a) {
     return (move_data & 0xFFFF) != (a.get_raw_data() & 0xFFFF);
 }
 

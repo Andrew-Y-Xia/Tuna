@@ -12,26 +12,25 @@
 #include "depend.hpp"
 #include "Data_structs.hpp"
 
-#define TT_SIZE 16777216
+#define TT_SIZE 16777216 // 2^24df
 
 
-struct node {
+struct TT_entry {
     U64 key;
     Move best_move;
     // No need to keep depth info because that's kept in move
     int score;
-
-    node* next;
+    
 };
 
 class TT {
 private:
-    node* hash_table;
+    TT_entry* hash_table;
     unsigned int occupied;
 public:
     TT();
-    void find(U64 key);
-    node& get_ref(U64 key);
+    ~TT();
+    TT_entry& find(U64 key);
     
 };
 

@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <nmmintrin.h>
 #include <immintrin.h>
+#include <random>
 
 #define WIDTH 1024
 #define SCALE 1.3

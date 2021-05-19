@@ -11,6 +11,10 @@ extern sf::Texture textures[13];
 extern std::forward_list<sf::Sprite> sprites, promotion_sprites_white, promotion_sprites_black;
 extern int incre8[8];
 
+U64 piece_bitstrings[64][2][6];
+U64 black_to_move_bitstring;
+U64 white_castle_queenside_bitstring, white_castle_kingside_bitstring, black_castle_queenside_bitstring, black_castle_kingside_bitstring;
+U64 en_passant_bitstrings[8];
 
 Board::Board() {
     read_FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -175,6 +179,99 @@ void Board::read_FEN(std::string str) {
 
 void Board::standard_setup() {
     calculate_piece_values();
+    init_zobrist_key();
+}
+
+void Board::hash() {
+    // Only use for init_zobrist_key
+    z_key = C64(0);
+    
+    
+    if (current_turn == 1) {
+        z_key ^= black_to_move_bitstring;
+    }
+    
+    
+    if (white_can_castle_queenside) {
+        z_key ^= white_castle_queenside_bitstring;
+    }
+    if (white_can_castle_kingside) {
+        z_key ^= white_castle_kingside_bitstring;
+    }
+    if (black_can_castle_queenside) {
+        z_key ^= black_castle_queenside_bitstring;
+    }
+    if (black_can_castle_kingside) {
+        z_key ^= black_castle_kingside_bitstring;
+    }
+    
+    U64 w_p = Bitboards[WhitePieces];
+    U64 b_p = Bitboards[BlackPieces];
+    
+    
+    for (int i = Kings; i <= Pawns; i++) {
+        U64 pieces = Bitboards[i] & w_p;
+//        std::cout << "Piece: " << i << '\n';
+//        print_BB(pieces); std::cout << '\n';
+        
+        if (pieces) do {
+            int index = bitscan_forward(pieces);
+            z_key ^= piece_bitstrings[index][WhitePieces][i - 2];
+            assert(i-2 <= 5);
+        } while (pieces &= pieces - 1);
+    }
+    
+    for (int i = Kings; i <= Pawns; i++) {
+        U64 pieces = Bitboards[i] & b_p;
+        
+        if (pieces) do {
+            int index = bitscan_forward(pieces);
+            z_key ^= piece_bitstrings[index][BlackPieces][i - 2];
+        } while (pieces &= pieces - 1);
+    }
+    
+    
+    if (en_passant_square != -1) {
+        // Find the en_passant file
+        U64 southrays = rays[South][en_passant_square];
+        int index = bitscan_forward(southrays);
+        z_key ^= en_passant_bitstrings[index];
+    }
+}
+
+void Board::init_zobrist_key() {
+    /* Seed */
+//    std::random_device rd;
+
+    /* Random number generator */
+    std::default_random_engine generator(42);
+
+    /* Distribution on which to apply the generator */
+    std::uniform_int_distribution<U64> distribution(0,0xFFFFFFFFFFFFFFFF);
+
+    for (int i = 0; i < 64; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 6; k++) {
+                piece_bitstrings[i][j][k] = distribution(generator);
+            }
+        }
+    }
+    black_to_move_bitstring = distribution(generator);
+    
+    white_castle_queenside_bitstring = distribution(generator);
+    white_castle_kingside_bitstring = distribution(generator);
+    black_castle_queenside_bitstring = distribution(generator);
+    black_castle_kingside_bitstring = distribution(generator);
+    
+    for (int i = 0; i < 8; i++) {
+        en_passant_bitstrings[i] = distribution(generator);
+    }
+    
+    
+    // Actual generation of zobrist key:
+    
+    hash();
+    
 }
 
 bool Board::get_current_turn() {
@@ -198,6 +295,11 @@ void Board::print_board() {
     print_BB(Bitboards[Knights]);
     std::cout << "\n\nPawns:\n";
     print_BB(Bitboards[Pawns]);
+}
+
+
+void Board::print_z_key() {
+    std::cout << z_key << '\n';
 }
 
 
@@ -916,10 +1018,17 @@ void Board::make_move(Move move) {
         
         // Take away the piece values for the side that pieces were captured
         piece_values[!current_turn] -= piece_to_value[move.get_piece_captured()];
+        
+        // Update zobrist key for capture
+        z_key ^= piece_bitstrings[move_to_index][!current_turn][move.get_piece_captured() - 2]; // Must -2 because pieces start at third index, not first
     }
     // Flip the occupacy of the from square and to square
     Bitboards[current_turn] ^= from_bb | to_bb;
     Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
+    
+    // Update zobrist keys
+    z_key ^= piece_bitstrings[move_from_index][current_turn][move.get_piece_moved() - 2];
+    z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_piece_moved() - 2];
     
     
     // Special move handling now:
@@ -929,26 +1038,49 @@ void Board::make_move(Move move) {
             break;
         }
         case MOVE_CASTLING: {
-            U64 side_mask = (!current_turn * first_rank) | (current_turn * eighth_rank);
-            U64 castle_bits = ((a_file | (a_file << 3)) * move.get_castle_type()) | ((h_file | a_file << 5) * !move.get_castle_type());
-            castle_bits &= side_mask;
-            Bitboards[current_turn] ^= castle_bits;
-            Bitboards[Rooks] ^= castle_bits;
+            U64 rook_bits;
+            int rook_from_index, rook_to_index;
+            if (move.get_castle_type() == CASTLE_TYPE_KINGSIDE) {
+                rook_from_index = 7;
+                rook_to_index = 5;
+            }
+            else {
+                rook_from_index = 0;
+                rook_to_index = 3;
+            }
+            if (current_turn == 1) {
+                rook_from_index += 56;
+                rook_to_index += 56;
+            }
+            rook_bits = (C64(1) << rook_from_index) | (C64(1) << rook_to_index);
+            Bitboards[current_turn] ^= rook_bits;
+            Bitboards[Rooks] ^= rook_bits;
+            
+            // Update zobrist key
+            z_key ^= piece_bitstrings[rook_from_index][current_turn][PIECE_ROOK - 2];
+            z_key ^= piece_bitstrings[rook_to_index][current_turn][PIECE_ROOK - 2];
             break;
         }
         case MOVE_ENPASSANT: {
             U64 delete_square;
+            int delete_index;
             if (current_turn == 0) {
-                delete_square = C64(1) << (move_to_index - 8);
+                delete_index = move_to_index - 8;
+                delete_square = C64(1) << (delete_index);
             }
             else {
-                delete_square = C64(1) << (move_to_index + 8);
+                delete_index = move_to_index + 8;
+                delete_square = C64(1) << (delete_index);
             }
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
             
             // Take away the piece values for the side that pieces were captured
             piece_values[!current_turn] -= piece_to_value[move.get_piece_captured()];
+            
+            // Update zobrist key
+            z_key ^= piece_bitstrings[delete_index][!current_turn][PIECE_PAWN - 2];
+            
             break;
         }
         case MOVE_PROMOTION: {
@@ -957,11 +1089,23 @@ void Board::make_move(Move move) {
             
             // Change the piece_values score accordingly
             piece_values[current_turn] += piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
+            
+            // Update zobrist key
+            z_key ^= piece_bitstrings[move_to_index][current_turn][PIECE_PAWN - 2];
+            z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_promote_to() + 1]; // Check move encoding to see why +1
             break;
         }
     }
     
     // Set en_passant square
+    // Clear the old en_passant change
+    
+
+    if (en_passant_square != -1) {
+        U64 last_en_passant_file = rays[South][en_passant_square];
+        z_key ^= en_passant_bitstrings[bitscan_forward(last_en_passant_file)];
+    }
+    
     if (move.get_piece_moved() == PIECE_PAWN && abs(move_from_index - move_to_index) == 16) {
         if (current_turn == 0) {
             en_passant_square = move_to_index - 8;
@@ -969,6 +1113,10 @@ void Board::make_move(Move move) {
         else {
             en_passant_square = move_to_index + 8;
         }
+        
+        // Update zobrist key:
+        U64 en_passant_file = rays[South][en_passant_square];
+        z_key ^= en_passant_bitstrings[bitscan_forward(en_passant_file)];
     }
     else {
         en_passant_square = -1;
@@ -980,31 +1128,55 @@ void Board::make_move(Move move) {
     if (move.get_piece_captured() != PIECE_NONE) {
         switch (move_to_index) {
             case 56:
-                black_can_castle_queenside = false;
+                if (black_can_castle_queenside) {
+                    black_can_castle_queenside = false;
+                    z_key ^= black_castle_queenside_bitstring;
+                }
                 break;
             case 63:
-                black_can_castle_kingside = false;
+                if (black_can_castle_kingside) {
+                    black_can_castle_kingside = false;
+                    z_key ^= black_castle_kingside_bitstring;
+                }
                 break;
             case 0:
-                white_can_castle_queenside = false;
+                if (white_can_castle_queenside) {
+                    white_can_castle_queenside = false;
+                    z_key ^= white_castle_queenside_bitstring;
+                }
                 break;
             case 7:
-                white_can_castle_kingside = false;
+                if (white_can_castle_kingside) {
+                    white_can_castle_kingside = false;
+                    z_key ^= white_castle_kingside_bitstring;
+                }
                 break;
         }
     }
     switch (move_from_index) {
         case 56:
-            black_can_castle_queenside = false;
+            if (black_can_castle_queenside) {
+                black_can_castle_queenside = false;
+                z_key ^= black_castle_queenside_bitstring;
+            }
             break;
         case 63:
-            black_can_castle_kingside = false;
+            if (black_can_castle_kingside) {
+                black_can_castle_kingside = false;
+                z_key ^= black_castle_kingside_bitstring;
+            }
             break;
         case 0:
-            white_can_castle_queenside = false;
+            if (white_can_castle_queenside) {
+                white_can_castle_queenside = false;
+                z_key ^= white_castle_queenside_bitstring;
+            }
             break;
         case 7:
-            white_can_castle_kingside = false;
+            if (white_can_castle_kingside) {
+                white_can_castle_kingside = false;
+                z_key ^= white_castle_kingside_bitstring;
+            }
             break;
     }
 
@@ -1012,34 +1184,70 @@ void Board::make_move(Move move) {
     // Check if king moves
     if (move.get_piece_moved() == PIECE_KING) {
         if (current_turn == 1) {
-            black_can_castle_kingside = false;
-            black_can_castle_queenside = false;
+            if (black_can_castle_queenside) {
+                black_can_castle_queenside = false;
+                z_key ^= black_castle_queenside_bitstring;
+            }
+            if (black_can_castle_kingside) {
+                black_can_castle_kingside = false;
+                z_key ^= black_castle_kingside_bitstring;
+            }
         }
         else {
-            white_can_castle_kingside = false;
-            white_can_castle_queenside = false;
+            if (white_can_castle_queenside) {
+                white_can_castle_queenside = false;
+                z_key ^= white_castle_queenside_bitstring;
+            }
+            if (white_can_castle_kingside) {
+                white_can_castle_kingside = false;
+                z_key ^= white_castle_kingside_bitstring;
+            }
         }
     }
     
     // Switch turns:
     
-    current_turn = !current_turn;
+    z_key ^= black_to_move_bitstring;
     
+    
+    current_turn = !current_turn;
 }
 
 void Board::unmake_move() {
     
     current_turn = !current_turn;
+    z_key ^= black_to_move_bitstring;
     
     move_data last_move = move_stack.back();
     Move move = last_move.move;
     
-    white_can_castle_queenside = last_move.white_can_castle_queenside;
-    white_can_castle_kingside = last_move.white_can_castle_kingside;
-    black_can_castle_queenside = last_move.black_can_castle_queenside;
-    black_can_castle_kingside = last_move.black_can_castle_kingside;
+    if (white_can_castle_queenside != last_move.white_can_castle_queenside) {
+        white_can_castle_queenside = last_move.white_can_castle_queenside;
+        z_key ^= white_castle_queenside_bitstring;
+    }
+    if (white_can_castle_kingside != last_move.white_can_castle_kingside) {
+        white_can_castle_kingside = last_move.white_can_castle_kingside;
+        z_key ^= white_castle_kingside_bitstring;
+    }
+    if (black_can_castle_queenside != last_move.black_can_castle_queenside) {
+        black_can_castle_queenside = last_move.black_can_castle_queenside;
+        z_key ^= black_castle_queenside_bitstring;
+    }
+    if (black_can_castle_kingside != last_move.black_can_castle_kingside) {
+        black_can_castle_kingside = last_move.black_can_castle_kingside;
+        z_key ^= black_castle_kingside_bitstring;
+    }
     
+    // Revert the en_passant file from z_key
+    if (en_passant_square != -1) {
+        U64 en_passant_file = rays[South][en_passant_square];
+        z_key ^= en_passant_bitstrings[bitscan_forward(en_passant_file)];
+    }
     en_passant_square = last_move.en_passant_square;
+    if (last_move.en_passant_square != -1) {
+        U64 last_en_passant_file = rays[South][last_move.en_passant_square];
+        z_key ^= en_passant_bitstrings[bitscan_forward(last_en_passant_file)];
+    }
     
     // Actual act of making move:
     int move_from_index = move.get_from();
@@ -1056,6 +1264,9 @@ void Board::unmake_move() {
         
         // Add back the piece values for the captured piece
         piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
+        
+        // Update zobrist key for capture
+        z_key ^= piece_bitstrings[move_to_index][!current_turn][move.get_piece_captured() - 2]; // Must -2 because pieces start at third index, not first
     }
     
 
@@ -1063,6 +1274,10 @@ void Board::unmake_move() {
     // Flip the occupacy of the from square and to square
     Bitboards[current_turn] ^= from_bb | to_bb;
     Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
+    
+    // Update zobrist keys
+    z_key ^= piece_bitstrings[move_from_index][current_turn][move.get_piece_moved() - 2];
+    z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_piece_moved() - 2];
 
     
     // Special move handling now:
@@ -1072,26 +1287,48 @@ void Board::unmake_move() {
             break;
         }
         case MOVE_CASTLING: {
-            U64 side_mask = (!current_turn * first_rank) | (current_turn * eighth_rank);
-            U64 castle_bits = ((a_file | (a_file << 3)) * move.get_castle_type()) | ((h_file | a_file << 5) * !move.get_castle_type());
-            castle_bits &= side_mask;
-            Bitboards[current_turn] ^= castle_bits;
-            Bitboards[Rooks] ^= castle_bits;
+            U64 rook_bits;
+            int rook_from_index, rook_to_index;
+            if (move.get_castle_type() == CASTLE_TYPE_KINGSIDE) {
+                rook_from_index = 7;
+                rook_to_index = 5;
+            }
+            else {
+                rook_from_index = 0;
+                rook_to_index = 3;
+            }
+            if (current_turn == 1) {
+                rook_from_index += 56;
+                rook_to_index += 56;
+            }
+            rook_bits = (C64(1) << rook_from_index) | (C64(1) << rook_to_index);
+            Bitboards[current_turn] ^= rook_bits;
+            Bitboards[Rooks] ^= rook_bits;
+            
+            // Update zobrist key
+            z_key ^= piece_bitstrings[rook_from_index][current_turn][PIECE_ROOK - 2];
+            z_key ^= piece_bitstrings[rook_to_index][current_turn][PIECE_ROOK - 2];
             break;
         }
         case MOVE_ENPASSANT: {
             U64 delete_square;
+            int delete_index;
             if (current_turn == 0) {
-                delete_square = C64(1) << (move_to_index - 8);
+                delete_index = move_to_index - 8;
+                delete_square = C64(1) << (delete_index);
             }
             else {
-                delete_square = C64(1) << (move_to_index + 8);
+                delete_index = move_to_index + 8;
+                delete_square = C64(1) << (delete_index);
             }
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
             
-            // Add back the piece values for the captured piece
+            // Take away the piece values for the side that pieces were captured
             piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
+            
+            // Update zobrist key
+            z_key ^= piece_bitstrings[delete_index][!current_turn][PIECE_PAWN - 2];
             break;
         }
         case MOVE_PROMOTION: {
@@ -1100,6 +1337,10 @@ void Board::unmake_move() {
             
             // Change the piece_values score accordingly
             piece_values[current_turn] -= piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
+            
+            // Update zobrist key
+            z_key ^= piece_bitstrings[move_to_index][current_turn][PIECE_PAWN - 2];
+            z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_promote_to() + 1]; // Check move encoding to see why +1
             break;
         }
     }

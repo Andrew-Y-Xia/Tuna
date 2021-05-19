@@ -55,10 +55,15 @@ public:
     Board(std::string str);
     void read_FEN(std::string str);
     void standard_setup();
+    void extracted();
+    
+    void hash();
+    void init_zobrist_key();
     
     bool get_current_turn();
     
     void print_board();
+    void print_z_key();
     
     unsigned int find_piece_occupying_sq(int index);
     unsigned int find_piece_captured(int index);
