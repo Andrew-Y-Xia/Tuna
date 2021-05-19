@@ -104,7 +104,7 @@ Move Search::find_best_move(unsigned int depth) {
     board.assign_move_scores(moves);
 
     Move best_move;
-    int maxEval = -2000000;
+    int maxEval = -2000001;
     
     
 

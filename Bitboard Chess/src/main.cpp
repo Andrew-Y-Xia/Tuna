@@ -275,11 +275,8 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 0");
+    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0");
     board.set_texture_to_pieces();
-    Search s(board);
-    int perft_score = s.perft(3);
-    std::cout << "\n\nPerft: " << perft_score;
 
     
     // run the program as long as the window is open
