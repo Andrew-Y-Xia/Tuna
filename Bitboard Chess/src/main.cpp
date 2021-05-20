@@ -275,8 +275,19 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0");
+    Board board("rqr3k1/3bppBp/3p2P1/p7/1n2P3/1p3P2/1PPQ2P1/2KR3R w - - 1 0");
     board.set_texture_to_pieces();
+    
+    /*
+    Search s(board);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    int perft_score = s.perft(5);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+    std::cout << perft_score;
+    
+    std::cout << "\nTime: " << ms_double.count() << "ms\n";
+     */
 
     
     // run the program as long as the window is open

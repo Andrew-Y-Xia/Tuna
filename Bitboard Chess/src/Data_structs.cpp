@@ -113,6 +113,33 @@ bool Move::is_capture() {
 }
 
 
+MoveList::MoveList() {
+    back_index = 0;
+}
+
+void MoveList::push_back(Move move) {
+    moves[back_index] = move;
+    back_index++;
+}
+
+Move* MoveList::begin() {
+    return moves;
+}
+
+Move* MoveList::end() {
+    return moves + back_index;
+}
+
+int MoveList::size() {
+    return back_index;
+}
+
+Move& MoveList::operator[] (int index) {
+    return moves[index];
+}
+
+
+
 bool move_cmp(Move first, Move second) {
     return first.get_move_score() > second.get_move_score();
 }

@@ -15,11 +15,11 @@
 
 class MovePicker {
 private:
-    std::vector<Move>& moves;
+    MoveList& moves;
     bool visited[256] = {0};
     int size, visit_count;
 public:
-    MovePicker(std::vector<Move>& init_moves);
+    MovePicker(MoveList& init_moves);
     
     int finished();
     Move operator++();

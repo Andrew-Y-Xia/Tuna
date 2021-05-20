@@ -138,6 +138,23 @@ public:
 
 };
 
+
+class MoveList {
+private:
+    Move moves[256];
+    int back_index;
+public:
+    MoveList();
+    
+    void push_back(Move move);
+    Move* begin();
+    Move* end();
+    
+    int size();
+    
+    Move& operator[] (int index);
+};
+
 bool move_cmp(Move first, Move second);
 
 

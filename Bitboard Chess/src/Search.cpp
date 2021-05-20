@@ -8,7 +8,7 @@
 
 #include "Search.hpp"
 
-MovePicker::MovePicker(std::vector<Move>& init_moves): moves(init_moves) {
+MovePicker::MovePicker(MoveList& init_moves): moves(init_moves) {
     size = init_moves.size();
     
     visit_count = 0;
@@ -60,8 +60,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
         return board.static_eval();
     }
     
-    std::vector<Move> moves;
-    moves.reserve(256);
+    MoveList moves;
     board.generate_moves(moves);
     
     if (moves.size() == 0) {
@@ -98,8 +97,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
 Move Search::find_best_move(unsigned int depth) {
     nodes_searched = 0;
     
-    std::vector<Move> moves;
-    moves.reserve(256);
+    MoveList moves;
     board.generate_moves(moves);
     board.assign_move_scores(moves);
 
@@ -145,8 +143,7 @@ long Search::perft(unsigned int depth) {
     long nodes = 0;
     int n_moves = 0;
 
-    std::vector<Move> moves;
-    moves.reserve(256);
+    MoveList moves;
     board.generate_moves(moves);
     n_moves = moves.size();
 
@@ -169,8 +166,7 @@ long Search::sort_perft(unsigned int depth) {
     long nodes = 0;
     int n_moves = 0;
 
-    std::vector<Move> moves;
-    moves.reserve(256);
+    MoveList moves;
     board.generate_moves(moves);
     board.assign_move_scores(moves);
     n_moves = moves.size();
