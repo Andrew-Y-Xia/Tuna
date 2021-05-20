@@ -20,7 +20,8 @@ struct TT_entry {
     Move best_move;
     // No need to keep depth info because that's kept in move
     int score;
-    
+    U64 sanity_check;
+    int beta_flag;
 };
 
 class TT {

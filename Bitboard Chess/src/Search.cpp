@@ -47,18 +47,28 @@ Search::Search(Board& b) : board(b) {}
 
 int Search::negamax(unsigned int depth, int alpha, int beta) {
 
-    /*
-    if (has_been_checkmated(moves)) {
-        return get_current_turn() == 0 ? 2000000 : -2000000;
-    }
-    else if (is_draw(moves)) {
-        return 0;
-    }
-     */
     if (depth == 0) {
 //            return quiescence_search(alpha, beta);
         return board.static_eval();
     }
+    
+    // Check for hits on the TT
+    
+    
+    TT_entry& tt_hit = board.tt.find(board.get_z_key());
+    
+    if (tt_hit.key == board.get_z_key() && tt_hit.best_move.get_depth() >= depth) {
+        if (tt_hit.sanity_check != board.tt_sanity_check()) {
+            std::cout << "Transposition table type 1 collision\n";
+        }
+        
+//        std::cout << tt_hit.sanity_check << ' ' << board.tt_sanity_check() << '\n';
+        return tt_hit.score;
+    }
+    if (tt_hit.beta_flag) {
+//        std::cout << tt_hit.score << '\n';
+    }
+     
     
     MoveList moves;
     board.generate_moves(moves);
@@ -90,6 +100,13 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
         }
         alpha = std::max(alpha, eval);
     }
+    
+    
+    // Write search data to transposition table
+    tt_hit.key = board.get_z_key();
+    tt_hit.best_move.set_depth(depth);
+    tt_hit.score = alpha;
+    tt_hit.sanity_check = board.tt_sanity_check();
 
     return alpha;
 }
@@ -117,6 +134,10 @@ Move Search::find_best_move(unsigned int depth) {
         board.make_move(it);
         int eval = -negamax(depth - 1, -2000000, -maxEval);
         board.unmake_move();
+        
+        std::cout << "\nMove: ";
+        print_move(it, true);
+        std::cout << "\nEval: " << eval;
 
         if (eval > maxEval) {
             maxEval = eval;
@@ -128,7 +149,7 @@ Move Search::find_best_move(unsigned int depth) {
     }
     
     
-    std::cout << "\nNodes searched: " << nodes_searched << '\n';
+    std::cout << "\nNodes searched: " << nodes_searched << "\n\n";
     return best_move;
 }
 
@@ -179,6 +200,44 @@ long Search::sort_perft(unsigned int depth) {
         nodes += sort_perft(depth-1);
         board.unmake_move();
     }
+    
+    return nodes;
+}
+
+long Search::hash_perft(unsigned int depth) {
+    if (depth == 0) {
+        return 1;
+    }
+    
+    TT_entry& tt_hit = board.tt.find(board.get_z_key());
+    
+    if (tt_hit.key == board.get_z_key() && tt_hit.best_move.get_depth() == depth) {
+        if (tt_hit.sanity_check != board.tt_sanity_check()) {
+            ASDF;
+        }
+//        std::cout << tt_hit.sanity_check << ' ' << board.tt_sanity_check() << '\n';
+        return tt_hit.score;
+    }
+
+    long nodes = 0;
+    int n_moves = 0;
+
+    MoveList moves;
+    board.generate_moves(moves);
+    n_moves = moves.size();
+
+
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        board.make_move(*it);
+        nodes += hash_perft(depth - 1);
+        board.unmake_move();
+    }
+    
+    // Write data to transposition table
+    tt_hit.key = board.get_z_key();
+    tt_hit.best_move.set_depth(depth);
+    tt_hit.score = nodes;
+    tt_hit.sanity_check = board.tt_sanity_check();
     
     return nodes;
 }

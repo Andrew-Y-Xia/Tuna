@@ -15,6 +15,7 @@
 #include "Data_structs.hpp"
 #include "Utility.hpp"
 #include "Evaluation.hpp"
+#include "Transposition_table.hpp"
 
 void set_single_texture(int color, old::piece_type piece, sf::Sprite& sprite);
 
@@ -51,6 +52,8 @@ private:
     U64 z_key;
     
 public:
+    TT tt;
+    
     Board();
     Board(std::string str);
     void read_FEN(std::string str);
@@ -122,7 +125,10 @@ public:
     
     void set_texture_to_pieces();
     
-    
+    U64 get_z_key();
+    U64 tt_sanity_check() {
+        return Bitboards[0] | Bitboards[1];
+    }
 };
 
 

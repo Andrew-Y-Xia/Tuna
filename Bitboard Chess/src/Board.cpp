@@ -1512,3 +1512,7 @@ void Board::set_texture_to_pieces() {
         }
     }
 }
+
+U64 Board::get_z_key() {
+    return z_key;
+}
