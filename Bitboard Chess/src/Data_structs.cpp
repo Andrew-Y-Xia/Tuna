@@ -32,7 +32,7 @@ Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int p
     move_data = (from & 0x3F) | ((to & 0x3F) << 6) | ((flag & 0x3) << 12) | ((promotion_piece_or_castle_type & 0x3) << 14) | ((piece_moved & 0x7) << 16) | ((piece_captured & 0x7) << 19) | ((score & 0x3FF) << 22);
 }
 
-unsigned int Move::get_raw_data() {
+unsigned int Move::get_raw_data() const {
     return move_data;
 }
 
@@ -67,9 +67,6 @@ unsigned int Move::get_piece_captured() const {
 unsigned int Move::get_move_score() const {
     return (move_data >> 22) & 0x3FF;
 }
-unsigned int Move::get_depth() const {
-    return (move_data >> 22) & 0x3F;
-}
 
 void Move::set_from(unsigned int from) {
     move_data &= ~(0x3F);
@@ -103,10 +100,7 @@ void Move::set_move_score(unsigned int score) {
     move_data &= ~(0x3FF << 22);
     move_data |= (score & 0x3FF) << 22;
 }
-void Move::set_depth(unsigned int depth) {
-    move_data &= ~(0x3F << 22);
-    move_data |= (depth & 0x3F) << 22;
-}
+
 
 bool Move::is_capture() {
     return move_data & (0x7 << 19);

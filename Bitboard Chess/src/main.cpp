@@ -281,7 +281,7 @@ int main() {
     /*
     Search s(board);
     auto t1 = std::chrono::high_resolution_clock::now();
-    int perft_score = s.perft(5);
+    int perft_score = s.hash_perft(5);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms_double = t2 - t1;
     std::cout << perft_score;
