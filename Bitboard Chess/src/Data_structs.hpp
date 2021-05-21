@@ -164,6 +164,8 @@ struct move_data {
     bool black_can_castle_kingside;
     
     int en_passant_square;
+    
+    U64 z_key;
 };
 
 

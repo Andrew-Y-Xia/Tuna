@@ -1000,7 +1000,7 @@ U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
 
 
 void Board::make_move(Move move) {
-    move_data move_data = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square};
+    move_data move_data = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square, z_key};
     move_stack.push_back(move_data);
     
     // Actual act of making move:
@@ -1209,45 +1209,25 @@ void Board::make_move(Move move) {
     
     z_key ^= black_to_move_bitstring;
     
-    
     current_turn = !current_turn;
 }
 
 void Board::unmake_move() {
     
     current_turn = !current_turn;
-    z_key ^= black_to_move_bitstring;
-    
+
     move_data last_move = move_stack.back();
     Move move = last_move.move;
     
-    if (white_can_castle_queenside != last_move.white_can_castle_queenside) {
-        white_can_castle_queenside = last_move.white_can_castle_queenside;
-        z_key ^= white_castle_queenside_bitstring;
-    }
-    if (white_can_castle_kingside != last_move.white_can_castle_kingside) {
-        white_can_castle_kingside = last_move.white_can_castle_kingside;
-        z_key ^= white_castle_kingside_bitstring;
-    }
-    if (black_can_castle_queenside != last_move.black_can_castle_queenside) {
-        black_can_castle_queenside = last_move.black_can_castle_queenside;
-        z_key ^= black_castle_queenside_bitstring;
-    }
-    if (black_can_castle_kingside != last_move.black_can_castle_kingside) {
-        black_can_castle_kingside = last_move.black_can_castle_kingside;
-        z_key ^= black_castle_kingside_bitstring;
-    }
-    
-    // Revert the en_passant file from z_key
-    if (en_passant_square != -1) {
-        U64 en_passant_file = rays[South][en_passant_square];
-        z_key ^= en_passant_bitstrings[bitscan_forward(en_passant_file)];
-    }
+    white_can_castle_queenside = last_move.white_can_castle_queenside;
+    white_can_castle_kingside = last_move.white_can_castle_kingside;
+    black_can_castle_queenside = last_move.black_can_castle_queenside;
+    black_can_castle_kingside = last_move.black_can_castle_kingside;
+
     en_passant_square = last_move.en_passant_square;
-    if (last_move.en_passant_square != -1) {
-        U64 last_en_passant_file = rays[South][last_move.en_passant_square];
-        z_key ^= en_passant_bitstrings[bitscan_forward(last_en_passant_file)];
-    }
+    
+    z_key = last_move.z_key;
+
     
     // Actual act of making move:
     int move_from_index = move.get_from();
@@ -1264,9 +1244,6 @@ void Board::unmake_move() {
         
         // Add back the piece values for the captured piece
         piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
-        
-        // Update zobrist key for capture
-        z_key ^= piece_bitstrings[move_to_index][!current_turn][move.get_piece_captured() - 2]; // Must -2 because pieces start at third index, not first
     }
     
 
@@ -1275,9 +1252,6 @@ void Board::unmake_move() {
     Bitboards[current_turn] ^= from_bb | to_bb;
     Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
     
-    // Update zobrist keys
-    z_key ^= piece_bitstrings[move_from_index][current_turn][move.get_piece_moved() - 2];
-    z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_piece_moved() - 2];
 
     
     // Special move handling now:
@@ -1305,9 +1279,6 @@ void Board::unmake_move() {
             Bitboards[current_turn] ^= rook_bits;
             Bitboards[Rooks] ^= rook_bits;
             
-            // Update zobrist key
-            z_key ^= piece_bitstrings[rook_from_index][current_turn][PIECE_ROOK - 2];
-            z_key ^= piece_bitstrings[rook_to_index][current_turn][PIECE_ROOK - 2];
             break;
         }
         case MOVE_ENPASSANT: {
@@ -1327,8 +1298,6 @@ void Board::unmake_move() {
             // Take away the piece values for the side that pieces were captured
             piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
             
-            // Update zobrist key
-            z_key ^= piece_bitstrings[delete_index][!current_turn][PIECE_PAWN - 2];
             break;
         }
         case MOVE_PROMOTION: {
@@ -1338,9 +1307,6 @@ void Board::unmake_move() {
             // Change the piece_values score accordingly
             piece_values[current_turn] -= piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
             
-            // Update zobrist key
-            z_key ^= piece_bitstrings[move_to_index][current_turn][PIECE_PAWN - 2];
-            z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_promote_to() + 1]; // Check move encoding to see why +1
             break;
         }
     }
