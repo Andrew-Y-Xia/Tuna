@@ -35,6 +35,9 @@ Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int p
 unsigned int Move::get_raw_data() const {
     return move_data;
 }
+void Move::set_raw_data(unsigned int data) {
+    move_data = data;
+}
 
 bool Move::operator==(Move& a) {
     return (move_data & 0xFFFF) == (a.get_raw_data() & 0xFFFF);

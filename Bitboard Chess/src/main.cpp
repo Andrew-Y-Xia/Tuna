@@ -275,7 +275,7 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 0");
+    Board board("8/8/8/8/B6n/7p/6k1/4K3 w - - 0 1");
     board.set_texture_to_pieces();
     
     /*
@@ -422,7 +422,7 @@ int main() {
             
             Search search(board);
             auto t1 = std::chrono::high_resolution_clock::now();
-            Move new_move = search.find_best_move(8);
+            Move new_move = search.find_best_move(64, 5000);
             auto t2 = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> ms_double = t2 - t1;
             

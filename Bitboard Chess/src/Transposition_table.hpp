@@ -22,6 +22,7 @@
 class HashMove: public Move {
 public:
     void operator=(Move move);
+    bool operator==(Move move);
     
     unsigned int get_depth() const;
     unsigned int get_node_type() const;

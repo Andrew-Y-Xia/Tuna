@@ -12,6 +12,10 @@ void HashMove::operator=(Move move) {
     move_data = move.get_raw_data() & 0x3FFFFF;
 }
 
+bool HashMove::operator==(Move move) {
+    return (move_data & 0x3FFFFF) == (move.get_raw_data() & 0x3FFFFF);
+}
+
 unsigned int HashMove::get_depth() const {
     return (move_data >> 22) & 0x3F;
 }

@@ -9,6 +9,10 @@
 #include "Search.hpp"
 
 
+#define MAXMATE 2000000
+#define MINMATE 1999000
+
+
 int type2collision;
 
 MovePicker::MovePicker(MoveList& init_moves): moves(init_moves) {
@@ -24,7 +28,7 @@ inline int MovePicker::finished() {
 inline Move MovePicker::operator++() {
     unsigned int highest_score = 0;
     int current_index = 0;
-    int found_index;
+    int found_index = 0;
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {
         unsigned int ms = it->get_move_score();
@@ -48,7 +52,19 @@ inline Move MovePicker::operator++() {
 Search::Search(Board& b) : board(b) {}
 
 
-int Search::negamax(unsigned int depth, int alpha, int beta) {
+static void store_pos_result(Board &board, HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root) {
+    if (score >= MINMATE) {
+        score += ply_from_root; // MAXMATE - (distance from this position to mate)
+    }
+    else if (score <= -MINMATE) {
+        score -= ply_from_root; // -(MAXMATE - (distance from this position to mate)
+    }
+    board.tt.set(board.get_z_key(), best_move, depth, node_type, score, board.tt_sanity_check());
+}
+
+
+
+int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root) {
     // Check for hits on the TT
     const TT_entry tt_hit = board.tt.get(board.get_z_key());
     
@@ -59,6 +75,13 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
         
         int score = tt_hit.score;
         unsigned int node_type = tt_hit.hash_move.get_node_type();
+        if (score >= MINMATE) {
+            score -= ply_from_root; // This gets MAXMATE - (distance between mate and root)
+        }
+        else if (score <= -MINMATE) {
+            score += ply_from_root; // This gets -(MAXMATE - (distance between mate and root))
+        }
+        
         if (node_type == NODE_EXACT) {
             return score;
         }
@@ -87,7 +110,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
     // Check for checkmate and stalemate
     if (moves.size() == 0) {
         if (board.is_king_in_check()) {
-            return -2000000;
+            return -MAXMATE + ply_from_root;
         }
         else {
             return 0;
@@ -95,10 +118,16 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
     }
     
 //    board.sort_moves(moves);
-    board.assign_move_scores(moves);
+    if (tt_hit.key == board.get_z_key()) {
+        board.assign_move_scores(moves, tt_hit.hash_move);
+    }
+    else {
+        board.assign_move_scores(moves, HashMove());
+    }
     
     
     MovePicker move_picker(moves);
+    HashMove best_move;
     
     unsigned int node_type = NODE_UPPERBOUND;
     while (!move_picker.finished()) {
@@ -107,68 +136,108 @@ int Search::negamax(unsigned int depth, int alpha, int beta) {
         
         nodes_searched++;
         board.make_move(it);
-        eval = -negamax(depth - 1, -beta, -alpha);
+        eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1);
         board.unmake_move();
         
         
         if (eval >= beta) {
-            board.tt.set(board.get_z_key(), Move(), depth, NODE_LOWERBOUND, beta, board.tt_sanity_check());
+            store_pos_result(board, best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             return beta;
         }
         if (eval > alpha) {
             node_type = NODE_EXACT;
+            best_move = it;
             alpha = eval;
         }
     }
     
     
     // Write search data to transposition table
-    board.tt.set(board.get_z_key(), Move(), depth, node_type, alpha, board.tt_sanity_check());
+    store_pos_result(board, best_move, depth, node_type, alpha, ply_from_root);
 
     return alpha;
 }
 
 
-Move Search::find_best_move(unsigned int depth) {
+static void search_finished_message(int depth, unsigned int nodes_searched) {
+    std::cout << "\nType2 Collisions: " << type2collision << "\n";
+    std::cout << "\nNodes searched: " << nodes_searched << "\n";
+    std::cout << "\nDepth searched: " << depth << "\n\n";
+}
+
+Move Search::find_best_move(unsigned int max_depth, double max_time_ms) {
     type2collision = 0;
     nodes_searched = 0;
     
-    MoveList moves;
-    board.generate_moves(moves);
-    board.assign_move_scores(moves);
+    auto t1 = std::chrono::high_resolution_clock::now();
 
     Move best_move;
-    int maxEval = -2000001;
     
+    MoveList moves;
+    board.generate_moves(moves);
     
-
+    int depth;
+    for (depth = 1; depth <= max_depth; depth++) {
+        TT_entry tt_hit = board.tt.get(board.get_z_key());
     
-    
-    MovePicker move_picker(moves);
-    
-    while (!move_picker.finished()) {
-        auto it = ++move_picker;
-        
-        nodes_searched++;
-        board.make_move(it);
-        int eval = -negamax(depth - 1, -2000000, -maxEval);
-        board.unmake_move();
-        
-//        std::cout << "\nMove: ";
-//        print_move(it, true);
-//        std::cout << "\nEval: " << eval;
-
-        if (eval > maxEval) {
-            maxEval = eval;
-            best_move = it;
+        if (tt_hit.key == board.get_z_key()) {
+            board.assign_move_scores(moves, tt_hit.hash_move);
         }
-        if (eval >= 2000000) {
-            break;
+        else {
+            board.assign_move_scores(moves, HashMove());
+        }
+    
+
+        
+        int maxEval = -MAXMATE - 1;
+    
+    
+    
+        MovePicker move_picker(moves);
+        
+        while (!move_picker.finished()) {
+            
+            
+            
+            auto it = ++move_picker;
+            
+            nodes_searched++;
+            board.make_move(it);
+            int eval = -negamax(depth - 1, -MAXMATE, -maxEval, 1);
+            board.unmake_move();
+    
+//            std::cout << "\nMove: ";
+//            print_move(it, true);
+//            std::cout << "\nEval: " << eval;
+
+            if (eval > maxEval) {
+                maxEval = eval;
+                best_move = it;
+            }
+            
+            // Check if time is up
+            // If so, exit
+            std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
+            if (ms_double.count() >= max_time_ms) {
+                search_finished_message(depth - 1, nodes_searched);
+                return best_move;
+            }
+        }
+        
+        
+        // In the case of finding checkmate, end search early
+    
+        HashMove h_best_move;
+        h_best_move = best_move;
+        store_pos_result(board, h_best_move, depth, NODE_EXACT, maxEval, 0);
+        
+        if (maxEval >= MINMATE && MAXMATE - maxEval <= depth) {
+            search_finished_message(depth, nodes_searched);
+            return best_move;
         }
     }
     
-    std::cout << "\nType2 Collisions: " << type2collision << "\n";
-    std::cout << "\nNodes searched: " << nodes_searched << "\n\n";
+    search_finished_message(max_depth, nodes_searched);
     return best_move;
 }
 
@@ -208,7 +277,7 @@ long Search::sort_perft(unsigned int depth) {
 
     MoveList moves;
     board.generate_moves(moves);
-    board.assign_move_scores(moves);
+    board.assign_move_scores(moves, HashMove());
     n_moves = moves.size();
 
     MovePicker move_picker(moves);

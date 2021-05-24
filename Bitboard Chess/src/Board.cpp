@@ -1320,7 +1320,7 @@ void Board::unmake_move() {
 
 // MOVE ORDERING BEGIN
 
-void Board::assign_move_scores(MoveList& moves) {
+void Board::assign_move_scores(MoveList& moves, HashMove hash_move) {
     unsigned int score;
 
     // Score all the moves
@@ -1344,12 +1344,16 @@ void Board::assign_move_scores(MoveList& moves) {
          }
          */
         
+        if (hash_move == (*it)) {
+            score = 1000;
+        }
+        
         it->set_move_score(score);
     }
 }
 
 void Board::sort_moves(MoveList& moves) {
-    assign_move_scores(moves);
+    assign_move_scores(moves, HashMove());
 
     std::sort(moves.begin(), moves.end(), move_cmp);
 }

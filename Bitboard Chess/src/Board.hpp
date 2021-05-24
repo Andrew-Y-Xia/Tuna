@@ -105,7 +105,7 @@ public:
     void unmake_move();
     
 
-    void assign_move_scores(MoveList &moves);
+    void assign_move_scores(MoveList &moves, HashMove hash_move);
     
     // Move ordering:
     

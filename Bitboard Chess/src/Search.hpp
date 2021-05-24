@@ -33,9 +33,9 @@ public:
     
     Search(Board& b);
     
-    int negamax(unsigned int depth, int alpha, int beta);
-    Move find_best_move(unsigned int depth);
-    
+    int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root);
+    Move find_best_move(unsigned int max_depth, double max_time_ms);
+
     long perft(unsigned int depth);
     long sort_perft(unsigned int depth);
     
