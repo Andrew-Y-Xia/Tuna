@@ -12,7 +12,7 @@
 #include "depend.hpp"
 #include "Data_structs.hpp"
 
-#define TT_SIZE 16777216 // 2^24df
+#define TT_SIZE 16777216 // 2^24
 
 
 #define NODE_EXACT 0

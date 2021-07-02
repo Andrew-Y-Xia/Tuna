@@ -449,7 +449,7 @@ U64 Board::in_between_mask(int from_index, int to_index) {
 // MOVE GENERATION BEGIN
 
 
-void Board::generate_moves(MoveList& moves) {
+void Board::generate_moves(MoveList& moves, bool include_quiet) {
     U64 king_attackers, bishop_pinned, rook_pinned;
     int num_attackers;
     U64 block_masks = UniverseBoard;
@@ -465,7 +465,7 @@ void Board::generate_moves(MoveList& moves) {
     
     king_is_in_check = num_attackers >= 1;
     
-    generate_king_moves(moves, occ, friendly_pieces, king_index, num_attackers);
+    generate_king_moves(moves, occ, friendly_pieces, king_index, num_attackers, include_quiet);
     
     if (num_attackers == 1) {
         block_masks = calculate_block_masks(king_attackers);
@@ -479,19 +479,19 @@ void Board::generate_moves(MoveList& moves) {
     rook_pinned = calculate_rook_pins(pinners, occ, friendly_pieces);
 
     if (current_turn == 0) {
-        generate_pawn_movesW(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+        generate_pawn_movesW(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
     }
     else {
-        generate_pawn_movesB(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+        generate_pawn_movesB(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
     }
-    generate_knight_moves(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
-    generate_bishop_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
-    generate_rook_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
-    generate_queen_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+    generate_knight_moves(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned, include_quiet);
+    generate_bishop_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
+    generate_rook_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
+    generate_queen_moves(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
 }
 
 
-inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
+inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers, bool include_quiet) {
 
     U64 move_targets = king_paths[king_index] & ~friendly_pieces;
     
@@ -526,7 +526,7 @@ inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pi
 
 
 
-inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index, bool include_quiet) {
     
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
@@ -667,7 +667,7 @@ inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, 
     }
 }
 
-inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index, bool include_quiet) {
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
     if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
@@ -808,7 +808,7 @@ inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, 
 
 
 
-inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned) {
+inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned, bool include_quiet) {
     U64 knights = Bitboards[Knights] & friendly_pieces & ~rook_pinned & ~bishop_pinned; // Knights can't move at all when pinned
     
     if (knights) do {
@@ -824,7 +824,7 @@ inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks,
 }
 
 
-inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index, bool include_quiet) {
     U64 bishops = Bitboards[Bishops] & friendly_pieces & ~rook_pinned & ~bishop_pinned; // Bishops can't move when pinned by a rook
     U64 bishops_bishop_pinned = Bitboards[Bishops] & bishop_pinned;
     
@@ -855,7 +855,7 @@ inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks,
     } while (bishops_bishop_pinned &= bishops_bishop_pinned - 1);
 }
 
-inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index, bool include_quiet) {
     U64 rooks = Bitboards[Rooks] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 rooks_rook_pinned = Bitboards[Rooks] & rook_pinned;
     
@@ -887,7 +887,7 @@ inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U
     } while (rooks_rook_pinned &= rooks_rook_pinned - 1);
 }
 
-inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
+inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index, bool include_quiet) {
     U64 queens = Bitboards[Queens] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 queens_pinned = Bitboards[Queens] & (rook_pinned | bishop_pinned);
     

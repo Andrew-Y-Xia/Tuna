@@ -37,6 +37,8 @@ char num_to_char(int input) {
         case 7:
             c = 'h';
             break;
+        default:
+            c = '\0';
     }
     return c;
 }

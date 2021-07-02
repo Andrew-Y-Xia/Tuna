@@ -254,7 +254,6 @@ long Search::perft(unsigned int depth) {
 
     MoveList moves;
     board.generate_moves(moves);
-    n_moves = moves.size();
 
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {
@@ -278,7 +277,6 @@ long Search::sort_perft(unsigned int depth) {
     MoveList moves;
     board.generate_moves(moves);
     board.assign_move_scores(moves, HashMove());
-    n_moves = moves.size();
 
     MovePicker move_picker(moves);
     while (!move_picker.finished()) {
@@ -312,7 +310,6 @@ long Search::hash_perft(unsigned int depth) {
 
     MoveList moves;
     board.generate_moves(moves);
-    n_moves = moves.size();
 
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {

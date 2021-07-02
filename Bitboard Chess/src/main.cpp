@@ -275,7 +275,7 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("8/8/8/8/B6n/7p/6k1/4K3 w - - 0 1");
+    Board board("3Q4/8/8/8/8/5K2/6r1/7k w - - 0 1");
     board.set_texture_to_pieces();
     
     /*
