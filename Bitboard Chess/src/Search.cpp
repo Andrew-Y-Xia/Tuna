@@ -102,6 +102,19 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         int eval = board.static_eval();
         return eval;
     }
+    else if (depth >= 7) {
+        // Check if time is up
+        // If so, exit
+        std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - start_time;
+        if (ms_double.count() >= max_time_ms) {
+            // Reset board to original state
+            for (int i = ply_from_root; i != 0; i--) {
+                board.unmake_move();
+            }
+            // Throw error to escape
+            throw SearchTimeout();
+        }
+    }
      
     
     MoveList moves;
@@ -165,11 +178,13 @@ static void search_finished_message(int depth, unsigned int nodes_searched) {
     std::cout << "\nDepth searched: " << depth << "\n\n";
 }
 
-Move Search::find_best_move(unsigned int max_depth, double max_time_ms) {
+Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
+    board.hash();
+    max_time_ms = max_time_ms_input;
     type2collision = 0;
     nodes_searched = 0;
     
-    auto t1 = std::chrono::high_resolution_clock::now();
+    start_time = std::chrono::high_resolution_clock::now();
 
     Move best_move;
     
@@ -196,14 +211,18 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms) {
         MovePicker move_picker(moves);
         
         while (!move_picker.finished()) {
-            
+            int eval;
             
             
             auto it = ++move_picker;
             
             nodes_searched++;
             board.make_move(it);
-            int eval = -negamax(depth - 1, -MAXMATE, -maxEval, 1);
+            try {
+                eval = -negamax(depth - 1, -MAXMATE, -maxEval, 1);
+            } catch(SearchTimeout& e) {
+                return best_move;
+            }
             board.unmake_move();
     
 //            std::cout << "\nMove: ";
@@ -215,13 +234,6 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms) {
                 best_move = it;
             }
             
-            // Check if time is up
-            // If so, exit
-            std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - t1;
-            if (ms_double.count() >= max_time_ms) {
-                search_finished_message(depth - 1, nodes_searched);
-                return best_move;
-            }
         }
         
         
@@ -299,7 +311,7 @@ long Search::hash_perft(unsigned int depth) {
     
     if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() == depth) {
         if (tt_hit.sanity_check != board.tt_sanity_check()) {
-            ASDF;
+            std::cout << "Type 1 collision occured" << std::endl;
         }
 //        std::cout << tt_hit.sanity_check << ' ' << board.tt_sanity_check() << '\n';
         return tt_hit.score;

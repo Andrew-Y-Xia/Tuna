@@ -58,7 +58,6 @@ public:
     Board(std::string str);
     void read_FEN(std::string str);
     void standard_setup();
-    void extracted();
     
     void hash();
     void init_zobrist_key();
