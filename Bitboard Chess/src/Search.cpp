@@ -98,11 +98,11 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
     
     if (depth == 0) {
-//            return quiescence_search(alpha, beta);
-        int eval = board.static_eval();
-        return eval;
+        return quiescence_search(alpha, beta, ply_from_root + 1);
+//        int eval = board.static_eval();
+//        return eval;
     }
-    else if (depth >= 7) {
+    else if (depth >= 6) {
         // Check if time is up
         // If so, exit
         std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - start_time;
@@ -168,6 +168,42 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     // Write search data to transposition table
     store_pos_result(board, best_move, depth, node_type, alpha, ply_from_root);
 
+    return alpha;
+}
+
+
+int Search::quiescence_search(int alpha, int beta, unsigned int ply_from_root) {
+    int stand_pat = board.static_eval();
+    if (stand_pat >= beta) {
+        return beta;
+    }
+    if (alpha < stand_pat) {
+        alpha = stand_pat;
+    }
+    
+    MoveList moves;
+    board.generate_moves(moves, false);
+    
+    MovePicker move_picker(moves);
+
+    while (!move_picker.finished()) {
+        int eval;
+        auto it = ++move_picker;
+        
+        nodes_searched++;
+        board.make_move(it);
+        eval = -quiescence_search(-beta, -alpha, ply_from_root + 1);
+        board.unmake_move();
+        
+
+        if (eval >= beta) {
+            return beta;
+        }
+        if (eval > alpha) {
+            alpha = eval;
+        }
+    }
+    
     return alpha;
 }
 
