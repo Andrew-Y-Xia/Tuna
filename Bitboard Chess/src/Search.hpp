@@ -44,8 +44,8 @@ public:
 
     long perft(unsigned int depth);
     long sort_perft(unsigned int depth);
-    
     long hash_perft(unsigned int depth);
+    long capture_perft(unsigned int depth);
     
 };
 

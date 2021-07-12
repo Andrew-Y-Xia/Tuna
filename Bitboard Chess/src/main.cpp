@@ -281,7 +281,7 @@ int main() {
     /*
     Search s(board);
     auto t1 = std::chrono::high_resolution_clock::now();
-    int perft_score = s.hash_perft(5);
+    long perft_score = s.hash_perft(5);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms_double = t2 - t1;
     std::cout << perft_score;
@@ -422,7 +422,7 @@ int main() {
             
             Search search(board);
             auto t1 = std::chrono::high_resolution_clock::now();
-            Move new_move = search.find_best_move(64, 5000);
+            Move new_move = search.find_best_move(64, 50000);
             auto t2 = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::milli> ms_double = t2 - t1;
             

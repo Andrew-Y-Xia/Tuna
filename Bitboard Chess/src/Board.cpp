@@ -450,34 +450,47 @@ U64 Board::in_between_mask(int from_index, int to_index) {
 
 
 void Board::generate_moves(MoveList& moves, bool include_quiet) {
-    U64 king_attackers, bishop_pinned, rook_pinned;
-    int num_attackers;
-    U64 block_masks = UniverseBoard;
+    // Routine for generating moves
     
-    int pinners[8];
+    U64 king_attackers; // Holds opponent pieces attacking the king
+    U64 bishop_pinned, rook_pinned; // These hold the pieces pinned by the opponent. 'rook' and 'bishop' indicate the way they are pinned
+    int num_attackers; // Number of attackers attacking the king
+    U64 block_masks = UniverseBoard; // Holds which squares pieces must go to in order to nullify a check (capture attacker, block check if attacker is Q, B, or R.
     
-    U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces];
+    int pinners[8]; // Since the king can only be pinned from the eight directions, hold the index of the possible pinners in this array (use Directions enum to look up with)
+    
+    U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces]; // BB with all the occupied squares
     U64 friendly_pieces = Bitboards[current_turn];
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
     
-    king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ);
-    num_attackers = _mm_popcnt_u64(king_attackers);
+    king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ); // Find all king_attackers
+    num_attackers = _mm_popcnt_u64(king_attackers); // Count the number of attackers
     
+    // During the search it may be useful to know whether the player is under check
+    // Since we want to avoid a recaculation, we'd like to save the info
     king_is_in_check = num_attackers >= 1;
     
+    // Generate king moves first
     generate_king_moves(moves, occ, friendly_pieces, king_index, num_attackers, include_quiet);
     
     if (num_attackers == 1) {
+        // In the case of check, we'll need to calculate the block masks
         block_masks = calculate_block_masks(king_attackers);
     }
     else if (num_attackers > 1) {
+        // If num_attackers is 2, then we have a double attack
+        // This type of check is unblockable, which means the only way to get out of check is to move the king
+        // Since we've already generated the king's moves, we can safely exit generate_moves()
         return;
     }
     
     
+    // Calculate the pinned pieces
     bishop_pinned = calculate_bishop_pins(pinners, occ, friendly_pieces);
     rook_pinned = calculate_rook_pins(pinners, occ, friendly_pieces);
 
+    // There are two pawn move generators (depending on who's turn it is)
+    // This is done for efficiency reasons
     if (current_turn == 0) {
         generate_pawn_movesW(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
     }
@@ -492,36 +505,53 @@ void Board::generate_moves(MoveList& moves, bool include_quiet) {
 
 
 inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers, bool include_quiet) {
-
+    
+    // Castling section
+    
+    if (include_quiet) {
+        if (current_turn == 0) {
+            if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) && !is_attacked(2, occ)) {
+                moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
+            }
+    
+            if (white_can_castle_kingside && !num_attackers && !(C64(0x60) & occ) && !is_attacked(5, occ) && !is_attacked(6, occ)) {
+                moves.push_back(Move(4, 6, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
+            }
+        }
+        else {
+            if (black_can_castle_queenside && !num_attackers && !(C64(0xE00000000000000) & occ) && !is_attacked(59, occ) && !is_attacked(58, occ)) {
+                moves.push_back(Move(60, 58, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
+            }
+    
+            if (black_can_castle_kingside && !num_attackers && !(C64(0x6000000000000000) & occ) && !is_attacked(61, occ) && !is_attacked(62, occ)) {
+                moves.push_back(Move(60, 62, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
+            }
+        }
+    }
+    // Castling section end
+    
+    // Look up possible king moves and remove locations where there's a friendly piece (because you can't capture your own piece)
     U64 move_targets = king_paths[king_index] & ~friendly_pieces;
     
-    if (current_turn == 0) {
-        if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) && !is_attacked(2, occ)) {
-            moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
-        }
-    
-        if (white_can_castle_kingside && !num_attackers && !(C64(0x60) & occ) && !is_attacked(5, occ) && !is_attacked(6, occ)) {
-            moves.push_back(Move(4, 6, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
-        }
+    // If we only want captures, we'll intersect move_targets with the occupied squares
+    if (!include_quiet) {
+        move_targets &= occ;
     }
-    else {
-        if (black_can_castle_queenside && !num_attackers && !(C64(0xE00000000000000) & occ) && !is_attacked(59, occ) && !is_attacked(58, occ)) {
-            moves.push_back(Move(60, 58, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
-        }
     
-        if (black_can_castle_kingside && !num_attackers && !(C64(0x6000000000000000) & occ) && !is_attacked(61, occ) && !is_attacked(62, occ)) {
-            moves.push_back(Move(60, 62, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
-        }
-    }
-
+    // Given a rank in the chess board:
+    // R * * k * * * *
+    // is_attacked() will be tricked into thinking that the king is blocking the rightmost squares from being attacked
+    // In truth, the king cannot move to the right, so we must hide the king from is_attacked()
     U64 occ_without_friendly_king = occ ^ (C64(1) << king_index);
     
     if (move_targets) do {
         int to_index = bitscan_forward(move_targets);
+        
+        // King cannot move into check (see above for why occ_without_friendly_king is used instead of normal occ)
         if (!is_attacked(to_index, occ_without_friendly_king)) {
             moves.push_back(Move(king_index, to_index, MOVE_NORMAL, 0, PIECE_KING, find_piece_captured(to_index)));
         }
-    } while (move_targets &= move_targets - 1);
+    } while (move_targets &= move_targets - 1); // Remove the target we just processed from move_target
 }
 
 
@@ -578,37 +608,39 @@ inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, 
         
         
         // Quiet moves:
-        
-        // Add Northern rook pins (only type of pin that pawn_push can move in)
-        U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
-        
-        U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) & ~(occ);
-        U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
-                
-        pawn_regular_pushes &= block_check_masks;
-        pawn_double_pushes &= block_check_masks;
-        
-        U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
-        pawn_promotion_pushes &= block_check_masks;
-        
-        
-        if (pawn_regular_pushes) do {
-            int to_index = bitscan_forward(pawn_regular_pushes);
-            moves.push_back(Move(to_index-8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-        } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
-        
-        if (pawn_double_pushes) do {
-            int to_index = bitscan_forward(pawn_double_pushes);
-            moves.push_back(Move(to_index-16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-        } while (pawn_double_pushes &= pawn_double_pushes - 1);
-        
-        if (pawn_promotion_pushes) do {
-            int to_index = bitscan_forward(pawn_promotion_pushes);
-            moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
-            moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
-            moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
-            moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
-        } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+        if (include_quiet) {
+    
+            // Add Northern rook pins (only type of pin that pawn_push can move in)
+            U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
+    
+            U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) & ~(occ);
+            U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
+    
+            pawn_regular_pushes &= block_check_masks;
+            pawn_double_pushes &= block_check_masks;
+    
+            U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
+            pawn_promotion_pushes &= block_check_masks;
+    
+    
+            if (pawn_regular_pushes) do {
+                int to_index = bitscan_forward(pawn_regular_pushes);
+                moves.push_back(Move(to_index-8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+            } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
+    
+            if (pawn_double_pushes) do {
+                int to_index = bitscan_forward(pawn_double_pushes);
+                moves.push_back(Move(to_index-16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+            } while (pawn_double_pushes &= pawn_double_pushes - 1);
+    
+            if (pawn_promotion_pushes) do {
+                int to_index = bitscan_forward(pawn_promotion_pushes);
+                moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
+                moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
+                moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
+                moves.push_back(Move(to_index-8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
+            } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+        } // if (include_quiet)
     }
     
     // Pinned pawns are handled individually:
@@ -718,37 +750,38 @@ inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, 
         
         
         // Quiet moves:
-        
-        // Add Southern rook pins (only type of pin that pawn_push can move in)
-        U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
-        
-        U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~first_rank) & ~(occ);
-        U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(occ);
-        
-        pawn_regular_pushes &= block_check_masks;
-        pawn_double_pushes &= block_check_masks;
-        
-        U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(occ);
-        pawn_promotion_pushes &= block_check_masks;
-        
-        
-        if (pawn_regular_pushes) do {
-            int to_index = bitscan_forward(pawn_regular_pushes);
-            moves.push_back(Move(to_index+8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-        } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
-        
-        if (pawn_double_pushes) do {
-            int to_index = bitscan_forward(pawn_double_pushes);
-            moves.push_back(Move(to_index+16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-        } while (pawn_double_pushes &= pawn_double_pushes - 1);
-        
-        if (pawn_promotion_pushes) do {
-            int to_index = bitscan_forward(pawn_promotion_pushes);
-            moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
-            moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
-            moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
-            moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
-        } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+        if (include_quiet) {
+            // Add Southern rook pins (only type of pin that pawn_push can move in)
+            U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
+    
+            U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~first_rank) & ~(occ);
+            U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(occ);
+    
+            pawn_regular_pushes &= block_check_masks;
+            pawn_double_pushes &= block_check_masks;
+    
+            U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(occ);
+            pawn_promotion_pushes &= block_check_masks;
+    
+    
+            if (pawn_regular_pushes) do {
+                int to_index = bitscan_forward(pawn_regular_pushes);
+                moves.push_back(Move(to_index+8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+            } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
+    
+            if (pawn_double_pushes) do {
+                int to_index = bitscan_forward(pawn_double_pushes);
+                moves.push_back(Move(to_index+16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+            } while (pawn_double_pushes &= pawn_double_pushes - 1);
+    
+            if (pawn_promotion_pushes) do {
+                int to_index = bitscan_forward(pawn_promotion_pushes);
+                moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
+                moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
+                moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
+                moves.push_back(Move(to_index+8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
+            } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+        } // if (include_quiet)
     }
     
     // Pinned pawns are handled individually:
@@ -815,6 +848,11 @@ inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks,
         int from_index = bitscan_forward(knights);
         U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
         move_targets &= block_check_masks;
+        
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
+        
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
             moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_KNIGHT, find_piece_captured(to_index)));
@@ -834,6 +872,10 @@ inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks,
         move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
+        
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
             moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_BISHOP, find_piece_captured(to_index)));
@@ -846,6 +888,10 @@ inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks,
         U64 move_targets = bishop_attacks(from_index, occ);
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
+        
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
 
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
@@ -865,6 +911,9 @@ inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U
         move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
         
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
@@ -879,6 +928,10 @@ inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
 
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
+        
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
             moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_ROOK, find_piece_captured(to_index)));
@@ -897,6 +950,10 @@ inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, 
         move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
+        
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
             moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_QUEEN, find_piece_captured(to_index)));
@@ -909,6 +966,10 @@ inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, 
         U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
+        
+        if (!include_quiet) {
+            move_targets &= occ;
+        }
 
         if (move_targets) do {
             int to_index = bitscan_forward(move_targets);
@@ -922,7 +983,7 @@ inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, 
 // Legality section
 
 inline U64 Board::attacks_to(int index, U64 occ) {
-    // Important: this function does not factor in king attacks
+    // Important: this function ->does not<- factor in king attacks
     U64 enemy_pawns = Bitboards[Pawns] & Bitboards[!current_turn];
     U64 enemy_knights = Bitboards[Knights] & Bitboards[!current_turn];
     U64 enemy_bishops_queens = (Bitboards[Bishops] | Bitboards[Queens]) & Bitboards[!current_turn];

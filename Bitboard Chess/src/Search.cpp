@@ -221,6 +221,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
             try {
                 eval = -negamax(depth - 1, -MAXMATE, -maxEval, 1);
             } catch(SearchTimeout& e) {
+                search_finished_message(depth - 1, nodes_searched);
                 return best_move;
             }
             board.unmake_move();
@@ -302,6 +303,7 @@ long Search::sort_perft(unsigned int depth) {
     return nodes;
 }
 
+// TODO: add TT clear
 long Search::hash_perft(unsigned int depth) {
     if (depth == 0) {
         return 1;
@@ -336,3 +338,36 @@ long Search::hash_perft(unsigned int depth) {
     return nodes;
 }
 
+
+long Search::capture_perft(unsigned int depth) {
+    int captures = 0;
+    
+    if (depth == 0) {
+//        print_board();
+        return 1;
+    }
+    
+    long nodes = 0;
+    int n_moves = 0;
+
+    MoveList moves;
+    board.generate_moves(moves);
+    
+    MoveList capture_moves;
+    board.generate_moves(capture_moves, false);
+
+
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        board.make_move(*it);
+        nodes += capture_perft(depth - 1);
+        board.unmake_move();
+        
+        if (it->is_capture()) {
+            captures++;
+        }
+    }
+    
+    assert(captures == capture_moves.size());
+
+    return nodes;
+}
