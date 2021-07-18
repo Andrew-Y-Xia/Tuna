@@ -116,6 +116,8 @@ public:
     void print_piece_values();
     int static_eval();
     bool is_king_in_check();
+    bool has_repeated_once();
+    bool has_repeated_twice();
     
     
     // UI:

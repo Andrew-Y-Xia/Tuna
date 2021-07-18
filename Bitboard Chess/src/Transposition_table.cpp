@@ -54,13 +54,12 @@ TT_entry TT::get(U64 key) const {
     return *(hash_table + lower_key);
 }
 
-void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score, U64 sanity_check) {
+void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score) {
     U64 lower_key = key & C64(0xFFFFFF);
     (hash_table + lower_key)->key = key;
     (hash_table + lower_key)->hash_move = best_move;
     (hash_table + lower_key)->hash_move.set_depth(depth);
     (hash_table + lower_key)->hash_move.set_node_type(node_type);
     (hash_table + lower_key)->score = score;
-    (hash_table + lower_key)->sanity_check = sanity_check;
 }
 

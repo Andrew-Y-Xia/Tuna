@@ -46,4 +46,6 @@ typedef uint64_t U64;
 #define bitscan_forward(a) _tzcnt_u64(a)
 #define bitscan_reverse(a) (63 - _lzcnt_u64(a))
 
+#define pop_count(a) _mm_popcnt_u64(a)
+
 #endif /* depend_hpp */

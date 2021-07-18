@@ -37,7 +37,6 @@ struct TT_entry {
     HashMove hash_move;
     // No need to keep depth info because that's kept in move
     int score;
-    U64 sanity_check;
 };
 
 class TT {
@@ -48,7 +47,7 @@ public:
     TT();
     ~TT();
     TT_entry get(U64 key) const;
-    void set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score, U64 sanity_check);
+    void set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score);
     
 };
 

@@ -464,7 +464,7 @@ void Board::generate_moves(MoveList& moves, bool include_quiet) {
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
     
     king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ); // Find all king_attackers
-    num_attackers = _mm_popcnt_u64(king_attackers); // Count the number of attackers
+    num_attackers = pop_count(king_attackers); // Count the number of attackers
     
     // During the search it may be useful to know whether the player is under check
     // Since we want to avoid a recaculation, we'd like to save the info
@@ -1428,17 +1428,17 @@ void Board::sort_moves(MoveList& moves) {
 void Board::calculate_piece_values() {
     U64 white_pieces = Bitboards[WhitePieces];
     U64 black_pieces = Bitboards[BlackPieces];
-    piece_values[WhitePieces] =  PAWN_VALUE * _mm_popcnt_u64(Bitboards[Pawns] & white_pieces)
-                        + KNIGHT_VALUE * _mm_popcnt_u64(Bitboards[Knights] & white_pieces)
-                        + BISHOP_VALUE * _mm_popcnt_u64(Bitboards[Bishops] & white_pieces)
-                        + ROOK_VALUE * _mm_popcnt_u64(Bitboards[Rooks] & white_pieces)
-                        + QUEEN_VALUE * _mm_popcnt_u64(Bitboards[Queens] & white_pieces)
+    piece_values[WhitePieces] =  PAWN_VALUE * pop_count(Bitboards[Pawns] & white_pieces)
+                        + KNIGHT_VALUE * pop_count(Bitboards[Knights] & white_pieces)
+                        + BISHOP_VALUE * pop_count(Bitboards[Bishops] & white_pieces)
+                        + ROOK_VALUE * pop_count(Bitboards[Rooks] & white_pieces)
+                        + QUEEN_VALUE * pop_count(Bitboards[Queens] & white_pieces)
     ;
-    piece_values[BlackPieces] =  PAWN_VALUE * _mm_popcnt_u64(Bitboards[Pawns] & black_pieces)
-                        + KNIGHT_VALUE * _mm_popcnt_u64(Bitboards[Knights] & black_pieces)
-                        + BISHOP_VALUE * _mm_popcnt_u64(Bitboards[Bishops] & black_pieces)
-                        + ROOK_VALUE * _mm_popcnt_u64(Bitboards[Rooks] & black_pieces)
-                        + QUEEN_VALUE * _mm_popcnt_u64(Bitboards[Queens] & black_pieces)
+    piece_values[BlackPieces] =  PAWN_VALUE * pop_count(Bitboards[Pawns] & black_pieces)
+                        + KNIGHT_VALUE * pop_count(Bitboards[Knights] & black_pieces)
+                        + BISHOP_VALUE * pop_count(Bitboards[Bishops] & black_pieces)
+                        + ROOK_VALUE * pop_count(Bitboards[Rooks] & black_pieces)
+                        + QUEEN_VALUE * pop_count(Bitboards[Queens] & black_pieces)
     ;
 }
 
@@ -1459,6 +1459,49 @@ int Board::static_eval() {
 
 bool Board::is_king_in_check() {
     return king_is_in_check;
+}
+
+bool Board::has_repeated_once() {
+    // Checks for repetition
+    // TODO: optimize by only comparing z_key every 2 plies
+    
+    U64 z_key = get_z_key();
+    
+    for (auto it = move_stack.rbegin(); it != move_stack.rend(); ++it) {
+        if (it->z_key == z_key) {
+            return true;
+        }
+        if (it->move.is_capture() || it->move.get_special_flag() != MOVE_NORMAL || it->move.get_piece_moved() == PIECE_PAWN ||
+            it->white_can_castle_kingside != white_can_castle_kingside || it->white_can_castle_queenside != white_can_castle_queenside ||
+            it->black_can_castle_kingside != black_can_castle_kingside || it->black_can_castle_queenside != black_can_castle_queenside) {
+            return false;
+        }
+    }
+    return false;
+}
+
+bool Board::has_repeated_twice() {
+    // Checks for threefold repetition
+    // Can optimize by only comparing z_key every 2 plies instead, but this function shouldn't be used in perfomance critical areas
+    
+    
+    bool first_rep_flag = false;
+    U64 z_key = get_z_key();
+    
+    for (auto it = move_stack.rbegin(); it != move_stack.rend(); ++it) {
+        if (it->z_key == z_key) {
+            if (first_rep_flag) {
+                return true;
+            }
+            first_rep_flag = true;
+        }
+        if (it->move.is_capture() || it->move.get_special_flag() != MOVE_NORMAL || it->move.get_piece_moved() == PIECE_PAWN ||
+            it->white_can_castle_kingside != white_can_castle_kingside || it->white_can_castle_queenside != white_can_castle_queenside ||
+            it->black_can_castle_kingside != black_can_castle_kingside || it->black_can_castle_queenside != black_can_castle_queenside) {
+            return false;
+        }
+    }
+    return false;
 }
 
 

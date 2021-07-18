@@ -59,7 +59,7 @@ static void store_pos_result(Board &board, HashMove best_move, unsigned int dept
     else if (score <= -MINMATE) {
         score -= ply_from_root; // -(MAXMATE - (distance from this position to mate)
     }
-    board.tt.set(board.get_z_key(), best_move, depth, node_type, score, board.tt_sanity_check());
+    board.tt.set(board.get_z_key(), best_move, depth, node_type, score);
 }
 
 
@@ -69,9 +69,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     const TT_entry tt_hit = board.tt.get(board.get_z_key());
     
     if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() >= depth) {
-        if (tt_hit.sanity_check != board.tt_sanity_check()) {
-            std::cout << "Transposition table type 1 collision\n";
-        }
+//        if (tt_hit.sanity_check != board.tt_sanity_check()) {
+//            std::cout << "Transposition table type 1 collision\n";
+//        }
         
         int score = tt_hit.score;
         unsigned int node_type = tt_hit.hash_move.get_node_type();
@@ -129,6 +129,12 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             return 0;
         }
     }
+    
+    // Check for repetition
+    if (board.has_repeated_once()) {
+        return 0;
+    }
+    
     
 //    board.sort_moves(moves);
     if (tt_hit.key == board.get_z_key()) {
@@ -395,9 +401,9 @@ long Search::hash_perft(unsigned int depth) {
     TT_entry tt_hit = board.tt.get(board.get_z_key());
     
     if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() == depth) {
-        if (tt_hit.sanity_check != board.tt_sanity_check()) {
-            std::cout << "Type 1 collision occured" << std::endl;
-        }
+//        if (tt_hit.sanity_check != board.tt_sanity_check()) {
+//            std::cout << "Type 1 collision occured" << std::endl;
+//        }
 //        std::cout << tt_hit.sanity_check << ' ' << board.tt_sanity_check() << '\n';
         return tt_hit.score;
     }
@@ -416,7 +422,7 @@ long Search::hash_perft(unsigned int depth) {
     }
     
     // Write data to transposition table
-    board.tt.set(board.get_z_key(), Move(), depth, NODE_EXACT, nodes, board.tt_sanity_check());
+    board.tt.set(board.get_z_key(), Move(), depth, NODE_EXACT, nodes);
     
     return nodes;
 }
