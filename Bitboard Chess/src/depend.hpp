@@ -18,8 +18,6 @@
 #include <vector>
 #include <sparsehash/sparse_hash_map>
 #include <stdint.h>
-#include <nmmintrin.h>
-#include <immintrin.h>
 #include <random>
 
 #define WIDTH 1024
@@ -43,9 +41,9 @@
 #define C64(constantU64) constantU64##ULL
 typedef uint64_t U64;
 
-#define bitscan_forward(a) _tzcnt_u64(a)
-#define bitscan_reverse(a) (63 - _lzcnt_u64(a))
+#define bitscan_forward(a) __builtin_ctzll(a)
+#define bitscan_reverse(a) (63 - __builtin_clzll(a))
 
-#define pop_count(a) _mm_popcnt_u64(a)
+#define pop_count(a) __builtin_popcountll(a)
 
 #endif /* depend_hpp */
