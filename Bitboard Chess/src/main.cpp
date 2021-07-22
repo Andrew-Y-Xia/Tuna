@@ -10,6 +10,7 @@
 #include "Bitboard.hpp"
 #include "Evaluation.hpp"
 #include "Transposition_table.hpp"
+#include "Opening_book.hpp"
 
 
 sf::Texture textures[13];
@@ -228,6 +229,7 @@ int main() {
     
     init_bitboard_utils();
     init_eval_utils();
+    init_opening_book();
     
     
     int AI_turn = 0;
