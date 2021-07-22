@@ -17,44 +17,59 @@ U64 white_castle_queenside_bitstring, white_castle_kingside_bitstring, black_cas
 U64 en_passant_bitstrings[8];
 
 Board::Board() {
+    // Initializer if no starting FEN is given
+    // Defaults normal starting position
     read_FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     standard_setup();
 }
 
 Board::Board(std::string str) {
+    // Initializer
     read_FEN(str);
     standard_setup();
 }
 
 
 void Board::read_FEN(std::string str) {
+    // Takes in a FEN and sets up the board accordingly
+    // Function is ugly; is there a c++ equiv. of python's 'string.split()' ?
     
+    // First, clear all bitboards
     for (int i = WhitePieces; i <= Pawns; i++) {
         Bitboards[i] = EmptyBoard;
     }
     
+    // state_flag is track which section of the FEN we are currently processing
     int state_flag = 0;
 
+    // Holders for particular sections of the FEN
     std::string en_passant_square, halfmove_str, fullmove_str;
 
+    // It's easier to work in cordinates and then covert to 0-63 index
     int x = 0;
     int y = 0;
 
+    // Iterate through FEN string
     for (std::string::iterator it=str.begin(); it!=str.end(); ++it) {
+        // If there's a space, we must be moving on to next section
         if (*it == ' ') {
             state_flag += 1;
         }
         else if (state_flag == 0) {
+            // First section is the position of all the pieces
+            
+            // '/' indicates we're moving to the next row; therefore increment y and reset x
             if (*it == '/') {
                 x = 0;
                 y += 1;
-//                    std::cout << "y increment" << '\n';
             }
             else {
+                // Numbers indicate we need to skip forward (in the x-dir.) by that much
                 if (isdigit(*it)) {
                     int blanks = *it - '0';
                     x += blanks;
                 }
+                // Otherwise it'll be a piece that we need to assign on the bitboards
                 else {
                     if (isupper(*it)) {
                         // Set to white
@@ -88,11 +103,11 @@ void Board::read_FEN(std::string str) {
                             std::cout << "This should not have been reached. Invalid piece: " << (char) tolower(*it) <<'\n';
                     }
                     
-                    // std::cout << squares[y][x].piece << '\n';
                     x++;
                 }
             }
         }
+        // Check who's turn it is
         else if (state_flag == 1) {
             if (*it == 'w') {
                 current_turn = 0;
@@ -101,6 +116,7 @@ void Board::read_FEN(std::string str) {
                 current_turn = 1;
             }
         }
+        // Check the castling rights
         else if (state_flag == 2) {
             if (*it == '-') {
                 white_can_castle_queenside = false;
@@ -121,6 +137,7 @@ void Board::read_FEN(std::string str) {
                 black_can_castle_queenside = true;
             }
         }
+        // For the rest of the sections, add them to corresponding strings to process later
         else if (state_flag == 3) {
             en_passant_square.append(1, *it);
         }
@@ -131,14 +148,15 @@ void Board::read_FEN(std::string str) {
             fullmove_str.append(1, *it);
         }
         else {
-            std::cout << "This state should not have been reached. ReadLEN Error occured." << '\n';
+            std::cout << "This state should not have been reached. ReadFEN Error occured." << '\n';
         }
     }
 
-
+    // Process counter strings
     halfmove_counter = std::stoi(halfmove_str);
     fullmove_counter = std::stoi(fullmove_str);
 
+    // Process En Passant string
     if (en_passant_square[0] != '-') {
         switch (en_passant_square[0]) {
             case 'a':
@@ -178,20 +196,26 @@ void Board::read_FEN(std::string str) {
 }
 
 void Board::standard_setup() {
+//     Called during initialization
     calculate_piece_values();
     init_zobrist_key();
 }
 
 void Board::hash() {
-    // Only use for init_zobrist_key
+    // Hashes current position into a U64
+    // Stores hash in z_key
+    // ONLY CALL AFTER 'init_zorbist_key()' has been called
+    // Supposedly only used during 'init_zobrist_key()' because the z_key is incrementally updated during make/unmake routines
+    
+    // Clear hash
     z_key = C64(0);
     
-    
+    // Apply xor for turn
     if (current_turn == 1) {
         z_key ^= black_to_move_bitstring;
     }
     
-    
+    // Apply xor for castling rights
     if (white_can_castle_queenside) {
         z_key ^= white_castle_queenside_bitstring;
     }
@@ -209,15 +233,13 @@ void Board::hash() {
     U64 b_p = Bitboards[BlackPieces];
     
     
+    // Iterate through the pieces and xor their positions accordingly
     for (int i = Kings; i <= Pawns; i++) {
         U64 pieces = Bitboards[i] & w_p;
-//        std::cout << "Piece: " << i << '\n';
-//        print_BB(pieces); std::cout << '\n';
-        
+
         if (pieces) do {
             int index = bitscan_forward(pieces);
             z_key ^= piece_bitstrings[index][WhitePieces][i - 2];
-            assert(i-2 <= 5);
         } while (pieces &= pieces - 1);
     }
     
@@ -230,7 +252,7 @@ void Board::hash() {
         } while (pieces &= pieces - 1);
     }
     
-    
+    // Hash en_passant_square
     if (en_passant_square != -1) {
         // Find the en_passant file
         U64 southrays = rays[South][en_passant_square];
@@ -240,13 +262,14 @@ void Board::hash() {
 }
 
 void Board::init_zobrist_key() {
-    /* Seed */
+    // Initializes bitstrings used for zobrist hashing
+    
 //    std::random_device rd;
-
-    /* Random number generator */
+    
+    // Random number generator
     std::default_random_engine generator(42);
 
-    /* Distribution on which to apply the generator */
+    // Distribution on which to apply the generator (uniform, from 0 to 2^64 - 1)
     std::uniform_int_distribution<U64> distribution(0,0xFFFFFFFFFFFFFFFF);
 
     for (int i = 0; i < 64; i++) {
@@ -279,6 +302,9 @@ bool Board::get_current_turn() {
 }
 
 void Board::print_board() {
+    // Debug routine
+    // Prints all the bitboards
+    
     std::cout << "\n\n\n\nWhitePieces:\n";
     print_BB(Bitboards[WhitePieces]);
     std::cout << "\n\nBlackPieces:\n";
@@ -304,8 +330,11 @@ void Board::print_z_key() {
 
 
 unsigned int Board::find_piece_occupying_sq(int index) {
+    // Finds what piece occupies a square
+    // This sort of lookup is inherently slow for bitboards
     
     /*
+    // Branchless version
     U64 bit = C64(1) << index;
     return PIECE_QUEEN * ((Bitboards[Queens] & bit) != 0) + PIECE_ROOK * ((Bitboards[Rooks] & bit) != 0) + PIECE_BISHOP * ((Bitboards[Bishops] & bit) != 0) + PIECE_KNIGHT * ((Bitboards[Knights] & bit) != 0) + PIECE_PAWN * ((Bitboards[Pawns] & bit) != 0);
     */
@@ -340,9 +369,10 @@ unsigned int Board::find_piece_occupying_sq(int index) {
 
 
 unsigned int Board::find_piece_captured(int index) {
+    // Similar routine to the above
     // This function does not check if the capture is illegal, make sure to &~friendly_pieces beforehand.
     // Also, it doesn't check king captures
-    
+
     /*
     U64 bit = C64(1) << index;
     return PIECE_QUEEN * ((Bitboards[Queens] & bit) != 0) + PIECE_ROOK * ((Bitboards[Rooks] & bit) != 0) + PIECE_BISHOP * ((Bitboards[Bishops] & bit) != 0) + PIECE_KNIGHT * ((Bitboards[Knights] & bit) != 0) + PIECE_PAWN * ((Bitboards[Pawns] & bit) != 0);
@@ -373,6 +403,7 @@ unsigned int Board::find_piece_captured(int index) {
 }
 
 unsigned int Board::find_piece_captured_without_occ(int index) {
+    // Same as above, but assumes that at least some piece will be captured
     // This function does not check if the capture is illegal, make sure to &~friendly_pieces beforehand.
     // Also, it doesn't check king captures
     
@@ -404,6 +435,7 @@ unsigned int Board::find_piece_captured_without_occ(int index) {
 
 
 U64 Board::get_positive_ray_attacks(int from_square, Directions dir, U64 occ) {
+    // Gets ray attacks in directions North, NorthEast, NorthWest, East
     U64 attacks = rays[dir][from_square];
     U64 blockers = attacks & occ;
     int blocker = bitscan_forward(blockers | C64(0x8000000000000000));
@@ -411,6 +443,7 @@ U64 Board::get_positive_ray_attacks(int from_square, Directions dir, U64 occ) {
 }
 
 U64 Board::get_negative_ray_attacks(int from_square, Directions dir, U64 occ) {
+    // Gets ray attacks in directions West, SouthWest, South, SouthEast
     U64 attacks = rays[dir][from_square];
     U64 blockers = attacks & occ;
     int blocker = bitscan_reverse(blockers | C64(1));
@@ -418,20 +451,24 @@ U64 Board::get_negative_ray_attacks(int from_square, Directions dir, U64 occ) {
 }
 
 U64 Board::bishop_attacks(int from_index, U64 occ) {
+    // Combines appropriate ray attacks for diagonal attacks
     return get_positive_ray_attacks(from_index, NorthEast, occ) | get_positive_ray_attacks(from_index, NorthWest, occ) | get_negative_ray_attacks(from_index, SouthEast, occ) | get_negative_ray_attacks(from_index, SouthWest, occ);
 }
 
 U64 Board::rook_attacks(int from_index, U64 occ) {
+    // Combines appropiate ray attacks for rank-and-file attacks
     return get_positive_ray_attacks(from_index, North, occ) | get_positive_ray_attacks(from_index, East, occ) | get_negative_ray_attacks(from_index, South, occ) | get_negative_ray_attacks(from_index, West, occ);
 }
 
 U64 Board::xray_bishop_attacks(int from_index, U64 occ, U64 blockers) {
+    // xray routines for diagonals
     U64 attacks = bishop_attacks(from_index, occ);
     blockers &= attacks;
     return attacks ^ bishop_attacks(from_index, occ ^ blockers);
 }
 
 U64 Board::xray_rook_attacks(int from_index, U64 occ, U64 blockers) {
+    // xray routines for rank-and-file
     U64 attacks = rook_attacks(from_index, occ);
     blockers &= attacks;
     return attacks ^ rook_attacks(from_index, occ ^ blockers);
@@ -439,7 +476,9 @@ U64 Board::xray_rook_attacks(int from_index, U64 occ, U64 blockers) {
 
 
 U64 Board::in_between_mask(int from_index, int to_index) {
-    // Includes the to_index
+    // Returns bitboard with squares between the two indices set
+    // The to_index is also set
+    // You'll get nonsense answers if from_index and to_index cannot be connected by a ray
     Directions dir = direction_between[from_index][to_index];
     U64 ray_from = rays[dir][from_index];
     U64 ray_to = rays[dir][to_index];
@@ -451,6 +490,7 @@ U64 Board::in_between_mask(int from_index, int to_index) {
 
 void Board::generate_moves(MoveList& moves, bool include_quiet) {
     // Routine for generating moves
+    // Include_quiet is true by default, switch to false for captures only
     
     U64 king_attackers; // Holds opponent pieces attacking the king
     U64 bishop_pinned, rook_pinned; // These hold the pieces pinned by the opponent. 'rook' and 'bishop' indicate the way they are pinned
@@ -558,13 +598,16 @@ inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pi
 
 inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index, bool include_quiet) {
     
+    // First handle pawns that are not pinned
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
     if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
+        // Generate pawn attacks and pushes for all pawns at the same time
+        
         // East attacks:
         U64 east_attacks = ((pawns << 9) & ~a_file) & Bitboards[BlackPieces];
         east_attacks &= block_check_masks;
-        // filter out promotions
+        // seperate out promotions
         U64 east_promotion_attacks = east_attacks & eighth_rank;
         U64 east_regular_attacks = east_attacks & ~eighth_rank;
         
@@ -612,8 +655,10 @@ inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, 
     
             // Add Northern rook pins (only type of pin that pawn_push can move in)
             U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
-    
+            
+            // Shift all pawns up and exclude squares that are already occupied
             U64 pawn_regular_pushes = (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) & ~(occ);
+            // Push up pawns that can single push and are on the second rank and are not pushing into an occupied square
             U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
     
             pawn_regular_pushes &= block_check_masks;
@@ -622,7 +667,7 @@ inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, 
             U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
             pawn_promotion_pushes &= block_check_masks;
     
-    
+            // Serialize into moves
             if (pawn_regular_pushes) do {
                 int to_index = bitscan_forward(pawn_regular_pushes);
                 moves.push_back(Move(to_index-8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
@@ -1414,6 +1459,7 @@ void Board::assign_move_scores(MoveList& moves, HashMove hash_move) {
 }
 
 void Board::sort_moves(MoveList& moves) {
+    // Deprecated
     assign_move_scores(moves, HashMove());
 
     std::sort(moves.begin(), moves.end(), move_cmp);
@@ -1426,6 +1472,7 @@ void Board::sort_moves(MoveList& moves) {
 // EVALUATION BEGIN
 
 void Board::calculate_piece_values() {
+    // Should only be called during init; piece values updated incrementally
     U64 white_pieces = Bitboards[WhitePieces];
     U64 black_pieces = Bitboards[BlackPieces];
     piece_values[WhitePieces] =  PAWN_VALUE * pop_count(Bitboards[Pawns] & white_pieces)
@@ -1448,6 +1495,7 @@ void Board::print_piece_values() {
 }
 
 int Board::static_eval() {
+    // Returns eval in the eyes of current turn
     int eval = 0;
 
     eval += piece_values[WhitePieces] - piece_values[BlackPieces];
@@ -1458,6 +1506,7 @@ int Board::static_eval() {
 }
 
 bool Board::is_king_in_check() {
+    // Made only to be called in Search.negamax()
     return king_is_in_check;
 }
 
