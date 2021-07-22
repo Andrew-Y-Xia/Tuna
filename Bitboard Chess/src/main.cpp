@@ -229,8 +229,9 @@ int main() {
     
     init_bitboard_utils();
     init_eval_utils();
-    init_opening_book();
     
+    TT tt;
+    OpeningBook opening_book;
     
     int AI_turn = 0;
     int PvP = 0;
@@ -423,7 +424,7 @@ int main() {
             if (AI_turn == board.get_current_turn() && frame_counter > 2) {
                 // Now, do the AI's move
     
-                Search search(board);
+                Search search(board, tt, opening_book);
                 auto t1 = std::chrono::high_resolution_clock::now();
                 Move new_move = search.find_best_move(64, 5000);
                 auto t2 = std::chrono::high_resolution_clock::now();

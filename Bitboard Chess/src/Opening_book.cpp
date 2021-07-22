@@ -8,15 +8,22 @@
 
 #include "Opening_book.hpp"
 
-void init_opening_book() {
-    
-    
+
+OpeningBook::OpeningBook() {
+    // Loads opening book into memory
     std::string line;
-    std::ifstream myfile (resourcePath() + "opening_book.txt");
-    if (myfile.is_open()) {
-        while (std::getline(myfile, line)) {
-            std::cout << line << '\n';
+    std::ifstream file (resourcePath() + "opening_book.txt");
+    if (file.is_open()) {
+        // 5000 is the number of lines in opening_book.txt
+        // Every line is a game (PGN format)
+        opening_lines.reserve(5000);
+        
+        while (std::getline(file, line)) {
+            opening_lines.push_back(line);
         }
-    myfile.close();
+        file.close();
+    }
+    else {
+        std::cout << "Opening book failed to init";
     }
 }

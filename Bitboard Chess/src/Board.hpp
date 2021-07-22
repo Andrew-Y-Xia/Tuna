@@ -52,8 +52,6 @@ private:
     U64 z_key;
     
 public:
-    TT tt;
-    
     Board();
     Board(std::string str);
     void read_FEN(std::string str);

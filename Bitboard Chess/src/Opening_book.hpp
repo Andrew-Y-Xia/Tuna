@@ -12,7 +12,14 @@
 #include "depend.hpp"
 #include "ResourcePath.hpp"
 
-void init_opening_book();
+
+
+class OpeningBook {
+private:
+    std::vector<std::string> opening_lines;
+public:
+    OpeningBook();
+};
 
 
 #endif /* Opening_book_hpp */

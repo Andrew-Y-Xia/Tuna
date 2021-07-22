@@ -49,24 +49,24 @@ inline Move MovePicker::operator++() {
 
 
 
-Search::Search(Board& b) : board(b) {}
+Search::Search(Board b, TT& t, OpeningBook ob) : board(b), tt(t), opening_book(ob) {}
 
 
-static void store_pos_result(Board &board, HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root) {
+void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root) {
     if (score >= MINMATE) {
         score += ply_from_root; // MAXMATE - (distance from this position to mate)
     }
     else if (score <= -MINMATE) {
         score -= ply_from_root; // -(MAXMATE - (distance from this position to mate)
     }
-    board.tt.set(board.get_z_key(), best_move, depth, node_type, score);
+    tt.set(board.get_z_key(), best_move, depth, node_type, score);
 }
 
 
 
 int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root) {
     // Check for hits on the TT
-    const TT_entry tt_hit = board.tt.get(board.get_z_key());
+    const TT_entry tt_hit = tt.get(board.get_z_key());
     
     if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() >= depth) {
 //        if (tt_hit.sanity_check != board.tt_sanity_check()) {
@@ -160,7 +160,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         
         
         if (eval >= beta) {
-            store_pos_result(board, best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
+            store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             return beta;
         }
         if (eval > alpha) {
@@ -172,7 +172,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     
     
     // Write search data to transposition table
-    store_pos_result(board, best_move, depth, node_type, alpha, ply_from_root);
+    store_pos_result(best_move, depth, node_type, alpha, ply_from_root);
 
     return alpha;
 }
@@ -243,7 +243,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     
     int depth;
     for (depth = 1; depth <= max_depth; depth++) {
-        TT_entry tt_hit = board.tt.get(board.get_z_key());
+        TT_entry tt_hit = tt.get(board.get_z_key());
     
         if (tt_hit.key == board.get_z_key()) {
             board.assign_move_scores(moves, tt_hit.hash_move);
@@ -331,7 +331,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     
         HashMove h_best_move;
         h_best_move = best_move;
-        store_pos_result(board, h_best_move, depth, NODE_EXACT, max_eval, 0);
+        store_pos_result(h_best_move, depth, NODE_EXACT, max_eval, 0);
         
         if (max_eval >= MINMATE && MAXMATE - max_eval <= depth) {
             search_finished_message(depth, nodes_searched);
@@ -398,7 +398,7 @@ long Search::hash_perft(unsigned int depth) {
         return 1;
     }
     
-    TT_entry tt_hit = board.tt.get(board.get_z_key());
+    TT_entry tt_hit = tt.get(board.get_z_key());
     
     if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() == depth) {
 //        if (tt_hit.sanity_check != board.tt_sanity_check()) {
@@ -422,7 +422,7 @@ long Search::hash_perft(unsigned int depth) {
     }
     
     // Write data to transposition table
-    board.tt.set(board.get_z_key(), Move(), depth, NODE_EXACT, nodes);
+    tt.set(board.get_z_key(), Move(), depth, NODE_EXACT, nodes);
     
     return nodes;
 }
