@@ -11,14 +11,18 @@
 
 #include "depend.hpp"
 #include "ResourcePath.hpp"
+#include "Data_structs.hpp"
 
 
 
 class OpeningBook {
 private:
     std::vector<std::string> opening_lines;
+    bool use_book;
 public:
     OpeningBook();
+    bool can_use_book();
+    Move request(std::vector<Move> move_stack);
 };
 
 

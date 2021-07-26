@@ -20,6 +20,10 @@ template <typename T> int sgn(T val) {
 
 char num_to_char(int input);
 
+int char_to_num(char input);
+
+unsigned int piece_char_to_piece(char input);
+
 int cords_to_index(int x, int y);
 
 Cords index_to_cords(int index);
@@ -29,6 +33,8 @@ void print_cords(Cords c);
 bool is_within_bounds(int x, int y);
 
 void print_move(Move move, bool reg = false);
+
+unsigned int txt_square_to_index(std::string str);
 
 
 namespace converter {

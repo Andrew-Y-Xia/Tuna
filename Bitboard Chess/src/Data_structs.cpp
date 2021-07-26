@@ -109,6 +109,14 @@ bool Move::is_capture() {
     return move_data & (0x7 << 19);
 }
 
+bool Move::is_illegal() {
+    return get_piece_moved() == PIECE_EXTRA;
+}
+
+void Move::set_as_illegal() {
+    set_piece_moved(PIECE_EXTRA);
+}
+
 
 MoveList::MoveList() {
     back_index = 0;
@@ -129,6 +137,15 @@ Move* MoveList::end() {
 
 int MoveList::size() {
     return back_index;
+}
+
+bool MoveList::contains(Move move) {
+    for (auto it = begin(); it != end(); ++it) {
+        if (*it == move) {
+            return true;
+        }
+    }
+    return false;
 }
 
 Move& MoveList::operator[] (int index) {

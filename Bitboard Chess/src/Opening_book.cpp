@@ -10,6 +10,8 @@
 
 
 OpeningBook::OpeningBook() {
+    use_book = true;
+    
     // Loads opening book into memory
     std::string line;
     std::ifstream file (resourcePath() + "opening_book.txt");
@@ -26,4 +28,12 @@ OpeningBook::OpeningBook() {
     else {
         std::cout << "Opening book failed to init";
     }
+}
+
+bool OpeningBook::can_use_book() {
+    return use_book;
+}
+
+Move OpeningBook::request(std::vector<Move> move_stack) {
+    std::string pgn;
 }

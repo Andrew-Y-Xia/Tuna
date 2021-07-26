@@ -34,14 +34,15 @@ class Search {
 private:
     Board board;
     TT& tt;
-    OpeningBook opening_book;
+    OpeningBook& opening_book;
     
+
     unsigned int nodes_searched;
     std::chrono::time_point<std::__1::chrono::steady_clock, std::chrono::duration<long long, std::ratio<1LL, 1000000000LL>>> start_time;
     double max_time_ms;
 public:
     
-    Search(Board b, TT& t, OpeningBook ob);
+    Search(Board b, TT& t, OpeningBook& ob);
     
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root);
     

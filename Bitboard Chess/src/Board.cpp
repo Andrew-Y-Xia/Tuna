@@ -195,6 +195,162 @@ void Board::read_FEN(std::string str) {
     }
 }
 
+Move Board::read_SAN(std::string str) {
+    // Reads Standard Algebraic Notation
+    // Checks for legality of move
+    Move move;
+    unsigned long str_last_index = str.length() - 1;
+    
+    unsigned int piece_moved;
+    int from_index, to_index;
+    
+    U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces];
+    MoveList moves;
+    generate_moves(moves);
+    
+    if (str[0] == 'O') {
+        int addon = 0;
+        if (current_turn == 0) {
+            from_index = 4;
+            addon = 0;
+        }
+        else {
+            from_index = 60;
+            addon = 56;
+        }
+        if (str == "O-O") {
+            move = Move(from_index, 6 + addon, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE);
+        }
+        else {
+            assert(str == "O-O-O");
+            move = Move(from_index, 2 + addon, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE);
+        }
+    }
+    
+    // Non-pawn move
+    else if (isupper(str[0]) && isalpha(str[0])) {
+        piece_moved = piece_char_to_piece(str[0]);
+        to_index = txt_square_to_index(str.substr(str_last_index - 1, 2));
+        
+        U64 target;
+        
+        switch (piece_moved) {
+            case PIECE_KING: {
+                target = Bitboards[current_turn] & Bitboards[Kings];
+                break;
+            }
+            case PIECE_QUEEN: {
+                target = Bitboards[current_turn] & Bitboards[Queens] & bishop_attacks(to_index, occ) & rook_attacks(to_index, occ);
+                break;
+            }
+            case PIECE_ROOK: {
+                target = Bitboards[current_turn] & Bitboards[Rooks] & rook_attacks(to_index, occ);
+                break;
+            }
+            case PIECE_BISHOP: {
+                target = Bitboards[current_turn] & Bitboards[Bishops] & bishop_attacks(to_index, occ);
+                break;
+            }
+            case PIECE_KNIGHT: {
+                target = Bitboards[current_turn] & Bitboards[Knights] & knight_paths[to_index];
+                break;
+            }
+            default:
+                target = C64(0);
+                std::cout << "read_SAN should not have been reached";
+        }
+        
+        assert(target);
+        
+        if (pop_count(target) >= 2) {
+            // Ambiguous case; check if file, rank, or square is used
+            int from_sqr_count = 7;
+            if (str[str_last_index - 2] == 'x') {
+                from_sqr_count--;
+            }
+            
+            if (str.length() == from_sqr_count) {
+                from_index = txt_square_to_index(str.substr(1, 2));
+            }
+            else {
+                if (isdigit(str[1])) {
+                    from_index = bitscan_forward((first_rank << (8*((str[1] - '0') - 1))) & target);
+                }
+                else {
+                    from_index = bitscan_forward((a_file << char_to_num(str[1])) & target);
+                }
+            }
+        }
+        else {
+            from_index = bitscan_forward(target);
+        }
+        
+        move = Move(from_index, to_index, MOVE_NORMAL, 0, piece_moved, find_piece_captured(to_index));
+    }
+    
+    // Pawn captures
+    else if (str[1] == 'x') {
+        unsigned int promotion_piece = 0;
+        unsigned int move_type = MOVE_NORMAL;
+        
+        to_index = txt_square_to_index(str.substr(2, 2));
+        
+        U64 target = Bitboards[current_turn] & Bitboards[Pawns] & pawn_attacks[!current_turn][to_index];
+        
+        assert(target);
+        
+        if (isdigit(str[0])) {
+            from_index = bitscan_forward((first_rank << (8*((str[0] - '0') - 1))) & target);
+        }
+        else {
+            from_index = bitscan_forward((a_file << char_to_num(str[0])) & target);
+        }
+        
+        unsigned int piece_captured = find_piece_captured(to_index);
+        
+        if (str[str_last_index - 1] == '=') {
+            promotion_piece = piece_char_to_piece(str[str_last_index]) - 3;
+            move_type = MOVE_PROMOTION;
+        }
+        else if (piece_captured == PIECE_NONE) {
+            move_type = MOVE_ENPASSANT;
+            piece_captured = PIECE_PAWN;
+        }
+        
+        
+        move = Move(from_index, to_index, move_type, promotion_piece, PIECE_PAWN, piece_captured);
+    }
+    
+    // Pawn pushes
+    else {
+        unsigned int promotion_piece = 0;
+        unsigned int move_type = MOVE_NORMAL;
+        
+        to_index = txt_square_to_index(str.substr(0, 2));
+        
+        U64 target;
+        
+        if (current_turn == 0) {
+            target = get_negative_ray_attacks(to_index, South, occ);
+        }
+        else {
+            target = get_positive_ray_attacks(to_index, North, occ);
+        }
+        
+        from_index = bitscan_forward(target);
+        
+        if (str[str_last_index - 1] == '=') {
+            promotion_piece = piece_char_to_piece(str[str_last_index]) - 3;
+            move_type = MOVE_PROMOTION;
+        }
+        
+        move = Move(from_index, to_index, move_type, promotion_piece, PIECE_PAWN, PIECE_NONE);
+    }
+    
+    assert(moves.contains(move));
+    return move;
+}
+
 void Board::standard_setup() {
 //     Called during initialization
     calculate_piece_values();
@@ -1577,7 +1733,7 @@ Move Board::request_move(Move move) {
             }
         }
     }
-    move.set_piece_moved(PIECE_EXTRA);
+    move.set_as_illegal();
     return move;
 }
 
@@ -1638,4 +1794,8 @@ void Board::set_texture_to_pieces() {
 
 U64 Board::get_z_key() {
     return z_key;
+}
+
+std::vector<move_data> Board::get_move_stack() {
+    return move_stack;
 }

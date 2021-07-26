@@ -55,6 +55,7 @@ public:
     Board();
     Board(std::string str);
     void read_FEN(std::string str);
+    Move read_SAN(std::string str);
     void standard_setup();
     
     void hash();
@@ -124,10 +125,9 @@ public:
     
     void set_texture_to_pieces();
     
+    // Produce info
     U64 get_z_key();
-    U64 tt_sanity_check() {
-        return Bitboards[0] | Bitboards[1];
-    }
+    std::vector<move_data> get_move_stack();
 };
 
 

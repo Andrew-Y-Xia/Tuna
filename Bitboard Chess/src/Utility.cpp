@@ -43,6 +43,67 @@ char num_to_char(int input) {
     return c;
 }
 
+int char_to_num(char input) {
+    int x = 0;
+    switch (input) {
+        case 'a':
+            x = 0;
+            break;
+        case 'b':
+            x = 1;
+            break;
+        case 'c':
+            x = 2;
+            break;
+        case 'd':
+            x = 3;
+            break;
+        case 'e':
+            x = 4;
+            break;
+        case 'f':
+            x = 5;
+            break;
+        case 'g':
+            x = 6;
+            break;
+        case 'h':
+            x = 7;
+            break;
+        default:
+            std::cout << "Should not have been reached. char_to_num";
+    }
+    return x;
+}
+
+unsigned int piece_char_to_piece(char input) {
+    input = tolower(input);
+    switch (input) {
+        case 'k':
+            return PIECE_KING;
+        case 'q':
+            return PIECE_QUEEN;
+        case 'r':
+            return PIECE_ROOK;
+        case 'b':
+            return PIECE_BISHOP;
+        case 'n':
+            return PIECE_KNIGHT;
+        case 'p':
+            return PIECE_PAWN;
+        default:
+            std::cout << "Piece is invalid\n";            
+            return 0;
+    }
+}
+
+unsigned int txt_square_to_index(std::string str) {
+    int x = char_to_num(str[0]);
+    int y = 8 - (str[1] - '0');
+    
+    return cords_to_index(x, y);
+}
+
 
 int cords_to_index(int x, int y) {
     return 8*(7-y) + x;

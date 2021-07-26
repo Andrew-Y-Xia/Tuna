@@ -101,7 +101,7 @@ protected:
     
 public:
     Move();
-    Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
+    Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece_or_castle_type, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
     
     unsigned int get_raw_data() const;
     void set_raw_data(unsigned int data);
@@ -132,6 +132,9 @@ public:
     
     bool is_capture();
     
+    bool is_illegal();
+    void set_as_illegal();
+    
     bool first_twelfth_eq(Move& a);
 
 };
@@ -149,6 +152,8 @@ public:
     Move* end();
     
     int size();
+    
+    bool contains(Move move);
     
     Move& operator[] (int index);
 };

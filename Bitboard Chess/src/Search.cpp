@@ -49,7 +49,7 @@ inline Move MovePicker::operator++() {
 
 
 
-Search::Search(Board b, TT& t, OpeningBook ob) : board(b), tt(t), opening_book(ob) {}
+Search::Search(Board b, TT& t, OpeningBook& ob) : board(b), tt(t), opening_book(ob) {}
 
 
 void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root) {
