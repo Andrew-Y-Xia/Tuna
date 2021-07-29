@@ -198,13 +198,26 @@ void Board::read_FEN(std::string str) {
 Move Board::read_SAN(std::string str) {
     // Reads Standard Algebraic Notation
     // Checks for legality of move
+    
+    // Check if there's a check or checkmate marker
+    // If there is, remove it
+    if (str.back() == '#' || str.back() == '+') {
+        str.pop_back();
+    }
+
     Move move;
     unsigned long str_last_index = str.length() - 1;
     
     unsigned int piece_moved;
     int from_index, to_index;
     
+    int pinners[8];
+    
+    int king_index = bitscan_forward(Bitboards[current_turn] & Bitboards[Kings]);
     U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces];
+    U64 bishop_pinned = calculate_bishop_pins(pinners, occ, Bitboards[current_turn]);
+    U64 rook_pinned = calculate_rook_pins(pinners, occ, Bitboards[current_turn]);
+    
     MoveList moves;
     generate_moves(moves);
     
@@ -240,19 +253,44 @@ Move Board::read_SAN(std::string str) {
                 break;
             }
             case PIECE_QUEEN: {
-                target = Bitboards[current_turn] & Bitboards[Queens] & bishop_attacks(to_index, occ) & rook_attacks(to_index, occ);
+                target = Bitboards[current_turn] & Bitboards[Queens] & (bishop_attacks(to_index, occ) | rook_attacks(to_index, occ));
+                
+                U64 queens_pinned = target & (rook_pinned | bishop_pinned);
+                if (queens_pinned) do {
+                    int queen_index = bitscan_forward(queens_pinned);
+                    if (!((C64(1) << to_index) & in_between_mask(king_index, *(pinners + direction_between[king_index][queen_index])))) {
+                        target &= ~(C64(1) << queen_index);
+                    }
+                } while (queens_pinned &= queens_pinned - 1);
+                
                 break;
             }
             case PIECE_ROOK: {
-                target = Bitboards[current_turn] & Bitboards[Rooks] & rook_attacks(to_index, occ);
+                target = Bitboards[current_turn] & Bitboards[Rooks] & rook_attacks(to_index, occ) & ~bishop_pinned;
+                // Check rook pins
+                U64 rooks_rook_pinned = target & rook_pinned;
+                if (rooks_rook_pinned) do {
+                    int rook_index = bitscan_forward(rooks_rook_pinned);
+                    if (!((C64(1) << to_index) & in_between_mask(king_index, *(pinners + direction_between[king_index][rook_index])))) {
+                        target &= ~(C64(1) << rook_index);
+                    }
+                } while (rooks_rook_pinned &= rooks_rook_pinned - 1);
                 break;
             }
             case PIECE_BISHOP: {
-                target = Bitboards[current_turn] & Bitboards[Bishops] & bishop_attacks(to_index, occ);
+                target = Bitboards[current_turn] & Bitboards[Bishops] & bishop_attacks(to_index, occ) & ~rook_pinned;
+                
+                U64 bishops_bishop_pinned = target & bishop_pinned;
+                if (bishops_bishop_pinned) do {
+                    int bishop_index = bitscan_forward(bishops_bishop_pinned);
+                    if (!((C64(1) << to_index) & in_between_mask(king_index, *(pinners + direction_between[king_index][bishop_index])))) {
+                        target &= ~(C64(1) << bishop_index);
+                    }
+                } while (bishops_bishop_pinned &= bishops_bishop_pinned - 1);
                 break;
             }
             case PIECE_KNIGHT: {
-                target = Bitboards[current_turn] & Bitboards[Knights] & knight_paths[to_index];
+                target = Bitboards[current_turn] & Bitboards[Knights] & knight_paths[to_index] & ~bishop_pinned & ~rook_pinned;
                 break;
             }
             default:
@@ -261,7 +299,7 @@ Move Board::read_SAN(std::string str) {
         }
         
         assert(target);
-        
+
         if (pop_count(target) >= 2) {
             // Ambiguous case; check if file, rank, or square is used
             int from_sqr_count = 7;
@@ -332,12 +370,13 @@ Move Board::read_SAN(std::string str) {
         
         if (current_turn == 0) {
             target = get_negative_ray_attacks(to_index, South, occ);
+            from_index = bitscan_forward(target);
         }
         else {
             target = get_positive_ray_attacks(to_index, North, occ);
+            from_index = bitscan_reverse(target);
         }
         
-        from_index = bitscan_forward(target);
         
         if (str[str_last_index - 1] == '=') {
             promotion_piece = piece_char_to_piece(str[str_last_index]) - 3;

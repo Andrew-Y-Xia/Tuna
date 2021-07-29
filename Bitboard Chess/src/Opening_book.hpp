@@ -12,17 +12,23 @@
 #include "depend.hpp"
 #include "ResourcePath.hpp"
 #include "Data_structs.hpp"
+#include "Board.hpp"
+
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 
 
 
 class OpeningBook {
 private:
-    std::vector<std::string> opening_lines;
+    std::vector<std::vector<Move>> opening_lines;
     bool use_book;
 public:
     OpeningBook();
     bool can_use_book();
-    Move request(std::vector<Move> move_stack);
+    Move request(std::vector<move_data> move_stack);
+    void reset();
 };
 
 

@@ -231,6 +231,14 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     nodes_searched = 0;
     
     start_time = std::chrono::high_resolution_clock::now();
+    
+    // Check opening_book
+    if (opening_book.can_use_book()) {
+        Move book_move = opening_book.request(board.get_move_stack());
+        if (!book_move.is_illegal()) {
+            return book_move;
+        }
+    }
 
     Move best_move; // Best verified move
     int max_eval; // Best verified score
