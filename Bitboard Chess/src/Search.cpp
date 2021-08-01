@@ -360,7 +360,6 @@ long Search::perft(unsigned int depth) {
     }
     
     long nodes = 0;
-    int n_moves = 0;
 
     MoveList moves;
     board.generate_moves(moves);
@@ -382,7 +381,6 @@ long Search::sort_perft(unsigned int depth) {
     }
     
     long nodes = 0;
-    int n_moves = 0;
 
     MoveList moves;
     board.generate_moves(moves);
@@ -417,7 +415,6 @@ long Search::hash_perft(unsigned int depth) {
     }
 
     long nodes = 0;
-    int n_moves = 0;
 
     MoveList moves;
     board.generate_moves(moves);
@@ -430,7 +427,7 @@ long Search::hash_perft(unsigned int depth) {
     }
     
     // Write data to transposition table
-    tt.set(board.get_z_key(), Move(), depth, NODE_EXACT, nodes);
+    tt.set(board.get_z_key(), Move(), depth, NODE_EXACT, (int) nodes);
     
     return nodes;
 }
@@ -445,7 +442,6 @@ long Search::capture_perft(unsigned int depth) {
     }
     
     long nodes = 0;
-    int n_moves = 0;
 
     MoveList moves;
     board.generate_moves(moves);

@@ -39,6 +39,9 @@
 #define EmptyBoard    0x0000000000000000##ULL
 #define UniverseBoard 0xffffffffffffffff##ULL
 
+#define WHITE 0
+#define BLACK 1
+
 #define C64(constantU64) constantU64##ULL
 typedef uint64_t U64;
 

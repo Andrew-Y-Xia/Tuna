@@ -158,8 +158,9 @@ void set_single_promotion_texture(int color, int i, sf::Sprite& sprite) {
             piece = old::Knight;
             break;
         default:
+            piece = old::King;
             std::cout << "Should not have been reached. " << std::endl;
-            break;
+            abort();
     }
     set_single_texture(color, piece, sprite);
 }
@@ -367,7 +368,7 @@ int main() {
                             if (!trying_to_promote) {
     
                                 int castle_side_value, en_passant_side_value;
-                                if (board.get_current_turn() == 1) {
+                                if (board.get_current_turn() == BLACK) {
                                     en_passant_side_value = 4;
                                     castle_side_value = 0;
                                 }
@@ -440,7 +441,7 @@ int main() {
                 normal_move_sprite_handler(best_move, AI_sprite);
     
                 int castle_side_value, en_passant_side_value;
-                if (board.get_current_turn() == 1) {
+                if (board.get_current_turn() == BLACK) {
                     en_passant_side_value = 4;
                     castle_side_value = 0;
                 }
@@ -479,7 +480,9 @@ int main() {
                                 promote_num = 0;
                                 break;
                             default:
+                                promote_num = 0;
                                 std::cout << "Should not have been reached ai promotion handler";
+                                abort();
                         }
                         set_single_promotion_texture(board.get_current_turn(), promote_num, *sprite);
                     }

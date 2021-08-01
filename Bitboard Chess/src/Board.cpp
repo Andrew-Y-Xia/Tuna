@@ -110,10 +110,10 @@ void Board::read_FEN(std::string str) {
         // Check who's turn it is
         else if (state_flag == 1) {
             if (*it == 'w') {
-                current_turn = 0;
+                current_turn = WHITE;
             }
             else {
-                current_turn = 1;
+                current_turn = BLACK;
             }
         }
         // Check the castling rights
@@ -223,7 +223,7 @@ Move Board::read_SAN(std::string str) {
     
     if (str[0] == 'O') {
         int addon = 0;
-        if (current_turn == 0) {
+        if (current_turn == WHITE) {
             from_index = 4;
             addon = 0;
         }
@@ -368,7 +368,7 @@ Move Board::read_SAN(std::string str) {
         
         U64 target;
         
-        if (current_turn == 0) {
+        if (current_turn == WHITE) {
             target = get_negative_ray_attacks(to_index, South, occ);
             from_index = bitscan_forward(target);
         }
@@ -406,7 +406,7 @@ void Board::hash() {
     z_key = C64(0);
     
     // Apply xor for turn
-    if (current_turn == 1) {
+    if (current_turn == BLACK) {
         z_key ^= black_to_move_bitstring;
     }
     
@@ -726,7 +726,7 @@ void Board::generate_moves(MoveList& moves, bool include_quiet) {
 
     // There are two pawn move generators (depending on who's turn it is)
     // This is done for efficiency reasons
-    if (current_turn == 0) {
+    if (current_turn == WHITE) {
         generate_pawn_movesW(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index, include_quiet);
     }
     else {
@@ -744,7 +744,7 @@ inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pi
     // Castling section
     
     if (include_quiet) {
-        if (current_turn == 0) {
+        if (current_turn == WHITE) {
             if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) && !is_attacked(2, occ)) {
                 moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
             }
@@ -1349,7 +1349,7 @@ void Board::make_move(Move move) {
                 rook_from_index = 0;
                 rook_to_index = 3;
             }
-            if (current_turn == 1) {
+            if (current_turn == BLACK) {
                 rook_from_index += 56;
                 rook_to_index += 56;
             }
@@ -1365,7 +1365,7 @@ void Board::make_move(Move move) {
         case MOVE_ENPASSANT: {
             U64 delete_square;
             int delete_index;
-            if (current_turn == 0) {
+            if (current_turn == WHITE) {
                 delete_index = move_to_index - 8;
                 delete_square = C64(1) << (delete_index);
             }
@@ -1408,7 +1408,7 @@ void Board::make_move(Move move) {
     }
     
     if (move.get_piece_moved() == PIECE_PAWN && abs(move_from_index - move_to_index) == 16) {
-        if (current_turn == 0) {
+        if (current_turn == WHITE) {
             en_passant_square = move_to_index - 8;
         }
         else {
@@ -1484,7 +1484,7 @@ void Board::make_move(Move move) {
 
     // Check if king moves
     if (move.get_piece_moved() == PIECE_KING) {
-        if (current_turn == 1) {
+        if (current_turn == BLACK) {
             if (black_can_castle_queenside) {
                 black_can_castle_queenside = false;
                 z_key ^= black_castle_queenside_bitstring;
@@ -1572,7 +1572,7 @@ void Board::unmake_move() {
                 rook_from_index = 0;
                 rook_to_index = 3;
             }
-            if (current_turn == 1) {
+            if (current_turn == BLACK) {
                 rook_from_index += 56;
                 rook_to_index += 56;
             }
@@ -1585,7 +1585,7 @@ void Board::unmake_move() {
         case MOVE_ENPASSANT: {
             U64 delete_square;
             int delete_index;
-            if (current_turn == 0) {
+            if (current_turn == WHITE) {
                 delete_index = move_to_index - 8;
                 delete_square = C64(1) << (delete_index);
             }
@@ -1783,7 +1783,7 @@ bool Board::is_trying_to_promote(Move move) {
     MoveList moves;
     generate_moves(moves);
     
-    if (current_turn == 0) {
+    if (current_turn == WHITE) {
         for (auto it = moves.begin(); it != moves.end(); ++it) {
             if (it->first_twelfth_eq(move) && move.get_to() >= 56) {
                 return true;
