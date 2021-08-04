@@ -19,13 +19,20 @@ U64 en_passant_bitstrings[8];
 Board::Board() {
     // Initializer if no starting FEN is given
     // Defaults normal starting position
-    read_FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    read_FEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");    
+    reg_starting_pos = true;
     standard_setup();
 }
 
 Board::Board(std::string str) {
     // Initializer
     read_FEN(str);
+    if (str == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
+        reg_starting_pos = true;
+    }
+    else {
+        reg_starting_pos = false;
+    }
     standard_setup();
 }
 
@@ -393,6 +400,7 @@ Move Board::read_SAN(std::string str) {
 void Board::standard_setup() {
 //     Called during initialization
     calculate_piece_values();
+    calculate_piece_square_values();
     init_zobrist_key();
 }
 
@@ -1322,6 +1330,9 @@ void Board::make_move(Move move) {
         
         // Update zobrist key for capture
         z_key ^= piece_bitstrings[move_to_index][!current_turn][move.get_piece_captured() - 2]; // Must -2 because pieces start at third index, not first
+        // Take away piece square value for captured piece
+        piece_square_values_m[!current_turn] -= lookup_ps_table_m(move_to_index, move.get_piece_captured(), !current_turn);
+        piece_square_values_e[!current_turn] -= lookup_ps_table_e(move_to_index, move.get_piece_captured(), !current_turn);
     }
     // Flip the occupacy of the from square and to square
     Bitboards[current_turn] ^= from_bb | to_bb;
@@ -1330,6 +1341,13 @@ void Board::make_move(Move move) {
     // Update zobrist keys
     z_key ^= piece_bitstrings[move_from_index][current_turn][move.get_piece_moved() - 2];
     z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_piece_moved() - 2];
+    
+    
+    piece_square_values_m[current_turn] -= lookup_ps_table_m(move_from_index, move.get_piece_moved(), current_turn);
+    piece_square_values_e[current_turn] -= lookup_ps_table_e(move_from_index, move.get_piece_moved(), current_turn);
+    
+    piece_square_values_m[current_turn] += lookup_ps_table_m(move_to_index, move.get_piece_moved(), current_turn);
+    piece_square_values_e[current_turn] += lookup_ps_table_e(move_to_index, move.get_piece_moved(), current_turn);
     
     
     // Special move handling now:
@@ -1360,6 +1378,12 @@ void Board::make_move(Move move) {
             // Update zobrist key
             z_key ^= piece_bitstrings[rook_from_index][current_turn][PIECE_ROOK - 2];
             z_key ^= piece_bitstrings[rook_to_index][current_turn][PIECE_ROOK - 2];
+            
+            piece_square_values_m[current_turn] -= lookup_ps_table_m(rook_from_index, PIECE_ROOK, current_turn);
+            piece_square_values_e[current_turn] -= lookup_ps_table_e(rook_from_index, PIECE_ROOK, current_turn);
+            
+            piece_square_values_m[current_turn] += lookup_ps_table_m(rook_to_index, PIECE_ROOK, current_turn);
+            piece_square_values_e[current_turn] += lookup_ps_table_e(rook_to_index, PIECE_ROOK, current_turn);
             break;
         }
         case MOVE_ENPASSANT: {
@@ -1382,6 +1406,10 @@ void Board::make_move(Move move) {
             // Update zobrist key
             z_key ^= piece_bitstrings[delete_index][!current_turn][PIECE_PAWN - 2];
             
+            // Take away piece square value for captured piece
+            piece_square_values_m[!current_turn] -= lookup_ps_table_m(delete_index, PIECE_PAWN, !current_turn);
+            piece_square_values_e[!current_turn] -= lookup_ps_table_e(delete_index, PIECE_PAWN, !current_turn);
+            
             break;
         }
         case MOVE_PROMOTION: {
@@ -1394,6 +1422,13 @@ void Board::make_move(Move move) {
             // Update zobrist key
             z_key ^= piece_bitstrings[move_to_index][current_turn][PIECE_PAWN - 2];
             z_key ^= piece_bitstrings[move_to_index][current_turn][move.get_promote_to() + 1]; // Check move encoding to see why +1
+            
+            // Take away piece square value for captured piece
+            piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, PIECE_PAWN, current_turn);
+            piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, PIECE_PAWN, current_turn);
+            
+            piece_square_values_m[current_turn] += lookup_ps_table_m(move_to_index, move.get_promote_to() + 3, current_turn);
+            piece_square_values_e[current_turn] += lookup_ps_table_e(move_to_index, move.get_promote_to() + 3, current_turn);
             break;
         }
     }
@@ -1545,6 +1580,9 @@ void Board::unmake_move() {
         
         // Add back the piece values for the captured piece
         piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
+        
+        piece_square_values_m[!current_turn] += lookup_ps_table_m(move_to_index, move.get_piece_captured(), !current_turn);
+        piece_square_values_e[!current_turn] += lookup_ps_table_e(move_to_index, move.get_piece_captured(), !current_turn);
     }
     
 
@@ -1552,6 +1590,12 @@ void Board::unmake_move() {
     // Flip the occupacy of the from square and to square
     Bitboards[current_turn] ^= from_bb | to_bb;
     Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
+    
+    piece_square_values_m[current_turn] += lookup_ps_table_m(move_from_index, move.get_piece_moved(), current_turn);
+    piece_square_values_e[current_turn] += lookup_ps_table_e(move_from_index, move.get_piece_moved(), current_turn);
+    
+    piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, move.get_piece_moved(), current_turn);
+    piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, move.get_piece_moved(), current_turn);
     
 
     
@@ -1580,6 +1624,12 @@ void Board::unmake_move() {
             Bitboards[current_turn] ^= rook_bits;
             Bitboards[Rooks] ^= rook_bits;
             
+            piece_square_values_m[current_turn] += lookup_ps_table_m(rook_from_index, PIECE_ROOK, current_turn);
+            piece_square_values_e[current_turn] += lookup_ps_table_e(rook_from_index, PIECE_ROOK, current_turn);
+            
+            piece_square_values_m[current_turn] -= lookup_ps_table_m(rook_to_index, PIECE_ROOK, current_turn);
+            piece_square_values_e[current_turn] -= lookup_ps_table_e(rook_to_index, PIECE_ROOK, current_turn);
+            
             break;
         }
         case MOVE_ENPASSANT: {
@@ -1599,6 +1649,9 @@ void Board::unmake_move() {
             // Take away the piece values for the side that pieces were captured
             piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
             
+            // Take away piece square value for captured piece
+            piece_square_values_m[!current_turn] += lookup_ps_table_m(delete_index, PIECE_PAWN, !current_turn);
+            piece_square_values_e[!current_turn] += lookup_ps_table_e(delete_index, PIECE_PAWN, !current_turn);
             break;
         }
         case MOVE_PROMOTION: {
@@ -1608,6 +1661,12 @@ void Board::unmake_move() {
             // Change the piece_values score accordingly
             piece_values[current_turn] -= piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
             
+            // Take away piece square value for captured piece
+            piece_square_values_m[current_turn] += lookup_ps_table_m(move_to_index, PIECE_PAWN, current_turn);
+            piece_square_values_e[current_turn] += lookup_ps_table_e(move_to_index, PIECE_PAWN, current_turn);
+            
+            piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, move.get_promote_to() + 3, current_turn);
+            piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, move.get_promote_to() + 3, current_turn);
             break;
         }
     }
@@ -1689,12 +1748,55 @@ void Board::print_piece_values() {
     std::cout << "\nBlack Piece Values: " << piece_values[BlackPieces] << '\n';
 }
 
+void Board::calculate_piece_square_values() {
+    piece_square_values_m[WHITE] = 0;
+    piece_square_values_e[WHITE] = 0;
+    piece_square_values_m[BLACK] = 0;
+    piece_square_values_e[BLACK] = 0;
+    
+    U64 w_p = Bitboards[WhitePieces];
+    U64 b_p = Bitboards[BlackPieces];
+    
+    
+    // Iterate through pieces and calculate piece_square_values
+    for (int i = Kings; i <= Pawns; i++) {
+        U64 pieces = Bitboards[i] & w_p;
+
+        if (pieces) do {
+            int index = bitscan_forward(pieces);
+            piece_square_values_m[WHITE] += lookup_ps_table_m(index, i, WHITE);
+            piece_square_values_e[WHITE] += lookup_ps_table_e(index, i, WHITE);
+        } while (pieces &= pieces - 1);
+    }
+    
+    for (int i = Kings; i <= Pawns; i++) {
+        U64 pieces = Bitboards[i] & b_p;
+        
+        if (pieces) do {
+            int index = bitscan_forward(pieces);
+            piece_square_values_m[BLACK] += lookup_ps_table_m(index, i, BLACK);
+            piece_square_values_e[BLACK] += lookup_ps_table_e(index, i, BLACK);
+        } while (pieces &= pieces - 1);
+    }
+}
+
+void Board::print_piece_square_values() {
+    std::cout << "White midgame ps values: " << piece_square_values_m[WHITE] << "\nWhite endgame ps values: " << piece_square_values_e[WHITE] << "\nBlack midgame ps values: " << piece_square_values_m[BLACK] << "\nBlack endgame ps values: " << piece_square_values_e[BLACK] << '\n';
+}
+
 int Board::static_eval() {
     // Returns eval in the eyes of current turn
+    // TODO: tapered eval
     int eval = 0;
 
-    eval += piece_values[WhitePieces] - piece_values[BlackPieces];
+    eval += piece_values[WHITE] - piece_values[BLACK];
+    
+    int midgame_score = 0;
+    midgame_score += piece_square_values_m[WHITE] - piece_square_values_m[BLACK];
+    int endgame_score = 0;
+    endgame_score += piece_square_values_e[WHITE] - piece_square_values_e[BLACK];
 
+    eval += midgame_score;
 
     eval *= current_turn == 0 ? 1 : -1;
     return eval;
@@ -1837,4 +1939,8 @@ U64 Board::get_z_key() {
 
 std::vector<move_data> Board::get_move_stack() {
     return move_stack;
+}
+
+bool Board::get_reg_starting_pos() {
+    return reg_starting_pos;
 }

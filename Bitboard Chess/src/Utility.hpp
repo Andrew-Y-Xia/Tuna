@@ -17,6 +17,8 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
+unsigned int flip_index_v(unsigned int i);
+
 
 char num_to_char(int input);
 

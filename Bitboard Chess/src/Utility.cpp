@@ -9,6 +9,9 @@
 #include "Utility.hpp"
 
 
+unsigned int flip_index_v(unsigned int i) {
+    return i ^ 56;
+}
 
 char num_to_char(int input) {
     char c;

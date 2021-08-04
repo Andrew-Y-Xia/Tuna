@@ -27,6 +27,7 @@ private:
 public:
     OpeningBook();
     bool can_use_book();
+    void set_use_book(bool b);
     Move request(std::vector<move_data> move_stack);
     void reset();
 };

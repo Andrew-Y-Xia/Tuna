@@ -44,10 +44,15 @@ private:
     // Incrementally updated move values
     int piece_values[2];
     
+    int piece_square_values_m[2];
+    int piece_square_values_e[2];
+    
     // This flag is not guaranteed to be correct! Guaranteed to be correct only after calling generate_moves()
     bool king_is_in_check;
     
     std::vector<move_data> move_stack;
+    
+    bool reg_starting_pos;
     
     U64 z_key;
     
@@ -113,6 +118,9 @@ public:
     
     void calculate_piece_values();
     void print_piece_values();
+    void calculate_piece_square_values();
+    void print_piece_square_values();
+    
     int static_eval();
     bool is_king_in_check();
     bool has_repeated_once();
@@ -128,6 +136,7 @@ public:
     // Produce info
     U64 get_z_key();
     std::vector<move_data> get_move_stack();
+    bool get_reg_starting_pos();
 };
 
 

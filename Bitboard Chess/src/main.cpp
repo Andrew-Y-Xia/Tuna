@@ -284,15 +284,16 @@ int main() {
     board.set_texture_to_pieces();
     
     /*
-    Search s(board);
+    Search s(board, tt, opening_book);
     auto t1 = std::chrono::high_resolution_clock::now();
-    long perft_score = s.hash_perft(5);
+    long perft_score = s.perft(5);
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> ms_double = t2 - t1;
     std::cout << perft_score;
     
     std::cout << "\nTime: " << ms_double.count() << "ms\n";
      */
+    
 
     
     // run the program as long as the window is open

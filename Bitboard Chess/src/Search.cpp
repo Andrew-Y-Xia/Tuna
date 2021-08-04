@@ -233,7 +233,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     start_time = std::chrono::high_resolution_clock::now();
     
     // Check opening_book
-    if (opening_book.can_use_book()) {
+    if (opening_book.can_use_book() && board.get_reg_starting_pos()) {
         Move book_move = opening_book.request(board.get_move_stack());
         if (!book_move.is_illegal()) {
             return book_move;
