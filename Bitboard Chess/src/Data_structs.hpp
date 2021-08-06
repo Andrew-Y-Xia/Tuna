@@ -43,7 +43,7 @@ enum Directions {
     SouthWest,
     West,
     NorthWest
-};
+} __attribute__ ((__packed__));
 
 
 struct Cords {
