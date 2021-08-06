@@ -638,56 +638,6 @@ unsigned int Board::find_piece_captured_without_occ(int index) {
 }
 
 
-U64 Board::get_positive_ray_attacks(int from_square, Directions dir, U64 occ) {
-    // Gets ray attacks in directions North, NorthEast, NorthWest, East
-    U64 attacks = rays[dir][from_square];
-    U64 blockers = attacks & occ;
-    int blocker = bitscan_forward(blockers | C64(0x8000000000000000));
-    return attacks ^ rays[dir][blocker];
-}
-
-U64 Board::get_negative_ray_attacks(int from_square, Directions dir, U64 occ) {
-    // Gets ray attacks in directions West, SouthWest, South, SouthEast
-    U64 attacks = rays[dir][from_square];
-    U64 blockers = attacks & occ;
-    int blocker = bitscan_reverse(blockers | C64(1));
-    return attacks ^ rays[dir][blocker];
-}
-
-U64 Board::bishop_attacks(int from_index, U64 occ) {
-    // Combines appropriate ray attacks for diagonal attacks
-    return get_positive_ray_attacks(from_index, NorthEast, occ) | get_positive_ray_attacks(from_index, NorthWest, occ) | get_negative_ray_attacks(from_index, SouthEast, occ) | get_negative_ray_attacks(from_index, SouthWest, occ);
-}
-
-U64 Board::rook_attacks(int from_index, U64 occ) {
-    // Combines appropiate ray attacks for rank-and-file attacks
-    return get_positive_ray_attacks(from_index, North, occ) | get_positive_ray_attacks(from_index, East, occ) | get_negative_ray_attacks(from_index, South, occ) | get_negative_ray_attacks(from_index, West, occ);
-}
-
-U64 Board::xray_bishop_attacks(int from_index, U64 occ, U64 blockers) {
-    // xray routines for diagonals
-    U64 attacks = bishop_attacks(from_index, occ);
-    blockers &= attacks;
-    return attacks ^ bishop_attacks(from_index, occ ^ blockers);
-}
-
-U64 Board::xray_rook_attacks(int from_index, U64 occ, U64 blockers) {
-    // xray routines for rank-and-file
-    U64 attacks = rook_attacks(from_index, occ);
-    blockers &= attacks;
-    return attacks ^ rook_attacks(from_index, occ ^ blockers);
-}
-
-
-U64 Board::in_between_mask(int from_index, int to_index) {
-    // Returns bitboard with squares between the two indices set
-    // The to_index is also set
-    // You'll get nonsense answers if from_index and to_index cannot be connected by a ray
-    Directions dir = direction_between[from_index][to_index];
-    U64 ray_from = rays[dir][from_index];
-    U64 ray_to = rays[dir][to_index];
-    return ray_from ^ ray_to;
-}
 
 // MOVE GENERATION BEGIN
 

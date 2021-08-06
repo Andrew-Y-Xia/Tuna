@@ -14,6 +14,9 @@ U64 knight_paths[64];
 U64 pawn_attacks[2][64];
 Directions direction_between[64][64];
 
+U64 rook_rays[64];
+U64 bishop_rays[64];
+
 
 
 U64 eastOne (U64 b) {return (b << 1) & ~a_file;}
@@ -162,6 +165,38 @@ void init_rays() {
         for (int r8 = 0; r8 < 64; r8 += 8, we <<= 8) {
             rays[West][r8+f] = we;
         }
+    }
+    
+    
+    // Init rook_rays and bishop_rays
+    
+    for (int sq = 0; sq < 64; sq++) {
+        U64 edge1, edge2, edge3, edge4;
+        U64 r_rays = rays[North][sq] | rays[East][sq] | rays[South][sq] | rays[West][sq];
+        U64 sq_BB = C64(1) << sq;
+        
+        edge1 = sq_BB & a_file ? C64(0) : a_file;
+        edge2 = sq_BB & h_file ? C64(0) : h_file;
+        edge3 = sq_BB & first_rank ? C64(0) : first_rank;
+        edge4 = sq_BB & eighth_rank ? C64(0) : eighth_rank;
+        
+        r_rays &= ~(edge1 | edge2 | edge3 | edge4);
+        
+        rook_rays[sq] = r_rays;
+    }
+    
+    for (int sq = 0; sq < 64; sq++) {
+        U64 edge1, edge2, edge3, edge4;
+        U64 b_rays = rays[NorthEast][sq] | rays[SouthEast][sq] | rays[SouthWest][sq] | rays[NorthWest][sq];
+
+        edge1 = a_file;
+        edge2 = h_file;
+        edge3 = first_rank;
+        edge4 = eighth_rank;
+        
+        b_rays &= ~(edge1 | edge2 | edge3 | edge4);
+        
+        bishop_rays[sq] = b_rays;
     }
 }
 

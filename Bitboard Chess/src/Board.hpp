@@ -16,6 +16,7 @@
 #include "Utility.hpp"
 #include "Evaluation.hpp"
 #include "Transposition_table.hpp"
+#include "Ray_gen.hpp"
 
 void set_single_texture(int color, old::piece_type piece, sf::Sprite& sprite);
 
@@ -76,16 +77,6 @@ public:
     unsigned int find_piece_occupying_sq(int index);
     unsigned int find_piece_captured(int index);
     unsigned int find_piece_captured_without_occ(int index);
-    
-    U64 get_positive_ray_attacks(int from_square, Directions dir, U64 occ);
-    U64 get_negative_ray_attacks(int from_square, Directions dir, U64 occ);
-    
-    U64 bishop_attacks(int from_index, U64 occ);
-    U64 rook_attacks(int from_index, U64 occ);
-    U64 xray_bishop_attacks(int from_index, U64 occ, U64 blockers);
-    U64 xray_rook_attacks(int from_index, U64 occ, U64 blockers);
-    
-    U64 in_between_mask(int from_index, int to_index);
     
     // Move generation:
     void generate_moves(MoveList& moves, bool include_quiet = true);

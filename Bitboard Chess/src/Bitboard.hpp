@@ -19,6 +19,9 @@ extern U64 knight_paths[64];
 extern U64 pawn_attacks[2][64];
 extern Directions direction_between[64][64];
 
+extern U64 rook_rays[64];
+extern U64 bishop_rays[64];
+
 U64 eastOne (U64 b);
 U64 noEaOne (U64 b);
 U64 soEaOne (U64 b);

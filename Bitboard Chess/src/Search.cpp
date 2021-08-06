@@ -274,6 +274,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
             
             int local_max_eval = expected_eval - lower_bound; // Best score for this search
             Move local_best_move; // Best move for this search
+//            std::cout << "Windows: ("  << local_max_eval << ", " << (expected_eval + upper_bound) << ")\n";
             
             MovePicker move_picker(moves);
     

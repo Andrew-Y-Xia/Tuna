@@ -50,4 +50,6 @@ typedef uint64_t U64;
 
 #define pop_count(a) __builtin_popcountll(a)
 
+#define byteswap(a) __builtin_bswap64(a)
+
 #endif /* depend_hpp */

@@ -230,7 +230,16 @@ int main() {
     
     init_bitboard_utils();
     init_eval_utils();
+    init_ray_gen();
     
+    /*
+    U64 a = bishop_attacks_slow(d4, C64(0));
+    print_BB(a);
+    std::cout << std::endl;
+    print_BB(bishop_attacks(g5, a));
+     */
+    
+
     TT tt;
     OpeningBook opening_book;
     

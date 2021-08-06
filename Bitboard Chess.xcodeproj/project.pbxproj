@@ -30,6 +30,7 @@
 		CC525AEB26A8F33200716C0B /* opening_book.txt in Resources */ = {isa = PBXBuildFile; fileRef = CC525AEA26A8F33200716C0B /* opening_book.txt */; };
 		CC525AEE26A8F37B00716C0B /* Opening_book.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC525AEC26A8F37B00716C0B /* Opening_book.cpp */; };
 		CC9EAEE326447FCF007AC548 /* Evaluation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC9EAEE126447FCF007AC548 /* Evaluation.cpp */; };
+		CCBBA99726BDAA250023500F /* Ray_gen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CCBBA99526BDAA250023500F /* Ray_gen.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -71,6 +72,8 @@
 		CC8658182629D1C200FFB5D7 /* depend.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = depend.hpp; sourceTree = "<group>"; };
 		CC9EAEE126447FCF007AC548 /* Evaluation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Evaluation.cpp; sourceTree = "<group>"; };
 		CC9EAEE226447FCF007AC548 /* Evaluation.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Evaluation.hpp; sourceTree = "<group>"; };
+		CCBBA99526BDAA250023500F /* Ray_gen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Ray_gen.cpp; sourceTree = "<group>"; };
+		CCBBA99626BDAA250023500F /* Ray_gen.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Ray_gen.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +159,8 @@
 				CC8658132629C00C00FFB5D7 /* Data_structs.hpp */,
 				A10FB66B2630D36B00B141DE /* Bitboard.cpp */,
 				A10FB66C2630D36B00B141DE /* Bitboard.hpp */,
+				CCBBA99526BDAA250023500F /* Ray_gen.cpp */,
+				CCBBA99626BDAA250023500F /* Ray_gen.hpp */,
 				CC9EAEE126447FCF007AC548 /* Evaluation.cpp */,
 				CC9EAEE226447FCF007AC548 /* Evaluation.hpp */,
 				A118E72B264C2616009BD882 /* Transposition_table.cpp */,
@@ -270,6 +275,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A161478E262F989B0025D16D /* ResourcePath.mm in Sources */,
+				CCBBA99726BDAA250023500F /* Ray_gen.cpp in Sources */,
 				A118E72D264C2616009BD882 /* Transposition_table.cpp in Sources */,
 				A10FB66D2630D36B00B141DE /* Bitboard.cpp in Sources */,
 				CC525AEE26A8F37B00716C0B /* Opening_book.cpp in Sources */,
