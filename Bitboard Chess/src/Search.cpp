@@ -102,7 +102,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 //        int eval = board.static_eval();
 //        return eval;
     }
-    else if (depth >= 6) {
+    else if (depth >= 5) {
         // Check if time is up
         // If so, exit
         std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - start_time;

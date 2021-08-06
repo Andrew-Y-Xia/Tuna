@@ -47,6 +47,8 @@ private:
     int piece_square_values_m[2];
     int piece_square_values_e[2];
     
+//    int piece_count[2][6];
+    
     // This flag is not guaranteed to be correct! Guaranteed to be correct only after calling generate_moves()
     bool king_is_in_check;
     
@@ -120,6 +122,16 @@ public:
     void print_piece_values();
     void calculate_piece_square_values();
     void print_piece_square_values();
+    
+    int calculate_game_phase();
+
+    /*
+    // Incremental piece_count code
+    void calculate_piece_count();
+    int get_piece_count(int side, unsigned int piece);
+    void print_piece_count();
+     */
+    
     
     int static_eval();
     bool is_king_in_check();

@@ -401,6 +401,7 @@ void Board::standard_setup() {
 //     Called during initialization
     calculate_piece_values();
     calculate_piece_square_values();
+//    calculate_piece_count();
     init_zobrist_key();
 }
 
@@ -1328,6 +1329,9 @@ void Board::make_move(Move move) {
         // Take away the piece values for the side that pieces were captured
         piece_values[!current_turn] -= piece_to_value[move.get_piece_captured()];
         
+        // Update piece_count
+//        piece_count[!current_turn][move.get_piece_captured() - 2] -= 1;
+        
         // Update zobrist key for capture
         z_key ^= piece_bitstrings[move_to_index][!current_turn][move.get_piece_captured() - 2]; // Must -2 because pieces start at third index, not first
         // Take away piece square value for captured piece
@@ -1401,7 +1405,10 @@ void Board::make_move(Move move) {
             Bitboards[Pawns] ^= delete_square;
             
             // Take away the piece values for the side that pieces were captured
-            piece_values[!current_turn] -= piece_to_value[move.get_piece_captured()];
+            piece_values[!current_turn] -= piece_to_value[PIECE_PAWN];
+            
+            // Update piece_count
+//            piece_count[!current_turn][PIECE_PAWN - 2] -= 1;
             
             // Update zobrist key
             z_key ^= piece_bitstrings[delete_index][!current_turn][PIECE_PAWN - 2];
@@ -1418,6 +1425,10 @@ void Board::make_move(Move move) {
             
             // Change the piece_values score accordingly
             piece_values[current_turn] += piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
+            
+            // Update piece_count
+//            piece_count[current_turn][PIECE_PAWN - 2] -= 1;
+//            piece_count[current_turn][move.get_promote_to() + 1] += 1; // Check move encoding to see why +1
             
             // Update zobrist key
             z_key ^= piece_bitstrings[move_to_index][current_turn][PIECE_PAWN - 2];
@@ -1581,6 +1592,9 @@ void Board::unmake_move() {
         // Add back the piece values for the captured piece
         piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
         
+        // Update piece_count
+//        piece_count[!current_turn][move.get_piece_captured() - 2] += 1;
+        
         piece_square_values_m[!current_turn] += lookup_ps_table_m(move_to_index, move.get_piece_captured(), !current_turn);
         piece_square_values_e[!current_turn] += lookup_ps_table_e(move_to_index, move.get_piece_captured(), !current_turn);
     }
@@ -1647,7 +1661,10 @@ void Board::unmake_move() {
             Bitboards[Pawns] ^= delete_square;
             
             // Take away the piece values for the side that pieces were captured
-            piece_values[!current_turn] += piece_to_value[move.get_piece_captured()];
+            piece_values[!current_turn] += piece_to_value[PIECE_PAWN];
+            
+            // Update piece_count
+//            piece_count[!current_turn][PIECE_PAWN - 2] += 1;
             
             // Take away piece square value for captured piece
             piece_square_values_m[!current_turn] += lookup_ps_table_m(delete_index, PIECE_PAWN, !current_turn);
@@ -1660,6 +1677,10 @@ void Board::unmake_move() {
             
             // Change the piece_values score accordingly
             piece_values[current_turn] -= piece_to_value[move.get_promote_to() + 3] - PAWN_VALUE;
+            
+            // Update piece_count
+//            piece_count[current_turn][PIECE_PAWN - 2] += 1;
+//            piece_count[current_turn][move.get_promote_to() + 1] -= 1;
             
             // Take away piece square value for captured piece
             piece_square_values_m[current_turn] += lookup_ps_table_m(move_to_index, PIECE_PAWN, current_turn);
@@ -1784,9 +1805,44 @@ void Board::print_piece_square_values() {
     std::cout << "White midgame ps values: " << piece_square_values_m[WHITE] << "\nWhite endgame ps values: " << piece_square_values_e[WHITE] << "\nBlack midgame ps values: " << piece_square_values_m[BLACK] << "\nBlack endgame ps values: " << piece_square_values_e[BLACK] << '\n';
 }
 
+int Board::calculate_game_phase() {
+    int game_phase = 0;
+    game_phase += pop_count(Bitboards[Knights] | Bitboards[Bishops]);
+    game_phase += pop_count(Bitboards[Rooks]) * 2;
+    game_phase += pop_count(Bitboards[Queens]) * 4;
+    // Handle early promotion
+    game_phase = std::min(game_phase, 24);
+    return game_phase;
+}
+
+/*
+// Incremental piece_count code
+void Board::calculate_piece_count() {
+    for (unsigned int side = WHITE; side <= BLACK; side++) {
+        for (int piece = Kings; piece <= Pawns; piece++) {
+            U64 pieces = Bitboards[side] & Bitboards[piece];
+            piece_count[side][piece-2] = pop_count(pieces);
+        }
+    }
+}
+
+int Board::get_piece_count(int side, unsigned int piece) {
+    return piece_count[side][piece-2];
+}
+
+void Board::print_piece_count() {
+    for (unsigned int side = WHITE; side <= BLACK; side++) {
+        std::cout << "Piece count for: " << side << '\n';
+        for (int piece = Kings; piece <= Pawns; piece++) {
+            std::cout << get_piece_count(side, piece) << '\n';
+        }
+        std::cout << '\n';
+    }
+}
+ */
+
 int Board::static_eval() {
     // Returns eval in the eyes of current turn
-    // TODO: tapered eval
     int eval = 0;
 
     eval += piece_values[WHITE] - piece_values[BLACK];
@@ -1795,8 +1851,11 @@ int Board::static_eval() {
     midgame_score += piece_square_values_m[WHITE] - piece_square_values_m[BLACK];
     int endgame_score = 0;
     endgame_score += piece_square_values_e[WHITE] - piece_square_values_e[BLACK];
-
-    eval += midgame_score;
+    
+    // Calculate game phase:
+    int game_phase = calculate_game_phase();
+    
+    eval += ((midgame_score * game_phase) + (endgame_score * (24 - game_phase))) / 24;
 
     eval *= current_turn == 0 ? 1 : -1;
     return eval;
