@@ -46,6 +46,12 @@ enum Directions {
 } __attribute__ ((__packed__));
 
 
+enum MoveGenType {
+    ALL_MOVES,
+    CAPTURES_ONLY,
+};
+
+
 struct Cords {
     int x: 8;
     int y: 8;

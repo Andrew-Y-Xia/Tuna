@@ -79,21 +79,21 @@ public:
     unsigned int find_piece_captured_without_occ(int index);
     
     // Move generation:
-    template <bool include_quiet = true>
+    template <MoveGenType gen_type = ALL_MOVES>
     void generate_moves(MoveList& moves);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
-    template <bool include_quiet>
+    template <MoveGenType gen_type>
     void generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index);
     
     // Legality portion

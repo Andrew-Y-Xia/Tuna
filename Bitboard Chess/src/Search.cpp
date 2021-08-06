@@ -191,7 +191,7 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     }
     
     MoveList moves;
-    board.generate_moves<false>(moves);
+    board.generate_moves<CAPTURES_ONLY>(moves);
     
     board.assign_move_scores(moves, HashMove());
     
@@ -448,7 +448,7 @@ long Search::capture_perft(unsigned int depth) {
     board.generate_moves(moves);
     
     MoveList capture_moves;
-    board.generate_moves<false>(capture_moves);
+    board.generate_moves<CAPTURES_ONLY>(capture_moves);
 
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {

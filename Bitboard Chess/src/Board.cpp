@@ -16,8 +16,8 @@ U64 black_to_move_bitstring;
 U64 white_castle_queenside_bitstring, white_castle_kingside_bitstring, black_castle_queenside_bitstring, black_castle_kingside_bitstring;
 U64 en_passant_bitstrings[8];
 
-template void Board::generate_moves<true>(MoveList& moves);
-template void Board::generate_moves<false>(MoveList& moves);
+template void Board::generate_moves<ALL_MOVES>(MoveList& moves);
+template void Board::generate_moves<CAPTURES_ONLY>(MoveList& moves);
 
 Board::Board() {
     // Initializer if no starting FEN is given
@@ -645,7 +645,7 @@ unsigned int Board::find_piece_captured_without_occ(int index) {
 // MOVE GENERATION BEGIN
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 void Board::generate_moves(MoveList& moves) {
     // Routine for generating moves
     // Include_quiet is true by default, switch to false for captures only
@@ -669,7 +669,7 @@ void Board::generate_moves(MoveList& moves) {
     king_is_in_check = num_attackers >= 1;
     
     // Generate king moves first
-    generate_king_moves<include_quiet>(moves, occ, friendly_pieces, king_index, num_attackers);
+    generate_king_moves<gen_type>(moves, occ, friendly_pieces, king_index, num_attackers);
     
     if (num_attackers == 1) {
         // In the case of check, we'll need to calculate the block masks
@@ -690,24 +690,24 @@ void Board::generate_moves(MoveList& moves) {
     // There are two pawn move generators (depending on who's turn it is)
     // This is done for efficiency reasons
     if (current_turn == WHITE) {
-        generate_pawn_movesW<include_quiet>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+        generate_pawn_movesW<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
     }
     else {
-        generate_pawn_movesB<include_quiet>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+        generate_pawn_movesB<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
     }
-    generate_knight_moves<include_quiet>(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
-    generate_bishop_moves<include_quiet>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
-    generate_rook_moves<include_quiet>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
-    generate_queen_moves<include_quiet>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+    generate_knight_moves<gen_type>(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
+    generate_bishop_moves<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+    generate_rook_moves<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
+    generate_queen_moves<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned, king_index);
 }
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
     
     // Castling section
     
-    if (include_quiet) {
+    if (gen_type == ALL_MOVES) {
         if (current_turn == WHITE) {
             if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) && !is_attacked(2, occ)) {
                 moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
@@ -733,7 +733,7 @@ inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pi
     U64 move_targets = king_paths[king_index] & ~friendly_pieces;
     
     // If we only want captures, we'll intersect move_targets with the occupied squares
-    if (!include_quiet) {
+    if (gen_type == CAPTURES_ONLY) {
         move_targets &= occ;
     }
     
@@ -754,7 +754,7 @@ inline void Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pi
 }
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     
     // First handle pawns that are not pinned
@@ -810,7 +810,7 @@ inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, 
         
         
         // Quiet moves:
-        if (include_quiet) {
+        if (gen_type == ALL_MOVES) {
     
             // Add Northern rook pins (only type of pin that pawn_push can move in)
             U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
@@ -903,7 +903,7 @@ inline void Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, 
     }
 }
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     
@@ -955,7 +955,7 @@ inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, 
         
         
         // Quiet moves:
-        if (include_quiet) {
+        if (gen_type == ALL_MOVES) {
             // Add Southern rook pins (only type of pin that pawn_push can move in)
             U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
     
@@ -1045,7 +1045,7 @@ inline void Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, 
 }
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned) {
     U64 knights = Bitboards[Knights] & friendly_pieces & ~rook_pinned & ~bishop_pinned; // Knights can't move at all when pinned
     
@@ -1054,7 +1054,7 @@ inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks,
         U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
         move_targets &= block_check_masks;
         
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
         
@@ -1067,7 +1067,7 @@ inline void Board::generate_knight_moves(MoveList& moves, U64 block_check_masks,
 }
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 bishops = Bitboards[Bishops] & friendly_pieces & ~rook_pinned & ~bishop_pinned; // Bishops can't move when pinned by a rook
     U64 bishops_bishop_pinned = Bitboards[Bishops] & bishop_pinned;
@@ -1078,7 +1078,7 @@ inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks,
         move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
         
@@ -1095,7 +1095,7 @@ inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks,
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
         
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
 
@@ -1108,7 +1108,7 @@ inline void Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks,
 }
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 rooks = Bitboards[Rooks] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 rooks_rook_pinned = Bitboards[Rooks] & rook_pinned;
@@ -1119,7 +1119,7 @@ inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U
         move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
         
@@ -1136,7 +1136,7 @@ inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
 
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
         
@@ -1149,7 +1149,7 @@ inline void Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U
 }
 
 
-template <bool include_quiet>
+template <MoveGenType gen_type>
 inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned, U64 bishop_pinned, int king_index) {
     U64 queens = Bitboards[Queens] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 queens_pinned = Bitboards[Queens] & (rook_pinned | bishop_pinned);
@@ -1160,7 +1160,7 @@ inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, 
         move_targets &= ~friendly_pieces;
         move_targets &= block_check_masks;
         
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
         
@@ -1177,7 +1177,7 @@ inline void Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, 
         move_targets &= block_check_masks;
         move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
         
-        if (!include_quiet) {
+        if (gen_type == CAPTURES_ONLY) {
             move_targets &= occ;
         }
 
