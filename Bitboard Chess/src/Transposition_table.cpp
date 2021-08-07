@@ -36,9 +36,9 @@ void HashMove::set_node_type(unsigned int node_type) {
 
 TT::TT() {
     // Constructor, allocate the hash_table
-    hash_table = new TT_entry[TT_SIZE];
+    hash_table = new TT_entry[TT_SIZE()];
     Move move;
-    for (int i = 0; i < TT_SIZE; i++) {
+    for (int i = 0; i < TT_SIZE(); i++) {
         assert((hash_table + i)->hash_move == move);
         assert((hash_table + i)->key == 0);
         assert((hash_table + i)->score == 0);
@@ -50,16 +50,27 @@ TT::~TT() {
 }
 
 TT_entry TT::get(U64 key) const {
-    U64 lower_key = key & C64(0xFFFFFF);
+    U64 lower_key = key & TT_LOOKUP_MASK();
     return *(hash_table + lower_key);
 }
 
 void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score) {
-    U64 lower_key = key & C64(0xFFFFFF);
+    U64 lower_key = key & TT_LOOKUP_MASK();
     (hash_table + lower_key)->key = key;
     (hash_table + lower_key)->hash_move = best_move;
     (hash_table + lower_key)->hash_move.set_depth(depth);
     (hash_table + lower_key)->hash_move.set_node_type(node_type);
     (hash_table + lower_key)->score = score;
+}
+
+
+void TT::clear() {
+    memset(hash_table, 0, TT_SIZE()*sizeof(*hash_table));
+    Move move;
+    for (int i = 0; i < TT_SIZE(); i++) {
+        assert((hash_table + i)->hash_move == move);
+        assert((hash_table + i)->key == 0);
+        assert((hash_table + i)->score == 0);
+    }
 }
 

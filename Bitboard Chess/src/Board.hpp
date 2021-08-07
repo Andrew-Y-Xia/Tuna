@@ -143,13 +143,6 @@ public:
     void print_piece_square_values();
     
     int calculate_game_phase();
-
-    /*
-    // Incremental piece_count code
-    void calculate_piece_count();
-    int get_piece_count(int side, unsigned int piece);
-    void print_piece_count();
-     */
     
     
     int static_eval();

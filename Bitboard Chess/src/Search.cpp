@@ -404,8 +404,14 @@ long Search::sort_perft(unsigned int depth) {
     return nodes;
 }
 
-// TODO: add TT clear
 long Search::hash_perft(unsigned int depth) {
+    tt.clear();
+    long result = hash_perft_internal(depth);
+    tt.clear();
+    return result;
+}
+
+long Search::hash_perft_internal(unsigned int depth) {
     if (depth == 0) {
         return 1;
     }
@@ -428,7 +434,7 @@ long Search::hash_perft(unsigned int depth) {
 
     for (auto it = moves.begin(); it != moves.end(); ++it) {
         board.make_move(*it);
-        nodes += hash_perft(depth - 1);
+        nodes += hash_perft_internal(depth - 1);
         board.unmake_move();
     }
     

@@ -9,15 +9,24 @@
 #ifndef Transposition_table_hpp
 #define Transposition_table_hpp
 
+#include <algorithm>
+
 #include "depend.hpp"
 #include "Data_structs.hpp"
 
-#define TT_SIZE 16777216 // 2^24
-
+#define TT_EXP_2_SIZE 24 // TT_SIZE is 2^x
 
 #define NODE_EXACT 0
 #define NODE_UPPERBOUND 1
 #define NODE_LOWERBOUND 2
+
+
+U64 constexpr TT_SIZE() {
+    return C64(1) << TT_EXP_2_SIZE;
+}
+U64 constexpr TT_LOOKUP_MASK() {
+    return TT_SIZE() - 1;
+}
 
 class HashMove: public Move {
 public:
@@ -48,6 +57,7 @@ public:
     ~TT();
     TT_entry get(U64 key) const;
     void set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score);
+    void clear();
     
 };
 

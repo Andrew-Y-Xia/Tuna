@@ -2252,32 +2252,6 @@ int Board::calculate_game_phase() {
     return game_phase;
 }
 
-/*
-// Incremental piece_count code
-void Board::calculate_piece_count() {
-    for (unsigned int side = WHITE; side <= BLACK; side++) {
-        for (int piece = Kings; piece <= Pawns; piece++) {
-            U64 pieces = Bitboards[side] & Bitboards[piece];
-            piece_count[side][piece-2] = pop_count(pieces);
-        }
-    }
-}
-
-int Board::get_piece_count(int side, unsigned int piece) {
-    return piece_count[side][piece-2];
-}
-
-void Board::print_piece_count() {
-    for (unsigned int side = WHITE; side <= BLACK; side++) {
-        std::cout << "Piece count for: " << side << '\n';
-        for (int piece = Kings; piece <= Pawns; piece++) {
-            std::cout << get_piece_count(side, piece) << '\n';
-        }
-        std::cout << '\n';
-    }
-}
- */
-
 int Board::static_eval() {
     // Returns eval in terms of side to play
     int eval = 0;
