@@ -66,6 +66,7 @@ void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned i
 
 int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root) {
     // Check for hits on the TT
+    nodes_searched++;
     const TT_entry tt_hit = tt.get(board.get_z_key());
     
     if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() >= depth) {
@@ -153,7 +154,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         int eval;
         auto it = ++move_picker;
         
-        nodes_searched++;
         board.make_move(it);
         eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1);
         board.unmake_move();
@@ -179,6 +179,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
 
 int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root) {
+    nodes_searched++;
     int stand_pat = board.static_eval();
     if (ply_from_horizon >= 7) {
         return stand_pat;
@@ -246,6 +247,10 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     MoveList moves;
     board.generate_moves(moves);
     
+    // Don't bother searching if there's one legal move
+    if (moves.size() == 1) {
+        return moves[0];
+    }
     
     int expected_eval = 0;
     
