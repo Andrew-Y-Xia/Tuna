@@ -1747,8 +1747,8 @@ U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
 
 
 void Board::make_move(Move move) {
-    move_data move_data = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square, z_key};
-    move_stack.push_back(move_data);
+    move_data m = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square, z_key, false};
+    move_stack.push_back(m);
     
     // Actual act of making move:
     int move_from_index = move.get_from();
@@ -2002,6 +2002,7 @@ void Board::unmake_move() {
 
     move_data last_move = move_stack.back();
     Move move = last_move.move;
+    assert(!last_move.is_null_move);
     
     white_can_castle_queenside = last_move.white_can_castle_queenside;
     white_can_castle_kingside = last_move.white_can_castle_kingside;
@@ -2128,6 +2129,39 @@ void Board::unmake_move() {
             break;
         }
     }
+    
+    move_stack.pop_back();
+}
+
+
+void Board::make_null_move() {
+    move_data m;
+    m.en_passant_square = en_passant_square;
+    m.is_null_move = true;
+    m.z_key = z_key;
+    move_stack.push_back(m);
+    
+    // Reset en_passant_square and clear it from z_key
+    if (en_passant_square != -1) {
+        U64 last_en_passant_file = rays[South][en_passant_square];
+        z_key ^= en_passant_bitstrings[bitscan_forward(last_en_passant_file)];
+    }
+    en_passant_square = -1;
+    
+    // Swap turn
+    z_key ^= black_to_move_bitstring;
+    current_turn = !current_turn;
+}
+
+void Board::unmake_null_move() {
+    
+    current_turn = !current_turn;
+    
+    move_data last_move = move_stack.back();
+    assert(last_move.is_null_move);
+    z_key = last_move.z_key;
+    en_passant_square = last_move.en_passant_square;
+    
     
     move_stack.pop_back();
 }

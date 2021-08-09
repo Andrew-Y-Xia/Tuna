@@ -178,6 +178,8 @@ struct move_data {
     int en_passant_square;
     
     U64 z_key;
+    
+    bool is_null_move;
 };
 
 

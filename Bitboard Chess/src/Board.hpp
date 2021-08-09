@@ -128,6 +128,9 @@ public:
     void make_move(Move move);
     void unmake_move();
     
+    void make_null_move();
+    void unmake_null_move();
+    
 
     void assign_move_scores(MoveList &moves, HashMove hash_move);
     

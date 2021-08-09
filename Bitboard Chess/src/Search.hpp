@@ -14,6 +14,9 @@
 #include "Transposition_table.hpp"
 #include "Opening_book.hpp"
 
+#define USE_NULL_MOVE_PRUNING 1
+#define R 2
+
 class MovePicker {
 private:
     MoveList& moves;
@@ -46,7 +49,7 @@ public:
     
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root);
     
-    int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root);
+    int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move);
     int quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root);
     Move find_best_move(unsigned int max_depth, double max_time_ms);
 

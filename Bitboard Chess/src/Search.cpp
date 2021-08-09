@@ -64,7 +64,7 @@ void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned i
 
 
 
-int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root) {
+int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move) {
     // Check for hits on the TT
     nodes_searched++;
     const TT_entry tt_hit = tt.get(board.get_z_key());
@@ -110,10 +110,28 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         if (ms_double.count() >= max_time_ms) {
             // Reset board to original state
             for (int i = ply_from_root; i != 0; i--) {
-                board.unmake_move();
+                if (board.get_move_stack().back().is_null_move) {
+                    board.unmake_null_move();
+                }
+                else {
+                    board.unmake_move();
+                }
             }
             // Throw error to escape
             throw SearchTimeout();
+        }
+    }
+    
+    // Null move pruning
+    if (USE_NULL_MOVE_PRUNING && do_null_move) {
+        if (depth > R) {
+            board.make_null_move();
+            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);
+            board.unmake_null_move();
+    
+            if (null_eval >= beta) {
+                return beta;
+            }
         }
     }
      
@@ -155,7 +173,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         auto it = ++move_picker;
         
         board.make_move(it);
-        eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1);
+        eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
         board.unmake_move();
         
         
@@ -289,7 +307,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
                 nodes_searched++;
                 board.make_move(it);
                 try {
-                    eval = -negamax(depth - 1, -(expected_eval + upper_bound), -local_max_eval, 1);
+                    eval = -negamax(depth - 1, -(expected_eval + upper_bound), -local_max_eval, 1, true);
                 } catch(SearchTimeout& e) {
                     search_finished_message(depth - 1, nodes_searched);
                     return best_move;
