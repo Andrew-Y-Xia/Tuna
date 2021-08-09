@@ -8,6 +8,14 @@
 
 #include "Transposition_table.hpp"
 
+
+U64 constexpr TT_SIZE() {
+    return C64(1) << TT_EXP_2_SIZE;
+}
+U64 constexpr TT_LOOKUP_MASK() {
+    return TT_SIZE() - 1;
+}
+
 void HashMove::operator=(Move move) {
     move_data = move.get_raw_data() & 0x3FFFFF;
 }

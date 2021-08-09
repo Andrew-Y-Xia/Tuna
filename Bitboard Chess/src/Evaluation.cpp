@@ -163,6 +163,28 @@ int* ps_e[6] = {
     pawn_ps_e,
 };
 
+
+U64 king_loc_queenside_castled[2] = {
+    0x7ULL,
+    0x700000000000000ULL,
+};
+
+U64 king_loc_kingside_castled[2] = {
+    0xE0ULL,
+    0xE000000000000000ULL,
+};
+
+
+U64 pawn_shield_queenside[2] = {
+    0x70700ULL,
+    0x7070000000000ULL,
+};
+U64 pawn_shield_kingside[2] = {
+    0xE0E000ULL,
+    0xE0E00000000000ULL,
+};
+
+
 void init_piece_to_value() {
     piece_to_value[PIECE_PAWN] = PAWN_VALUE;
     piece_to_value[PIECE_KNIGHT] = KNIGHT_VALUE;

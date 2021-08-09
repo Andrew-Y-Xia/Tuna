@@ -21,12 +21,6 @@
 #define NODE_LOWERBOUND 2
 
 
-U64 constexpr TT_SIZE() {
-    return C64(1) << TT_EXP_2_SIZE;
-}
-U64 constexpr TT_LOOKUP_MASK() {
-    return TT_SIZE() - 1;
-}
 
 class HashMove: public Move {
 public:

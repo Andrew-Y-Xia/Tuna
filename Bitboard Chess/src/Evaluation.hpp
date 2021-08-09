@@ -40,6 +40,13 @@ extern int king_ps_e[64];
 extern int* ps_m[6];
 extern int* ps_e[6];
 
+extern U64 king_loc_queenside_castled[2];
+extern U64 king_loc_kingside_castled[2];
+extern U64 pawn_shield_queenside[2];
+extern U64 pawn_shield_kingside[2];
+extern U64 pawn_storm_queenside[2];
+extern U64 pawn_storm_kingside[2];
+
 
 void init_eval_utils();
 void init_piece_to_value();

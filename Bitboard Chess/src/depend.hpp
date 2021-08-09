@@ -36,6 +36,10 @@
 #define light_squares   0x55AA55AA55AA55AA##ULL
 #define dark_squares    0xAA55AA55AA55AA55##ULL
 
+#define second_or_seventh_rank 0xFF00000000FF00##ULL
+#define third_or_sixth_rank    0x00FF0000FF0000##ULL
+
+
 #define EmptyBoard    0x0000000000000000##ULL
 #define UniverseBoard 0xffffffffffffffff##ULL
 

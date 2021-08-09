@@ -2252,6 +2252,32 @@ int Board::calculate_game_phase() {
     return game_phase;
 }
 
+int Board::calculate_pawn_shield_bonus() {
+    int score = 0;
+    if (king_loc_kingside_castled[WHITE] & Bitboards[Kings] & Bitboards[WHITE]) {
+        // Pawn shield on second rank is better than on third rank
+        score += pop_count(Bitboards[WHITE] & Bitboards[Pawns] & pawn_shield_kingside[WHITE] & second_or_seventh_rank) * 32;
+        score += pop_count(Bitboards[WHITE] & Bitboards[Pawns] & pawn_shield_kingside[WHITE] & third_or_sixth_rank) * 16;
+    }
+    else if (king_loc_queenside_castled[WHITE] & Bitboards[Kings] & Bitboards[WHITE]) {
+        // Pawn shield on second rank is better than on third rank
+        score += pop_count(Bitboards[WHITE] & Bitboards[Pawns] & pawn_shield_queenside[WHITE] & second_or_seventh_rank) * 32;
+        score += pop_count(Bitboards[WHITE] & Bitboards[Pawns] & pawn_shield_queenside[WHITE] & third_or_sixth_rank) * 16;
+    }
+    
+    if (king_loc_kingside_castled[BLACK] & Bitboards[Kings] & Bitboards[BLACK]) {
+        // Pawn shield on seventh rank is better than on sixth rank
+        score -= pop_count(Bitboards[BLACK] & Bitboards[Pawns] & pawn_shield_kingside[BLACK] & second_or_seventh_rank) * 32;
+        score -= pop_count(Bitboards[BLACK] & Bitboards[Pawns] & pawn_shield_kingside[BLACK] & third_or_sixth_rank) * 16;
+    }
+    else if (king_loc_queenside_castled[BLACK] & Bitboards[Kings] & Bitboards[BLACK]) {
+        // Pawn shield on seventh rank is better than on sixth rank
+        score -= pop_count(Bitboards[BLACK] & Bitboards[Pawns] & pawn_shield_queenside[BLACK] & second_or_seventh_rank) * 32;
+        score -= pop_count(Bitboards[BLACK] & Bitboards[Pawns] & pawn_shield_queenside[BLACK] & third_or_sixth_rank) * 16;
+    }
+    return score;
+}
+
 int Board::static_eval() {
     // Returns eval in terms of side to play
     int eval = 0;
@@ -2262,6 +2288,11 @@ int Board::static_eval() {
     midgame_score += piece_square_values_m[WHITE] - piece_square_values_m[BLACK];
     int endgame_score = 0;
     endgame_score += piece_square_values_e[WHITE] - piece_square_values_e[BLACK];
+    
+    
+    // Pawn shield in front of king
+    midgame_score += calculate_pawn_shield_bonus();
+    
     
     // Calculate game phase:
     int game_phase = calculate_game_phase();

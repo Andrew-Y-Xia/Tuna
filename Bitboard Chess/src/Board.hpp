@@ -143,7 +143,7 @@ public:
     void print_piece_square_values();
     
     int calculate_game_phase();
-    
+    int calculate_pawn_shield_bonus();
     
     int static_eval();
     bool is_king_in_check();
