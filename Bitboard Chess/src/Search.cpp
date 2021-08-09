@@ -254,17 +254,13 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     
     int expected_eval = 0;
     
+    // Iterative deepening loop
     int depth;
     for (depth = 1; depth <= max_depth; depth++) {
-        TT_entry tt_hit = tt.get(board.get_z_key());
     
-        if (tt_hit.key == board.get_z_key()) {
-            board.assign_move_scores(moves, tt_hit.hash_move);
-        }
-        else {
-            board.assign_move_scores(moves, HashMove());
-        }
-    
+        HashMove best_move_temp;
+        best_move_temp = best_move;
+        board.assign_move_scores(moves, best_move_temp);
 
         
         
@@ -274,6 +270,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
         
         unsigned int times_researched = 0;
         
+        // Aspiration window re-search loop
         while (1) {
             times_researched++;
             
