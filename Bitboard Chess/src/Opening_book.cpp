@@ -79,6 +79,7 @@ void OpeningBook::set_use_book(bool b) {
 Move OpeningBook::request(std::vector<move_data> move_stack) {
     Move illegal_move;
     illegal_move.set_as_illegal();
+    return illegal_move;
     
     std::vector<int> possible_line_indices;
     

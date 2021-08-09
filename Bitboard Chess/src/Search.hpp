@@ -39,6 +39,7 @@ private:
     TT& tt;
     OpeningBook& opening_book;
     
+    Move local_best_move;
 
     unsigned int nodes_searched;
     std::chrono::time_point<std::__1::chrono::steady_clock, std::chrono::duration<long long, std::ratio<1LL, 1000000000LL>>> start_time;
@@ -49,6 +50,7 @@ public:
     
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score, unsigned int ply_from_root);
     
+    template <bool root_search>
     int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move);
     int quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root);
     Move find_best_move(unsigned int max_depth, double max_time_ms);

@@ -64,6 +64,7 @@ void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned i
 
 
 
+template <bool root_search>
 int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move) {
     // Check for hits on the TT
     nodes_searched++;
@@ -123,10 +124,10 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
     
     // Null move pruning
-    if (USE_NULL_MOVE_PRUNING && do_null_move) {
+    if (USE_NULL_MOVE_PRUNING && do_null_move && !root_search) {
         if (depth > R) {
             board.make_null_move();
-            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);
+            int null_eval = -negamax<false>(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);
             board.unmake_null_move();
     
             if (null_eval >= beta) {
@@ -173,7 +174,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         auto it = ++move_picker;
         
         board.make_move(it);
-        eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+        eval = -negamax<false>(depth - 1, -beta, -alpha, ply_from_root + 1, true);
         board.unmake_move();
         
         
@@ -184,6 +185,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         if (eval > alpha) {
             node_type = NODE_EXACT;
             best_move = it;
+            if (root_search) {
+                local_best_move = it;
+            }
             alpha = eval;
         }
     }
@@ -262,6 +266,8 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     Move best_move; // Best verified move
     int max_eval; // Best verified score
     
+    local_best_move = Move();
+    
     MoveList moves;
     board.generate_moves(moves);
     
@@ -275,12 +281,6 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     // Iterative deepening loop
     int depth;
     for (depth = 1; depth <= max_depth; depth++) {
-    
-        HashMove best_move_temp;
-        best_move_temp = best_move;
-        board.assign_move_scores(moves, best_move_temp);
-
-        
         
         int upper_bound = 25;
         int lower_bound = 25;
@@ -292,40 +292,20 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
         while (1) {
             times_researched++;
             
-            int local_max_eval = expected_eval - lower_bound; // Best score for this search
-            Move local_best_move; // Best move for this search
-//            std::cout << "Windows: ("  << local_max_eval << ", " << (expected_eval + upper_bound) << ")\n";
+            int local_max_eval;
+            int alpha = expected_eval - lower_bound;
+            int beta = expected_eval + upper_bound;
+            std::cout << "Windows: ("  << alpha << ", " << beta << ")\n";
             
-            MovePicker move_picker(moves);
-    
-            while (!move_picker.finished()) {
-                int eval;
-    
-    
-                auto it = ++move_picker;
-    
-                nodes_searched++;
-                board.make_move(it);
-                try {
-                    eval = -negamax(depth - 1, -(expected_eval + upper_bound), -local_max_eval, 1, true);
-                } catch(SearchTimeout& e) {
-                    search_finished_message(depth - 1, nodes_searched);
-                    return best_move;
-                }
-                board.unmake_move();
-    
-//                std::cout << "\nMove: ";
-//                print_move(it, true);
-//                std::cout << "\nEval: " << eval;
-
-                if (eval > local_max_eval) {
-                    local_max_eval = eval;
-                    local_best_move = it;
-                }
+            try {
+                local_max_eval = negamax<true>(depth, alpha, beta, 0, true);
+            } catch(SearchTimeout& e) {
+                search_finished_message(depth - 1, nodes_searched);
+                return best_move;
             }
             
             // Check if score is within bounds
-            if (local_max_eval >= expected_eval + upper_bound) {
+            if (local_max_eval >= beta) {
                 // If so, do a re-search
                 if (times_researched >= 4) {
                     // If we've searched too many times and there's still no viable result, give up and widen bounds all the way
@@ -337,7 +317,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
                     upper_bound *= 4;
                 }
             }
-            else if (local_max_eval <= expected_eval - lower_bound) {
+            else if (local_max_eval <= alpha) {
                 if (times_researched >= 4) {
                     expected_eval = 0;
                     upper_bound = MAXMATE + 1;
@@ -347,6 +327,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
                     lower_bound *= 4;
                 }
             }
+            // If score is within bounds, accept it
             else {
                 // Continue on to next stage of iterative deepening
                 expected_eval = local_max_eval;
