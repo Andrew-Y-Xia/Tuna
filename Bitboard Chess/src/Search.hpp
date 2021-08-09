@@ -39,6 +39,7 @@ private:
     TT& tt;
     OpeningBook& opening_book;
     
+    Move best_move;
     Move local_best_move;
 
     unsigned int nodes_searched;

@@ -70,7 +70,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     nodes_searched++;
     const TT_entry tt_hit = tt.get(board.get_z_key());
     
-    if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() >= depth) {
+    if (!root_search && tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() >= depth) {
 //        if (tt_hit.sanity_check != board.tt_sanity_check()) {
 //            std::cout << "Transposition table type 1 collision\n";
 //        }
@@ -157,7 +157,12 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     
     
 //    board.sort_moves(moves);
-    if (tt_hit.key == board.get_z_key()) {
+    if (root_search) {
+        HashMove m;
+        m = best_move;
+        board.assign_move_scores(moves, m);
+    }
+    else if (tt_hit.key == board.get_z_key()) {
         board.assign_move_scores(moves, tt_hit.hash_move);
     }
     else {
@@ -166,7 +171,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     
     
     MovePicker move_picker(moves);
-    HashMove best_move;
+    HashMove hbest_move;
     
     unsigned int node_type = NODE_UPPERBOUND;
     while (!move_picker.finished()) {
@@ -179,12 +184,12 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         
         
         if (eval >= beta) {
-            store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
+            store_pos_result(hbest_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             return beta;
         }
         if (eval > alpha) {
             node_type = NODE_EXACT;
-            best_move = it;
+            hbest_move = it;
             if (root_search) {
                 local_best_move = it;
             }
@@ -194,7 +199,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     
     
     // Write search data to transposition table
-    store_pos_result(best_move, depth, node_type, alpha, ply_from_root);
+    store_pos_result(hbest_move, depth, node_type, alpha, ply_from_root);
 
     return alpha;
 }
@@ -263,7 +268,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
         }
     }
 
-    Move best_move; // Best verified move
+    best_move = Move(); // Best verified move
     int max_eval; // Best verified score
     
     local_best_move = Move();
