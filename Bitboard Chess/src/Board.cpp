@@ -2358,7 +2358,8 @@ bool Board::has_repeated_once() {
         }
         if (it->move.is_capture() || it->move.get_special_flag() != MOVE_NORMAL || it->move.get_piece_moved() == PIECE_PAWN ||
             it->white_can_castle_kingside != white_can_castle_kingside || it->white_can_castle_queenside != white_can_castle_queenside ||
-            it->black_can_castle_kingside != black_can_castle_kingside || it->black_can_castle_queenside != black_can_castle_queenside) {
+            it->black_can_castle_kingside != black_can_castle_kingside || it->black_can_castle_queenside != black_can_castle_queenside ||
+            it->is_null_move) {
             return false;
         }
     }
@@ -2382,7 +2383,8 @@ bool Board::has_repeated_twice() {
         }
         if (it->move.is_capture() || it->move.get_special_flag() != MOVE_NORMAL || it->move.get_piece_moved() == PIECE_PAWN ||
             it->white_can_castle_kingside != white_can_castle_kingside || it->white_can_castle_queenside != white_can_castle_queenside ||
-            it->black_can_castle_kingside != black_can_castle_kingside || it->black_can_castle_queenside != black_can_castle_queenside) {
+            it->black_can_castle_kingside != black_can_castle_kingside || it->black_can_castle_queenside != black_can_castle_queenside ||
+            it->is_null_move) {
             return false;
         }
     }
