@@ -150,7 +150,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
     
     // Check for repetition
-    if (board.has_repeated_once()) {
+    if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
         return 0;
     }
     

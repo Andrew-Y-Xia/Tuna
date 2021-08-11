@@ -152,6 +152,7 @@ public:
     bool is_king_in_check();
     bool has_repeated_once();
     bool has_repeated_twice();
+    bool has_drawn_by_fifty_move_rule();
     
     
     // UI:

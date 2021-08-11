@@ -1747,7 +1747,7 @@ U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
 
 
 void Board::make_move(Move move) {
-    move_data m = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square, z_key, false};
+    move_data m = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside, black_can_castle_kingside, en_passant_square, z_key, false, halfmove_counter};
     move_stack.push_back(m);
     
     // Actual act of making move:
@@ -1774,6 +1774,9 @@ void Board::make_move(Move move) {
         // Take away piece square value for captured piece
         piece_square_values_m[!current_turn] -= lookup_ps_table_m(move_to_index, move.get_piece_captured(), !current_turn);
         piece_square_values_e[!current_turn] -= lookup_ps_table_e(move_to_index, move.get_piece_captured(), !current_turn);
+        
+        // Reset halfmove counter:
+        halfmove_counter = -1;
     }
     // Flip the occupacy of the from square and to square
     Bitboards[current_turn] ^= from_bb | to_bb;
@@ -1906,6 +1909,13 @@ void Board::make_move(Move move) {
         en_passant_square = -1;
     }
     
+    // Check if pawn has moved
+    // If so, reset halfmove counter
+    
+    if (move.get_piece_moved() == PIECE_PAWN) {
+        halfmove_counter = -1;
+    }
+    
     // Check to see if castling is invalidated
 
     // see if rook was captured/moved
@@ -1992,8 +2002,11 @@ void Board::make_move(Move move) {
     // Switch turns:
     
     z_key ^= black_to_move_bitstring;
-    
     current_turn = !current_turn;
+    
+    // Increment halfmove counter
+    halfmove_counter++;
+    
 }
 
 void Board::unmake_move() {
@@ -2012,6 +2025,8 @@ void Board::unmake_move() {
     en_passant_square = last_move.en_passant_square;
     
     z_key = last_move.z_key;
+    
+    halfmove_counter = last_move.halfmove_counter;
 
     
     // Actual act of making move:
@@ -2151,6 +2166,9 @@ void Board::make_null_move() {
     // Swap turn
     z_key ^= black_to_move_bitstring;
     current_turn = !current_turn;
+    
+    // Should halfmove_counter be updated?
+//     halfmove_counter++;
 }
 
 void Board::unmake_null_move() {
@@ -2164,6 +2182,9 @@ void Board::unmake_null_move() {
     
     
     move_stack.pop_back();
+    
+    // Should halfmove_counter be updated?
+//     halfmove_counter--;
 }
 
 
@@ -2389,6 +2410,11 @@ bool Board::has_repeated_twice() {
         }
     }
     return false;
+}
+
+bool Board::has_drawn_by_fifty_move_rule() {
+    // Please check for checkmate before this function is called
+    return halfmove_counter >= 100;
 }
 
 

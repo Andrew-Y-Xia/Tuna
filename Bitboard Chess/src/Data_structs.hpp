@@ -180,6 +180,8 @@ struct move_data {
     U64 z_key;
     
     bool is_null_move;
+    
+    int halfmove_counter;
 };
 
 
