@@ -2154,6 +2154,7 @@ void Board::make_null_move() {
     m.en_passant_square = en_passant_square;
     m.is_null_move = true;
     m.z_key = z_key;
+    m.halfmove_counter = halfmove_counter;
     move_stack.push_back(m);
     
     // Reset en_passant_square and clear it from z_key
@@ -2168,7 +2169,7 @@ void Board::make_null_move() {
     current_turn = !current_turn;
     
     // Should halfmove_counter be updated?
-//     halfmove_counter++;
+     halfmove_counter = 0;
 }
 
 void Board::unmake_null_move() {
@@ -2184,7 +2185,7 @@ void Board::unmake_null_move() {
     move_stack.pop_back();
     
     // Should halfmove_counter be updated?
-//     halfmove_counter--;
+     halfmove_counter = last_move.halfmove_counter;
 }
 
 

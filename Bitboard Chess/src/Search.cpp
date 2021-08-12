@@ -121,19 +121,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             throw SearchTimeout();
         }
     }
-    
-    // Null move pruning
-    if (USE_NULL_MOVE_PRUNING && do_null_move) {
-        if (depth > R) {
-            board.make_null_move();
-            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);
-            board.unmake_null_move();
-    
-            if (null_eval >= beta) {
-                return beta;
-            }
-        }
-    }
      
     
     MoveList moves;
@@ -152,6 +139,19 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     // Check for repetition
     if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
         return 0;
+    }
+    
+    // Null move pruning
+    if (USE_NULL_MOVE_PRUNING && do_null_move) {
+        if (depth > R) {
+            board.make_null_move();
+            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);
+            board.unmake_null_move();
+    
+            if (null_eval >= beta) {
+                return beta;
+            }
+        }
     }
     
     
@@ -237,9 +237,10 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
 }
 
 
-static void search_finished_message(int depth, unsigned int nodes_searched) {
+static void search_finished_message(int depth, unsigned int nodes_searched, int eval) {
     std::cout << "\nType2 Collisions: " << type2collision << "\n";
     std::cout << "\nNodes searched: " << nodes_searched << "\n";
+    std::cout << "\nEval: " << eval << "\n";
     std::cout << "\nDepth searched: " << depth << "\n\n";
 }
 
@@ -309,7 +310,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
                 try {
                     eval = -negamax(depth - 1, -(expected_eval + upper_bound), -local_max_eval, 1, true);
                 } catch(SearchTimeout& e) {
-                    search_finished_message(depth - 1, nodes_searched);
+                    search_finished_message(depth - 1, nodes_searched, local_max_eval);
                     return best_move;
                 }
                 board.unmake_move();
@@ -363,12 +364,12 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
         store_pos_result(h_best_move, depth, NODE_EXACT, max_eval, 0);
         
         if (max_eval >= MINMATE && MAXMATE - max_eval <= depth) {
-            search_finished_message(depth, nodes_searched);
+            search_finished_message(depth, nodes_searched, max_eval);
             return best_move;
         }
     }
     
-    search_finished_message(max_depth, nodes_searched);
+    search_finished_message(max_depth, nodes_searched, max_eval);
     return best_move;
 }
 
