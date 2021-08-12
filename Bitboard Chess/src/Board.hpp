@@ -73,6 +73,7 @@ public:
     
     void print_board();
     void print_z_key();
+    bool verify_bitboard();
     
     unsigned int find_piece_occupying_sq(int index);
     unsigned int find_piece_captured(int index);
@@ -122,6 +123,7 @@ public:
     U64 calculate_block_masks(U64 king_attacker);
     U64 calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces);
     U64 calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces);
+    
     // Move generation end
     
     

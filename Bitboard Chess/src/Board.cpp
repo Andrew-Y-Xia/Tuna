@@ -538,6 +538,28 @@ void Board::print_z_key() {
     std::cout << z_key << '\n';
 }
 
+bool Board::verify_bitboard() {
+    for (int i = Kings; i < Pawns; i++) {
+        if (Bitboards[i] & Bitboards[i+1]) {
+            print_board();
+            return false;
+        }
+    }
+    if (Bitboards[WhitePieces] & Bitboards[BlackPieces]) {
+        print_board();
+        return false;
+    }
+    U64 all_pieces = C64(0);
+    for (int i = Kings; i <= Pawns; i++) {
+        all_pieces |= Bitboards[i];
+    }
+    if (all_pieces != (Bitboards[WhitePieces] | Bitboards[BlackPieces])) {
+        print_board();
+        return false;
+    }
+    return true;
+}
+
 
 unsigned int Board::find_piece_occupying_sq(int index) {
     // Finds what piece occupies a square
@@ -2169,7 +2191,7 @@ void Board::make_null_move() {
     current_turn = !current_turn;
     
     // Should halfmove_counter be updated?
-     halfmove_counter = 0;
+    halfmove_counter = 0;
 }
 
 void Board::unmake_null_move() {
@@ -2185,7 +2207,7 @@ void Board::unmake_null_move() {
     move_stack.pop_back();
     
     // Should halfmove_counter be updated?
-     halfmove_counter = last_move.halfmove_counter;
+    halfmove_counter = last_move.halfmove_counter;
 }
 
 

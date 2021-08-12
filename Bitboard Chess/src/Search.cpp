@@ -142,7 +142,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
     
     // Null move pruning
-    if (USE_NULL_MOVE_PRUNING && do_null_move) {
+    if (USE_NULL_MOVE_PRUNING && do_null_move && !board.is_king_in_check()) {
         if (depth > R) {
             board.make_null_move();
             int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);

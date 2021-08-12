@@ -235,7 +235,7 @@ int main() {
     TT tt;
     OpeningBook opening_book;
     
-    int AI_turn = WHITE;
+    int AI_turn = BLACK;
     int PvP = 0;
     
     
@@ -323,7 +323,7 @@ int main() {
     promotion_rectangle.setFillColor(sf::Color(26, 110, 8, 200));
     promotion_rectangle.setPosition(WIDTH / 4, WIDTH / 2 - WIDTH / 16);
     
-    Board board("8/2b5/4p1k1/3b1pp1/2rP4/P2R2NP/2r1N1P1/4R1K1 w - - 0 38");
+    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     board.set_texture_to_pieces();
     
     /*
@@ -510,7 +510,7 @@ int main() {
     
                 Search search(board, tt, opening_book);
                 auto t1 = std::chrono::high_resolution_clock::now();
-                Move new_move = search.find_best_move(64, 15000);
+                Move new_move = search.find_best_move(64, 5000);
                 auto t2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double, std::milli> ms_double = t2 - t1;
     
