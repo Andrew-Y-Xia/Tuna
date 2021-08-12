@@ -27,6 +27,7 @@
 		A1A1F5CE260277B600E15AA0 /* Chess_rlt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C2260277B600E15AA0 /* Chess_rlt60.png */; };
 		A1A1F5CF260277B600E15AA0 /* Chess_plt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C3260277B600E15AA0 /* Chess_plt60.png */; };
 		A1A1F5D0260277B600E15AA0 /* Chess_qdt60.png in Resources */ = {isa = PBXBuildFile; fileRef = A1A1F5C4260277B600E15AA0 /* Chess_qdt60.png */; };
+		A1BB245126C4944100C0C309 /* Georama_Expanded-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1BB245026C4944100C0C309 /* Georama_Expanded-Bold.ttf */; };
 		CC525AEB26A8F33200716C0B /* opening_book.txt in Resources */ = {isa = PBXBuildFile; fileRef = CC525AEA26A8F33200716C0B /* opening_book.txt */; };
 		CC525AEE26A8F37B00716C0B /* Opening_book.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC525AEC26A8F37B00716C0B /* Opening_book.cpp */; };
 		CC9EAEE326447FCF007AC548 /* Evaluation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC9EAEE126447FCF007AC548 /* Evaluation.cpp */; };
@@ -58,6 +59,7 @@
 		A1A1F5C2260277B600E15AA0 /* Chess_rlt60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Chess_rlt60.png; sourceTree = "<group>"; };
 		A1A1F5C3260277B600E15AA0 /* Chess_plt60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Chess_plt60.png; sourceTree = "<group>"; };
 		A1A1F5C4260277B600E15AA0 /* Chess_qdt60.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Chess_qdt60.png; sourceTree = "<group>"; };
+		A1BB245026C4944100C0C309 /* Georama_Expanded-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Georama_Expanded-Bold.ttf"; sourceTree = "<group>"; };
 		CC525AEA26A8F33200716C0B /* opening_book.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = opening_book.txt; sourceTree = "<group>"; };
 		CC525AEC26A8F37B00716C0B /* Opening_book.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Opening_book.cpp; sourceTree = "<group>"; };
 		CC525AED26A8F37B00716C0B /* Opening_book.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Opening_book.hpp; sourceTree = "<group>"; };
@@ -138,6 +140,7 @@
 				A1A1F5BA260277B500E15AA0 /* Chess_rdt60.png */,
 				A1A1F5C2260277B600E15AA0 /* Chess_rlt60.png */,
 				CC525AEA26A8F33200716C0B /* opening_book.txt */,
+				A1BB245026C4944100C0C309 /* Georama_Expanded-Bold.ttf */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -240,6 +243,7 @@
 				A1A1F5CD260277B600E15AA0 /* Chess_ndt60.png in Resources */,
 				A1A1F5C9260277B600E15AA0 /* Chess_qlt60.png in Resources */,
 				A1A1F5C6260277B600E15AA0 /* Chess_rdt60.png in Resources */,
+				A1BB245126C4944100C0C309 /* Georama_Expanded-Bold.ttf in Resources */,
 				A1A1F5C8260277B600E15AA0 /* Chess_blt60.png in Resources */,
 				A1A1F5CB260277B600E15AA0 /* Chess_klt60.png in Resources */,
 				A1A1F5CC260277B600E15AA0 /* Chess_bdt60.png in Resources */,

@@ -24,6 +24,7 @@
 #define WIDTH 1024
 #define SCALE 1.3
 #define OFFSET 2
+#define SIDEBAR_WIDTH 300
 #define ASDF std::cout << "asdf" << std::endl
 
 

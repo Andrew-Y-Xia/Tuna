@@ -235,7 +235,7 @@ int main() {
     TT tt;
     OpeningBook opening_book;
     
-    int AI_turn = 0;
+    int AI_turn = BLACK;
     int PvP = 0;
     
     
@@ -248,11 +248,53 @@ int main() {
     bool trying_to_promote = false;
 
     // create the window
-    sf::RenderWindow window(sf::VideoMode(WIDTH, WIDTH), "My window");
+    sf::RenderWindow window(sf::VideoMode(WIDTH + SIDEBAR_WIDTH, WIDTH), "Chess");
     window.setFramerateLimit(60);
     
     load_textures();
     set_promotional_sprites();
+    
+    
+    sf::Font font;
+    if (!font.loadFromFile(resourcePath() + "Georama_Expanded-Bold.ttf")) {
+        std::cout << "Font loading error!\n";
+    }
+    
+    sf::Text play_as_white_text;
+    play_as_white_text.setFont(font);
+    play_as_white_text.setString("Play as White");
+    play_as_white_text.setCharacterSize(32);
+    play_as_white_text.setFillColor(sf::Color(196, 192, 181));
+    sf::FloatRect play_as_white_text_rect = play_as_white_text.getLocalBounds();
+    play_as_white_text.setOrigin(play_as_white_text_rect.left + play_as_white_text_rect.width/2.0f,
+                                 play_as_white_text_rect.top  + play_as_white_text_rect.height/2.0f);
+    play_as_white_text.setPosition(SIDEBAR_WIDTH / 2 + WIDTH, 200);
+    
+    sf::Text play_as_black_text;
+    play_as_black_text.setFont(font);
+    play_as_black_text.setString("Play as Black");
+    play_as_black_text.setCharacterSize(32);
+    play_as_black_text.setFillColor(sf::Color(143, 101, 83));
+    sf::FloatRect play_as_black_text_rect = play_as_black_text.getLocalBounds();
+    play_as_black_text.setOrigin(play_as_black_text_rect.left + play_as_black_text_rect.width/2.0f,
+                                 play_as_black_text_rect.top  + play_as_black_text_rect.height/2.0f);
+    play_as_black_text.setPosition(SIDEBAR_WIDTH / 2 + WIDTH, 300);
+    
+    sf::RectangleShape turn_to_move_indicator(sf::Vector2f(100, 100));
+    turn_to_move_indicator.setOutlineColor(sf::Color(110, 93, 92));
+    turn_to_move_indicator.setOutlineThickness(28);
+    turn_to_move_indicator.setOrigin(50, 50);
+    turn_to_move_indicator.setPosition(SIDEBAR_WIDTH / 2 + WIDTH, 500);
+    
+    sf::Color turn_indicator_white(184, 176, 169);
+    sf::Color turn_indicator_black(33, 29, 25);
+    
+    if (AI_turn == WHITE) {
+        turn_to_move_indicator.setFillColor(turn_indicator_white);
+    }
+    else {
+        turn_to_move_indicator.setFillColor(turn_indicator_black);
+    }
     
     
     sf::RectangleShape displaygrid[8][8];
@@ -313,7 +355,32 @@ int main() {
                 {
                     if (event.mouseButton.button == sf::Mouse::Left && !sprite_being_dragged)
                     {
-                        if (trying_to_promote) {
+                        // First, check if they want to play as black or play as white
+                        auto m = sf::Mouse::getPosition(window);
+                        
+                        bool setup_for_white = play_as_white_text.getGlobalBounds().contains(m.x, m.y);
+                        bool setup_for_black = play_as_black_text.getGlobalBounds().contains(m.x, m.y);
+                        
+                        if (setup_for_white || setup_for_black) {
+                            opening_book.reset();
+                            tt.clear();
+                            board = Board();
+                            
+                            sprites.clear();
+                            board.set_texture_to_pieces();
+                            
+                            turn_to_move_indicator.setFillColor(turn_indicator_white);
+                            
+                            if (setup_for_white) {
+                                AI_turn = BLACK;
+                            }
+                            else {
+                                AI_turn = WHITE;
+                            }
+                        }
+                        
+                        
+                        else if (trying_to_promote) {
                             auto& promotion_sprites = board.get_current_turn() ? promotion_sprites_white : promotion_sprites_black;
                             int temp_index = locate_sprite_clicked_index(promotion_sprites, sf::Mouse::getPosition(window).x, sf::Mouse::getPosition(window).y, NULL);
                             if (temp_index != -1) {
@@ -345,6 +412,13 @@ int main() {
     
                                 trying_to_promote = false;
                                 frame_counter = 0;
+                                
+                                if (board.get_current_turn() == WHITE) {
+                                    turn_to_move_indicator.setFillColor(turn_indicator_white);
+                                }
+                                else {
+                                    turn_to_move_indicator.setFillColor(turn_indicator_black);
+                                }
                                 
                                 // TODO: Game over message
                             }
@@ -405,7 +479,14 @@ int main() {
                                     }
 
                                     frame_counter = 0;
-    
+                                    
+                                    if (board.get_current_turn() == WHITE) {
+                                        turn_to_move_indicator.setFillColor(turn_indicator_white);
+                                    }
+                                    else {
+                                        turn_to_move_indicator.setFillColor(turn_indicator_black);
+                                    }
+                                    
                                     // TODO: Game over message
                                 }
                                 else {
@@ -493,6 +574,14 @@ int main() {
                 }
     
                 board.request_move(converter::old_move_to_new(best_move));
+                
+                if (board.get_current_turn() == WHITE) {
+                    turn_to_move_indicator.setFillColor(turn_indicator_white);
+                }
+                else {
+                    turn_to_move_indicator.setFillColor(turn_indicator_black);
+                }
+                
                 // TODO: Gameover message
             }
         }
@@ -526,6 +615,14 @@ int main() {
             window.draw(promotion_rectangle);
             draw_promotion_pieces(&window, !board.get_current_turn());
         }
+        
+        
+        // Draw sidebar
+        
+        window.draw(play_as_white_text);
+        window.draw(play_as_black_text);
+        
+        window.draw(turn_to_move_indicator);
         
         
         
