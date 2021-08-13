@@ -224,6 +224,32 @@ void normal_move_sprite_handler(old::Move validated_move, sf::Sprite* sprite_bei
     }
 }
 
+void center_text_origin(sf::Text& t) {
+    sf::FloatRect r = t.getLocalBounds();
+    t.setOrigin(r.left + r.width/2.0f,
+                r.top  + r.height/2.0f);
+}
+
+static void game_over_check(Board &board, sf::Text &game_end_message, bool &should_show_game_end_message) {
+    std::string side_that_moved = board.get_current_turn() == WHITE ? "Black" : "White";
+    int n_moves = board.calculate_mobility();
+    if (n_moves == 0) {
+        if (board.is_king_in_check()) {
+            game_end_message.setString(side_that_moved + " has won!");
+            center_text_origin(game_end_message);
+        }
+        else {
+            game_end_message.setString("Stalemate!");
+            center_text_origin(game_end_message);
+        }
+        should_show_game_end_message = true;
+    }
+    else if (board.has_repeated_twice() || board.has_drawn_by_fifty_move_rule()) {
+        game_end_message.setString("Game drawn!");
+        center_text_origin(game_end_message);
+        should_show_game_end_message = true;
+    }
+}
 
 
 int main() {
@@ -265,9 +291,7 @@ int main() {
     play_as_white_text.setString("Play as White");
     play_as_white_text.setCharacterSize(32);
     play_as_white_text.setFillColor(sf::Color(196, 192, 181));
-    sf::FloatRect play_as_white_text_rect = play_as_white_text.getLocalBounds();
-    play_as_white_text.setOrigin(play_as_white_text_rect.left + play_as_white_text_rect.width/2.0f,
-                                 play_as_white_text_rect.top  + play_as_white_text_rect.height/2.0f);
+    center_text_origin(play_as_white_text);
     play_as_white_text.setPosition(SIDEBAR_WIDTH / 2 + WIDTH, 200);
     
     sf::Text play_as_black_text;
@@ -275,9 +299,7 @@ int main() {
     play_as_black_text.setString("Play as Black");
     play_as_black_text.setCharacterSize(32);
     play_as_black_text.setFillColor(sf::Color(143, 101, 83));
-    sf::FloatRect play_as_black_text_rect = play_as_black_text.getLocalBounds();
-    play_as_black_text.setOrigin(play_as_black_text_rect.left + play_as_black_text_rect.width/2.0f,
-                                 play_as_black_text_rect.top  + play_as_black_text_rect.height/2.0f);
+    center_text_origin(play_as_black_text);
     play_as_black_text.setPosition(SIDEBAR_WIDTH / 2 + WIDTH, 300);
     
     sf::RectangleShape turn_to_move_indicator(sf::Vector2f(100, 100));
@@ -288,6 +310,17 @@ int main() {
     
     sf::Color turn_indicator_white(184, 176, 169);
     sf::Color turn_indicator_black(33, 29, 25);
+    
+    // Game end message:
+    
+    bool should_show_game_end_message = false;
+    sf::Text game_end_message;
+    game_end_message.setFont(font);
+    game_end_message.setCharacterSize(28);
+    game_end_message.setFillColor(sf::Color(sf::Color::White));
+    game_end_message.setPosition(SIDEBAR_WIDTH / 2 + WIDTH, 700);
+    
+    
     
     if (AI_turn == WHITE) {
         turn_to_move_indicator.setFillColor(turn_indicator_white);
@@ -371,6 +404,8 @@ int main() {
                             
                             turn_to_move_indicator.setFillColor(turn_indicator_white);
                             
+                            should_show_game_end_message = false;
+                            
                             if (setup_for_white) {
                                 AI_turn = BLACK;
                             }
@@ -420,7 +455,7 @@ int main() {
                                     turn_to_move_indicator.setFillColor(turn_indicator_black);
                                 }
                                 
-                                // TODO: Game over message
+                                game_over_check(board, game_end_message, should_show_game_end_message);
                             }
                         }
                         else {
@@ -487,7 +522,7 @@ int main() {
                                         turn_to_move_indicator.setFillColor(turn_indicator_black);
                                     }
                                     
-                                    // TODO: Game over message
+                                    game_over_check(board, game_end_message, should_show_game_end_message);
                                 }
                                 else {
                                     // If move isn't valid, return sprite to original position and do nothing
@@ -582,7 +617,7 @@ int main() {
                     turn_to_move_indicator.setFillColor(turn_indicator_black);
                 }
                 
-                // TODO: Gameover message
+                game_over_check(board, game_end_message, should_show_game_end_message);
             }
         }
 
@@ -624,6 +659,9 @@ int main() {
         
         window.draw(turn_to_move_indicator);
         
+        if (should_show_game_end_message) {
+            window.draw(game_end_message);
+        }
         
         
         
