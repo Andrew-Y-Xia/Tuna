@@ -21,6 +21,9 @@
 #include <stdint.h>
 #include <random>
 
+#define NDEBUG
+#include <assert.h>
+
 #define WIDTH 1024
 #define SCALE 1.3
 #define OFFSET 2

@@ -545,7 +545,7 @@ int main() {
     
                 Search search(board, tt, opening_book);
                 auto t1 = std::chrono::high_resolution_clock::now();
-                Move new_move = search.find_best_move(64, 5000);
+                Move new_move = search.find_best_move(64, 2000);
                 auto t2 = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double, std::milli> ms_double = t2 - t1;
     
