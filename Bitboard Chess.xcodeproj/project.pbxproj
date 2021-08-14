@@ -32,6 +32,7 @@
 		CC525AEE26A8F37B00716C0B /* Opening_book.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC525AEC26A8F37B00716C0B /* Opening_book.cpp */; };
 		CC9EAEE326447FCF007AC548 /* Evaluation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC9EAEE126447FCF007AC548 /* Evaluation.cpp */; };
 		CCBBA99726BDAA250023500F /* Ray_gen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CCBBA99526BDAA250023500F /* Ray_gen.cpp */; };
+		CCCCEA0F26C85C500045B400 /* Zobrist.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CCCCEA0D26C85C500045B400 /* Zobrist.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -76,6 +77,8 @@
 		CC9EAEE226447FCF007AC548 /* Evaluation.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Evaluation.hpp; sourceTree = "<group>"; };
 		CCBBA99526BDAA250023500F /* Ray_gen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Ray_gen.cpp; sourceTree = "<group>"; };
 		CCBBA99626BDAA250023500F /* Ray_gen.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Ray_gen.hpp; sourceTree = "<group>"; };
+		CCCCEA0D26C85C500045B400 /* Zobrist.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Zobrist.cpp; sourceTree = "<group>"; };
+		CCCCEA0E26C85C500045B400 /* Zobrist.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Zobrist.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,6 +171,8 @@
 				CC9EAEE226447FCF007AC548 /* Evaluation.hpp */,
 				A118E72B264C2616009BD882 /* Transposition_table.cpp */,
 				A118E72C264C2616009BD882 /* Transposition_table.hpp */,
+				CCCCEA0D26C85C500045B400 /* Zobrist.cpp */,
+				CCCCEA0E26C85C500045B400 /* Zobrist.hpp */,
 				CC525AEC26A8F37B00716C0B /* Opening_book.cpp */,
 				CC525AED26A8F37B00716C0B /* Opening_book.hpp */,
 				A164B2C32627A3BB00160CF7 /* ctpl_stl.h */,
@@ -283,6 +288,7 @@
 				A118E72D264C2616009BD882 /* Transposition_table.cpp in Sources */,
 				A10FB66D2630D36B00B141DE /* Bitboard.cpp in Sources */,
 				CC525AEE26A8F37B00716C0B /* Opening_book.cpp in Sources */,
+				CCCCEA0F26C85C500045B400 /* Zobrist.cpp in Sources */,
 				A161478F262F989B0025D16D /* main.cpp in Sources */,
 				A1614790262F989B0025D16D /* Board.cpp in Sources */,
 				A1614791262F989B0025D16D /* Utility.cpp in Sources */,

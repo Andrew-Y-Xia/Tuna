@@ -82,8 +82,7 @@ Move OpeningBook::request(std::vector<move_data> move_stack) {
     
     std::vector<int> possible_line_indices;
     
-    std::random_device rd;
-    std::default_random_engine generator(rd());
+    std::mt19937 generator(static_cast<unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
     
     
     if (move_stack.size() == 0) {

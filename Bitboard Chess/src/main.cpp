@@ -257,6 +257,7 @@ int main() {
     init_bitboard_utils();
     init_eval_utils();
     init_ray_gen();
+    init_zobrist_bitstrings();
 
     TT tt;
     OpeningBook opening_book;

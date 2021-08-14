@@ -17,6 +17,7 @@
 #include "Evaluation.hpp"
 #include "Transposition_table.hpp"
 #include "Ray_gen.hpp"
+#include "Zobrist.hpp"
 
 void set_single_texture(int color, old::piece_type piece, sf::Sprite& sprite);
 
@@ -67,8 +68,7 @@ public:
     void standard_setup();
     
     void hash();
-    void init_zobrist_key();
-    
+
     bool get_current_turn();
     
     void print_board();

@@ -106,7 +106,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     else if (depth >= 5) {
         // Check if time is up
         // If so, exit
-        std::chrono::duration<double, std::milli> ms_double = std::chrono::high_resolution_clock::now() - start_time;
+        std::chrono::duration<double, std::milli> ms_double = std::chrono::steady_clock::now() - start_time;
         if (ms_double.count() >= max_time_ms) {
             // Reset board to original state
             for (int i = ply_from_root; i != 0; i--) {
@@ -250,7 +250,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
     type2collision = 0;
     nodes_searched = 0;
     
-    start_time = std::chrono::high_resolution_clock::now();
+    start_time = std::chrono::steady_clock::now();
     
     // Check opening_book
     if (opening_book.can_use_book() && board.get_reg_starting_pos()) {

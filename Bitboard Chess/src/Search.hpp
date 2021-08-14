@@ -41,7 +41,7 @@ private:
     
 
     unsigned int nodes_searched;
-    std::chrono::time_point<std::__1::chrono::steady_clock, std::chrono::duration<long long, std::ratio<1LL, 1000000000LL>>> start_time;
+    std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<long long, std::ratio<1LL, 1000000000LL>>> start_time;
     double max_time_ms;
 public:
     

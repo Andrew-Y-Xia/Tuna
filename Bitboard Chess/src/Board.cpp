@@ -11,10 +11,6 @@ extern sf::Texture textures[13];
 extern std::forward_list<sf::Sprite> sprites, promotion_sprites_white, promotion_sprites_black;
 extern int incre8[8];
 
-U64 piece_bitstrings[64][2][6];
-U64 black_to_move_bitstring;
-U64 white_castle_queenside_bitstring, white_castle_kingside_bitstring, black_castle_queenside_bitstring, black_castle_kingside_bitstring;
-U64 en_passant_bitstrings[8];
 
 template void Board::generate_moves<ALL_MOVES>(MoveList& moves);
 template void Board::generate_moves<CAPTURES_ONLY>(MoveList& moves);
@@ -408,14 +404,13 @@ void Board::standard_setup() {
     calculate_piece_values();
     calculate_piece_square_values();
 //    calculate_piece_count();
-    init_zobrist_key();
+    hash();
 }
 
 void Board::hash() {
     // Hashes current position into a U64
     // Stores hash in z_key
-    // ONLY CALL AFTER 'init_zorbist_key()' has been called
-    // Supposedly only used during 'init_zobrist_key()' because the z_key is incrementally updated during make/unmake routines
+    // ONLY CALL AFTER 'init_zorbist_bitstrings()' has been called
     
     // Clear hash
     z_key = C64(0);
@@ -469,42 +464,6 @@ void Board::hash() {
         int index = bitscan_forward(southrays);
         z_key ^= en_passant_bitstrings[index];
     }
-}
-
-void Board::init_zobrist_key() {
-    // Initializes bitstrings used for zobrist hashing
-    
-//    std::random_device rd;
-    
-    // Random number generator
-    std::default_random_engine generator(42);
-
-    // Distribution on which to apply the generator (uniform, from 0 to 2^64 - 1)
-    std::uniform_int_distribution<U64> distribution(0,0xFFFFFFFFFFFFFFFF);
-
-    for (int i = 0; i < 64; i++) {
-        for (int j = 0; j < 2; j++) {
-            for (int k = 0; k < 6; k++) {
-                piece_bitstrings[i][j][k] = distribution(generator);
-            }
-        }
-    }
-    black_to_move_bitstring = distribution(generator);
-    
-    white_castle_queenside_bitstring = distribution(generator);
-    white_castle_kingside_bitstring = distribution(generator);
-    black_castle_queenside_bitstring = distribution(generator);
-    black_castle_kingside_bitstring = distribution(generator);
-    
-    for (int i = 0; i < 8; i++) {
-        en_passant_bitstrings[i] = distribution(generator);
-    }
-    
-    
-    // Actual generation of zobrist key:
-    
-    hash();
-    
 }
 
 bool Board::get_current_turn() {
