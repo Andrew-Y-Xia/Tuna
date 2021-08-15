@@ -19,7 +19,6 @@
 #include "Ray_gen.hpp"
 #include "Zobrist.hpp"
 
-void set_single_texture(int color, old::piece_type piece, sf::Sprite& sprite);
 
 
 class Board {
@@ -160,8 +159,6 @@ public:
     // UI:
     Move request_move(Move move);
     bool is_trying_to_promote(Move move);
-    
-    void set_texture_to_pieces();
     
     // Produce info
     U64 get_z_key();

@@ -10,7 +10,6 @@
 #define Opening_book_hpp
 
 #include "depend.hpp"
-#include "ResourcePath.hpp"
 #include "Data_structs.hpp"
 #include "Board.hpp"
 
@@ -18,11 +17,11 @@
 #include <algorithm>
 #include <iterator>
 
-
+extern std::vector<std::vector<Move>> opening_lines;
 
 class OpeningBook {
 private:
-    std::vector<std::vector<Move>> opening_lines;
+    
     bool use_book;
 public:
     OpeningBook();
@@ -31,6 +30,8 @@ public:
     Move request(std::vector<move_data> move_stack);
     void reset();
 };
+
+void init_opening_book();
 
 
 #endif /* Opening_book_hpp */

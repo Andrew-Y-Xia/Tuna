@@ -9,7 +9,6 @@
 #ifndef depend_hpp
 #define depend_hpp
 
-#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -17,17 +16,13 @@
 #include <ctype.h>
 #include <forward_list>
 #include <vector>
-#include <sparsehash/sparse_hash_map>
 #include <stdint.h>
 #include <random>
 
 #define NDEBUG
 #include <assert.h>
 
-#define WIDTH 1024
-#define SCALE 1.3
-#define OFFSET 2
-#define SIDEBAR_WIDTH 300
+#define RESOURCE_PATH std::string("./Resources/")
 #define ASDF std::cout << "asdf" << std::endl
 
 

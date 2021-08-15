@@ -7,9 +7,6 @@
 //
 #include "Board.hpp"
 
-extern sf::Texture textures[13];
-extern std::forward_list<sf::Sprite> sprites, promotion_sprites_white, promotion_sprites_black;
-extern int incre8[8];
 
 
 template void Board::generate_moves<ALL_MOVES>(MoveList& moves);
@@ -2451,36 +2448,6 @@ bool Board::is_trying_to_promote(Move move) {
     return false;
 }
 
-
-void Board::set_texture_to_pieces() {
-    U64 occ = Bitboards[BlackPieces] | Bitboards[WhitePieces];
-    for (int y = 0; y < 8; y++) {
-        for (int x = 0; x < 8; x++) {
-            int index = cords_to_index(x, y);
-            if ((C64(1) << index) & occ) {
-                old::piece_type piece = converter::piece_type_to_old(find_piece_occupying_sq(index));
-                int color;
-                if ((C64(1) << index) & Bitboards[BlackPieces]) {
-                    color = 1;
-                }
-                else {
-                    color = 0;
-                }
-                
-                sf::Sprite sprite;
-                
-
-                set_single_texture(color, piece, sprite);
-
-
-                sprite.setOrigin(sf::Vector2f(30, 30));
-                sprite.setPosition(x * WIDTH/8 + WIDTH/16 - OFFSET, y * WIDTH/8 + WIDTH/16 - OFFSET);
-                sprite.setScale(sf::Vector2f(SCALE, SCALE));
-                sprites.push_front(sprite);
-            }
-        }
-    }
-}
 
 U64 Board::get_z_key() {
     return z_key;

@@ -8,64 +8,10 @@
 
 #include "Opening_book.hpp"
 
+std::vector<std::vector<Move>> opening_lines;
 
 OpeningBook::OpeningBook() {
     use_book = true;
-    
-    // Loads opening book into memory
-    std::string line;
-    std::ifstream file (resourcePath() + "opening_book.txt");
-    if (file.is_open()) {
-        // 5000 is the number of lines in opening_book.txt
-        // Every line is a game (PGN format)
-        opening_lines.reserve(5000);
-        
-        while (std::getline(file, line)) {
-            
-            // equivalent of python's str.split()
-            std::istringstream iss(line);
-            std::vector<std::string> move_strs;
-            std::copy(std::istream_iterator<std::string>(iss),
-                      std::istream_iterator<std::string>(),
-                      std::back_inserter(move_strs));
-            
-            
-            
-            // str.split() end
-            
-            move_strs.pop_back();
-            
-            Board board;
-            std::vector<Move> move_list;
-            
-            bool skip_flag = false;
-            
-            for (auto it = move_strs.begin(); it != move_strs.end(); it++) {
-                if (it->front() == '{') {
-                    skip_flag = true;
-                    continue;
-                }
-                if (it->front() == '}') {
-                    skip_flag = false;
-                    continue;
-                }
-                if (it->back() == '.' || skip_flag) {
-                    continue;
-                }
-                
-                Move move = board.read_SAN(*it);
-                move_list.push_back(move);
-                board.make_move(move);
-            }
-
-            
-            opening_lines.push_back(move_list);
-        }
-        file.close();
-    }
-    else {
-        std::cout << "Opening book failed to init";
-    }
 }
 
 bool OpeningBook::can_use_book() {
@@ -129,4 +75,62 @@ Move OpeningBook::request(std::vector<move_data> move_stack) {
 
 void OpeningBook::reset() {
     use_book = true;
+}
+
+
+void init_opening_book() {
+    // Loads opening book into memory
+    std::string line;
+    std::ifstream file (RESOURCE_PATH + "opening_book.txt");
+    if (file.is_open()) {
+        // 5000 is the number of lines in opening_book.txt
+        // Every line is a game (PGN format)
+        opening_lines.reserve(5000);
+        
+        while (std::getline(file, line)) {
+            
+            // equivalent of python's str.split()
+            std::istringstream iss(line);
+            std::vector<std::string> move_strs;
+            std::copy(std::istream_iterator<std::string>(iss),
+                      std::istream_iterator<std::string>(),
+                      std::back_inserter(move_strs));
+            
+            
+            
+            // str.split() end
+            
+            move_strs.pop_back();
+            
+            Board board;
+            std::vector<Move> move_list;
+            
+            bool skip_flag = false;
+            
+            for (auto it = move_strs.begin(); it != move_strs.end(); it++) {
+                if (it->front() == '{') {
+                    skip_flag = true;
+                    continue;
+                }
+                if (it->front() == '}') {
+                    skip_flag = false;
+                    continue;
+                }
+                if (it->back() == '.' || skip_flag) {
+                    continue;
+                }
+                
+                Move move = board.read_SAN(*it);
+                move_list.push_back(move);
+                board.make_move(move);
+            }
+
+            
+            opening_lines.push_back(move_list);
+        }
+        file.close();
+    }
+    else {
+        std::cout << "Opening book failed to init";
+    }
 }
