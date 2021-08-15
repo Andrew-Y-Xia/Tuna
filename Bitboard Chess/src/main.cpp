@@ -275,7 +275,7 @@ int main() {
     bool trying_to_promote = false;
 
     // create the window
-    sf::RenderWindow window(sf::VideoMode(WIDTH + SIDEBAR_WIDTH, WIDTH), "Chess");
+    sf::RenderWindow window(sf::VideoMode(WIDTH + SIDEBAR_WIDTH, WIDTH), "Chess", sf::Style::Titlebar | sf::Style::Close);
     window.setFramerateLimit(60);
     
     load_textures();
