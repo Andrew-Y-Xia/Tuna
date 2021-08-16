@@ -81,7 +81,7 @@ void OpeningBook::reset() {
 void init_opening_book() {
     // Loads opening book into memory
     std::string line;
-    std::ifstream file (RESOURCE_PATH + "opening_book.txt");
+    std::ifstream file (resource_path() + "opening_book.txt");
     if (file.is_open()) {
         // 5000 is the number of lines in opening_book.txt
         // Every line is a game (PGN format)

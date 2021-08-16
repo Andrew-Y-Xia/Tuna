@@ -12,8 +12,8 @@
 namespace UCI {
 
 
-void init();
-void loop();
+    void init();
+    void loop();
 
 }
 

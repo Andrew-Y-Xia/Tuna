@@ -11,25 +11,27 @@
 
 namespace Engine {
 
-Board board;
-TT tt;
-OpeningBook opening_book;
 
-void init() {
-    
-}
+    void loop() {
+        Board board;
+        TT tt;
+        OpeningBook opening_book;
 
-void loop() {
-    while (1) {
-        std::string input;
-        std::cin >> input;
-        
-        if (input == "perft") {
-            Search search(board, tt, opening_book);
-            
-            std::cout << search.perft(5) << std::endl;
+        while (1) {
+            std::string input;
+            std::cin >> input;
+
+            if (input == "perft") {
+                Search search(board, tt, opening_book);
+                auto t1 = std::chrono::high_resolution_clock::now();
+                long perft_score = search.perft(6);
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+                std::cout << perft_score;
+
+                std::cout << "\nTime: " << ms_double.count() << "ms\n";
+            }
         }
     }
-}
-
+    
 }

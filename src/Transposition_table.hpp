@@ -45,7 +45,6 @@ struct TT_entry {
 class TT {
 private:
     TT_entry* hash_table;
-    unsigned int occupied;
 public:
     TT();
     ~TT();

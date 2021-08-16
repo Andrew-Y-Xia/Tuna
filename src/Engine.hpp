@@ -19,10 +19,7 @@
 
 namespace Engine {
 
-
-void init();
-void loop();
-
+    void loop();
 
 }
 

@@ -19,10 +19,8 @@
 #include <stdint.h>
 #include <random>
 
-#define NDEBUG
 #include <assert.h>
 
-#define RESOURCE_PATH std::string("./Resources/")
 #define ASDF std::cout << "asdf" << std::endl
 
 
@@ -54,5 +52,7 @@ typedef uint64_t U64;
 #define pop_count(a) __builtin_popcountll(a)
 
 #define byteswap(a) __builtin_bswap64(a)
+
+std::string resource_path();
 
 #endif /* depend_hpp */
