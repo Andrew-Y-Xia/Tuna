@@ -12,6 +12,7 @@
 U64 constexpr TT_SIZE() {
     return C64(1) << TT_EXP_2_SIZE;
 }
+
 U64 constexpr TT_LOOKUP_MASK() {
     return TT_SIZE() - 1;
 }
@@ -27,6 +28,7 @@ bool HashMove::operator==(Move move) {
 unsigned int HashMove::get_depth() const {
     return (move_data >> 22) & 0x3F;
 }
+
 unsigned int HashMove::get_node_type() const {
     return (move_data >> 28) & 0xF;
 }
@@ -35,11 +37,11 @@ void HashMove::set_depth(unsigned int depth) {
     move_data &= ~(0x3F << 22);
     move_data |= (depth & 0x3F) << 22;
 }
+
 void HashMove::set_node_type(unsigned int node_type) {
     move_data &= ~(0xF << 28);
     move_data |= (node_type & 0xF) << 28;
 }
-
 
 
 TT::TT() {
@@ -52,6 +54,7 @@ TT::TT() {
         assert((hash_table + i)->score == 0);
     }
 }
+
 TT::~TT() {
     // Delete hash_table
     delete[] hash_table;
@@ -73,7 +76,7 @@ void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type
 
 
 void TT::clear() {
-    memset(hash_table, 0, TT_SIZE()*sizeof(*hash_table));
+    memset(hash_table, 0, TT_SIZE() * sizeof(*hash_table));
     Move move;
     for (int i = 0; i < TT_SIZE(); i++) {
         assert((hash_table + i)->hash_move == move);

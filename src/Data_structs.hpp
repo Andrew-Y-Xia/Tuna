@@ -12,14 +12,14 @@
 #include "depend.hpp"
 
 enum square_mappings {
-  a1 = 0, b1, c1, d1, e1, f1, g1, h1,
-  a2, b2, c2, d2, e2, f2, g2, h2,
-  a3, b3, c3, d3, e3, f3, g3, h3,
-  a4, b4, c4, d4, e4, f4, g4, h4,
-  a5, b5, c5, d5, e5, f5, g5, h5,
-  a6, b6, c6, d6, e6, f6, g6, h6,
-  a7, b7, c7, d7, e7, f7, g7, h7,
-  a8, b8, c8, d8, e8, f8, g8, h8
+    a1 = 0, b1, c1, d1, e1, f1, g1, h1,
+    a2, b2, c2, d2, e2, f2, g2, h2,
+    a3, b3, c3, d3, e3, f3, g3, h3,
+    a4, b4, c4, d4, e4, f4, g4, h4,
+    a5, b5, c5, d5, e5, f5, g5, h5,
+    a6, b6, c6, d6, e6, f6, g6, h6,
+    a7, b7, c7, d7, e7, f7, g7, h7,
+    a8, b8, c8, d8, e8, f8, g8, h8
 };
 
 enum Enum_BoardBB {
@@ -60,10 +60,13 @@ enum CommandType {
 struct Cords {
     int x: 8;
     int y: 8;
-    
+
     bool operator==(const Cords c2);
+
     bool operator!=(const Cords c2);
+
     Cords();
+
     Cords(int a, int b);
 };
 
@@ -91,7 +94,6 @@ struct Cords {
 #define PIECE_PAWN 7
 
 
-
 struct Move {
 protected:
     unsigned int move_data;
@@ -109,43 +111,62 @@ protected:
      bits 22-31: move score
      
     */
-    
+
 public:
     Move();
-    Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece_or_castle_type, unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
-    
+
+    Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int promotion_piece_or_castle_type,
+         unsigned int piece_moved, unsigned int piece_captured, unsigned int score = 0);
+
     unsigned int get_raw_data() const;
+
     void set_raw_data(unsigned int data);
-    
+
     bool operator==(Move& a);
+
     bool operator!=(Move& a);
-    
-    
+
+
     unsigned int get_from() const;
+
     unsigned int get_to() const;
+
     unsigned int get_special_flag() const;
+
     unsigned int get_promote_to() const;
+
     unsigned int get_castle_type() const;
+
     unsigned int get_piece_moved() const;
+
     unsigned int get_piece_captured() const;
+
     unsigned int get_move_score() const;
-    
-    
+
+
     void set_from(unsigned int from);
+
     void set_to(unsigned int to);
+
     void set_special_flag(unsigned int flag);
+
     void set_promote_to(unsigned int piece);
+
     void set_castle_type(unsigned int piece);
+
     void set_piece_moved(unsigned int piece);
+
     void set_piece_captured(unsigned int piece);
+
     void set_move_score(unsigned int score);
 
-    
+
     bool is_capture();
-    
+
     bool is_illegal();
+
     void set_as_illegal();
-    
+
     bool first_twelfth_eq(Move& a);
 
 };
@@ -157,16 +178,18 @@ private:
     int back_index;
 public:
     MoveList();
-    
+
     void push_back(Move move);
+
     Move* begin();
+
     Move* end();
-    
+
     int size();
-    
+
     bool contains(Move move);
-    
-    Move& operator[] (int index);
+
+    Move& operator[](int index);
 };
 
 bool move_cmp(Move first, Move second);
@@ -174,55 +197,55 @@ bool move_cmp(Move first, Move second);
 
 struct move_data {
     Move move;
-    
+
     bool white_can_castle_queenside;
     bool white_can_castle_kingside;
     bool black_can_castle_queenside;
     bool black_can_castle_kingside;
-    
+
     int en_passant_square;
-    
+
     U64 z_key;
-    
+
     bool is_null_move;
-    
+
     int halfmove_counter;
 };
 
 
 namespace old {
 // What type of piece is it?
-enum piece_type {
-    Empty,
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King
-};
+    enum piece_type {
+        Empty,
+        Pawn,
+        Knight,
+        Bishop,
+        Rook,
+        Queen,
+        King
+    };
 
-enum move_type {
-    // Pawn moving two steps for initial move is not included since it can be treated like a normal move
-    Normal,
-    Promote_to_Queen,
-    Promote_to_Rook,
-    Promote_to_Bishop,
-    Promote_to_Knight,
-    En_Passant,
-    Castle_Queenside,
-    Castle_Kingside,
-    Illegal
-};
+    enum move_type {
+        // Pawn moving two steps for initial move is not included since it can be treated like a normal move
+        Normal,
+        Promote_to_Queen,
+        Promote_to_Rook,
+        Promote_to_Bishop,
+        Promote_to_Knight,
+        En_Passant,
+        Castle_Queenside,
+        Castle_Kingside,
+        Illegal
+    };
 
 
-struct Move {
-    Cords from_c;
-    Cords to_c;
-    
-    move_type type: 4;
-    int score: 8;
-};
+    struct Move {
+        Cords from_c;
+        Cords to_c;
+
+        move_type type: 4;
+        int score: 8;
+    };
 } // old
 
 

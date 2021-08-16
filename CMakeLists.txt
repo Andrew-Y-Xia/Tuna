@@ -23,7 +23,6 @@ add_executable(Bitboard_Chess
         src/Bitboard.hpp
         src/Board.cpp
         src/Board.hpp
-        src/ctpl_stl.h
         src/Data_structs.cpp
         src/Data_structs.hpp
         src/depend.hpp

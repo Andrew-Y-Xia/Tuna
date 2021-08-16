@@ -14,7 +14,7 @@
 
 namespace Thread {
 
-extern std::atomic<bool> should_end_search;
+    extern std::atomic<bool> should_end_search;
 
 
 }

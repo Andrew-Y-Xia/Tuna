@@ -15,7 +15,7 @@ unsigned int flip_index_v(unsigned int i) {
 
 char num_to_char(int input) {
     char c;
-    switch(input) {
+    switch (input) {
         case 0:
             c = 'a';
             break;
@@ -95,7 +95,7 @@ unsigned int piece_char_to_piece(char input) {
         case 'p':
             return PIECE_PAWN;
         default:
-            std::cout << "Piece is invalid\n";            
+            std::cout << "Piece is invalid\n";
             return 0;
     }
 }
@@ -103,13 +103,13 @@ unsigned int piece_char_to_piece(char input) {
 unsigned int txt_square_to_index(std::string str) {
     int x = char_to_num(str[0]);
     int y = 8 - (str[1] - '0');
-    
+
     return cords_to_index(x, y);
 }
 
 
 int cords_to_index(int x, int y) {
-    return 8*(7-y) + x;
+    return 8 * (7 - y) + x;
 }
 
 
@@ -138,8 +138,7 @@ void print_move(Move move, bool reg) {
         std::cout << "Piece moved: " << move.get_piece_moved() << '\n';
         std::cout << "Piece captured: " << move.get_piece_captured() << '\n';
         std::cout << "Move score: " << move.get_move_score() << '\n';
-    }
-    else {
+    } else {
         Cords from_c = index_to_cords(move.get_from());
         Cords to_c = index_to_cords(move.get_to());
         std::cout << num_to_char(from_c.x) << 8 - from_c.y << num_to_char(to_c.x) << 8 - to_c.y;
@@ -164,135 +163,135 @@ void print_move(Move move, bool reg) {
 
 namespace converter {
 
-old::piece_type piece_type_to_old(unsigned int piece) {
-    switch (piece) {
-        case PIECE_NONE:
-            return old::Empty;
-        case PIECE_PAWN:
-            return old::Pawn;
-        case PIECE_KNIGHT:
-            return old::Knight;
-        case PIECE_BISHOP:
-            return old::Bishop;
-        case PIECE_ROOK:
-            return old::Rook;
-        case PIECE_QUEEN:
-            return old::Queen;
-        case PIECE_KING:
-            return old::King;
-        default:
-            std::cout << "Something went wrong piece_type_to_old";
-            return old::Empty;
-    }
-}
-
-old::Move move_to_old(Move move) {
-    old::Move old_move;
-    old_move.from_c = index_to_cords(move.get_from());
-    old_move.to_c = index_to_cords(move.get_to());
-    switch (move.get_special_flag()) {
-        case MOVE_NORMAL:
-            old_move.type = old::Normal;
-            break;
-        case MOVE_CASTLING:
-            if (move.get_castle_type() == CASTLE_TYPE_QUEENSIDE) {
-                old_move.type = old::Castle_Queenside;
-            }
-            else {
-                old_move.type = old::Castle_Kingside;
-            }
-            break;
-        case MOVE_ENPASSANT:
-            old_move.type = old::En_Passant;
-            break;
-        case MOVE_PROMOTION:
-            switch (move.get_promote_to()) {
-                case PROMOTE_TO_KNIGHT:
-                    old_move.type = old::Promote_to_Knight;
-                    break;
-                case PROMOTE_TO_BISHOP:
-                    old_move.type = old::Promote_to_Bishop;
-                    break;
-                case PROMOTE_TO_ROOK:
-                    old_move.type = old::Promote_to_Rook;
-                    break;
-                case PROMOTE_TO_QUEEN:
-                    old_move.type = old::Promote_to_Queen;
-                    break;
-            }
-            break;
-    }
-    if (move.get_piece_moved() == PIECE_EXTRA) {
-        old_move.type = old::Illegal;
-    }
-    return old_move;
-}
-
-unsigned int old_piece_type_to_new(old::piece_type piece) {
-    switch (piece) {
-        case old::Empty:
-            return PIECE_NONE;
-        case old::Pawn:
-            return PIECE_PAWN;
-        case old::Knight:
-            return PIECE_KNIGHT;
-        case old::Bishop:
-            return PIECE_BISHOP;
-        case old::Rook:
-            return PIECE_ROOK;
-        case old::Queen:
-            return PIECE_QUEEN;
-        case old::King:
-            return PIECE_KING;
-        default:
-            std::cout << "Something went wrong old_piece_type_to_new";
-            return PIECE_EXTRA;
-    }
-}
-Move old_move_to_new(old::Move old_move) {
-    Move new_move;
-    
-    new_move.set_from(cords_to_index(old_move.from_c.x, old_move.from_c.y));
-    new_move.set_to(cords_to_index(old_move.to_c.x, old_move.to_c.y));
-    
-    switch (old_move.type) {
-        case old::Normal:
-            new_move.set_special_flag(MOVE_NORMAL);
-            break;
-        case old::Promote_to_Queen:
-            new_move.set_special_flag(MOVE_PROMOTION);
-            new_move.set_promote_to(PROMOTE_TO_QUEEN);
-            break;
-        case old::Promote_to_Rook:
-            new_move.set_special_flag(MOVE_PROMOTION);
-            new_move.set_promote_to(PROMOTE_TO_ROOK);
-            break;
-        case old::Promote_to_Bishop:
-            new_move.set_special_flag(MOVE_PROMOTION);
-            new_move.set_promote_to(PROMOTE_TO_BISHOP);
-            break;
-        case old::Promote_to_Knight:
-            new_move.set_special_flag(MOVE_PROMOTION);
-            new_move.set_promote_to(PROMOTE_TO_KNIGHT);
-            break;
-        case old::En_Passant:
-            new_move.set_special_flag(MOVE_ENPASSANT);
-            break;
-        case old::Castle_Queenside:
-            new_move.set_special_flag(MOVE_CASTLING);
-            new_move.set_castle_type(CASTLE_TYPE_QUEENSIDE);
-            break;
-        case old::Castle_Kingside:
-            new_move.set_special_flag(MOVE_CASTLING);
-            new_move.set_castle_type(CASTLE_TYPE_KINGSIDE);
-            break;
-        case old::Illegal:
-            new_move.set_piece_moved(PIECE_EXTRA);
-            break;
+    old::piece_type piece_type_to_old(unsigned int piece) {
+        switch (piece) {
+            case PIECE_NONE:
+                return old::Empty;
+            case PIECE_PAWN:
+                return old::Pawn;
+            case PIECE_KNIGHT:
+                return old::Knight;
+            case PIECE_BISHOP:
+                return old::Bishop;
+            case PIECE_ROOK:
+                return old::Rook;
+            case PIECE_QUEEN:
+                return old::Queen;
+            case PIECE_KING:
+                return old::King;
+            default:
+                std::cout << "Something went wrong piece_type_to_old";
+                return old::Empty;
+        }
     }
 
-    return new_move;
-}
+    old::Move move_to_old(Move move) {
+        old::Move old_move;
+        old_move.from_c = index_to_cords(move.get_from());
+        old_move.to_c = index_to_cords(move.get_to());
+        switch (move.get_special_flag()) {
+            case MOVE_NORMAL:
+                old_move.type = old::Normal;
+                break;
+            case MOVE_CASTLING:
+                if (move.get_castle_type() == CASTLE_TYPE_QUEENSIDE) {
+                    old_move.type = old::Castle_Queenside;
+                } else {
+                    old_move.type = old::Castle_Kingside;
+                }
+                break;
+            case MOVE_ENPASSANT:
+                old_move.type = old::En_Passant;
+                break;
+            case MOVE_PROMOTION:
+                switch (move.get_promote_to()) {
+                    case PROMOTE_TO_KNIGHT:
+                        old_move.type = old::Promote_to_Knight;
+                        break;
+                    case PROMOTE_TO_BISHOP:
+                        old_move.type = old::Promote_to_Bishop;
+                        break;
+                    case PROMOTE_TO_ROOK:
+                        old_move.type = old::Promote_to_Rook;
+                        break;
+                    case PROMOTE_TO_QUEEN:
+                        old_move.type = old::Promote_to_Queen;
+                        break;
+                }
+                break;
+        }
+        if (move.get_piece_moved() == PIECE_EXTRA) {
+            old_move.type = old::Illegal;
+        }
+        return old_move;
+    }
+
+    unsigned int old_piece_type_to_new(old::piece_type piece) {
+        switch (piece) {
+            case old::Empty:
+                return PIECE_NONE;
+            case old::Pawn:
+                return PIECE_PAWN;
+            case old::Knight:
+                return PIECE_KNIGHT;
+            case old::Bishop:
+                return PIECE_BISHOP;
+            case old::Rook:
+                return PIECE_ROOK;
+            case old::Queen:
+                return PIECE_QUEEN;
+            case old::King:
+                return PIECE_KING;
+            default:
+                std::cout << "Something went wrong old_piece_type_to_new";
+                return PIECE_EXTRA;
+        }
+    }
+
+    Move old_move_to_new(old::Move old_move) {
+        Move new_move;
+
+        new_move.set_from(cords_to_index(old_move.from_c.x, old_move.from_c.y));
+        new_move.set_to(cords_to_index(old_move.to_c.x, old_move.to_c.y));
+
+        switch (old_move.type) {
+            case old::Normal:
+                new_move.set_special_flag(MOVE_NORMAL);
+                break;
+            case old::Promote_to_Queen:
+                new_move.set_special_flag(MOVE_PROMOTION);
+                new_move.set_promote_to(PROMOTE_TO_QUEEN);
+                break;
+            case old::Promote_to_Rook:
+                new_move.set_special_flag(MOVE_PROMOTION);
+                new_move.set_promote_to(PROMOTE_TO_ROOK);
+                break;
+            case old::Promote_to_Bishop:
+                new_move.set_special_flag(MOVE_PROMOTION);
+                new_move.set_promote_to(PROMOTE_TO_BISHOP);
+                break;
+            case old::Promote_to_Knight:
+                new_move.set_special_flag(MOVE_PROMOTION);
+                new_move.set_promote_to(PROMOTE_TO_KNIGHT);
+                break;
+            case old::En_Passant:
+                new_move.set_special_flag(MOVE_ENPASSANT);
+                break;
+            case old::Castle_Queenside:
+                new_move.set_special_flag(MOVE_CASTLING);
+                new_move.set_castle_type(CASTLE_TYPE_QUEENSIDE);
+                break;
+            case old::Castle_Kingside:
+                new_move.set_special_flag(MOVE_CASTLING);
+                new_move.set_castle_type(CASTLE_TYPE_KINGSIDE);
+                break;
+            case old::Illegal:
+                new_move.set_piece_moved(PIECE_EXTRA);
+                break;
+        }
+
+        return new_move;
+    }
 
 
 } // converter

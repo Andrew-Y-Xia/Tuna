@@ -21,16 +21,18 @@
 #define NODE_LOWERBOUND 2
 
 
-
-class HashMove: public Move {
+class HashMove : public Move {
 public:
     void operator=(Move move);
+
     bool operator==(Move move);
-    
+
     unsigned int get_depth() const;
+
     unsigned int get_node_type() const;
 
     void set_depth(unsigned int depth);
+
     void set_node_type(unsigned int node_type);
 };
 
@@ -47,11 +49,15 @@ private:
     TT_entry* hash_table;
 public:
     TT();
+
     ~TT();
+
     TT_entry get(U64 key) const;
+
     void set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score);
+
     void clear();
-    
+
 };
 
 #endif /* Transposition_table_hpp */

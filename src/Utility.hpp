@@ -13,7 +13,8 @@
 #include "Data_structs.hpp"
 
 // Math function: sign
-template <typename T> int sgn(T val) {
+template<typename T>
+int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
@@ -41,11 +42,13 @@ unsigned int txt_square_to_index(std::string str);
 
 namespace converter {
 
-old::piece_type piece_type_to_old(unsigned int piece);
-old::Move move_to_old(Move move);
+    old::piece_type piece_type_to_old(unsigned int piece);
 
-unsigned int old_piece_type_to_new(old::piece_type piece);
-Move old_move_to_new(old::Move old_move);
+    old::Move move_to_old(Move move);
+
+    unsigned int old_piece_type_to_new(old::piece_type piece);
+
+    Move old_move_to_new(old::Move old_move);
 
 }
 

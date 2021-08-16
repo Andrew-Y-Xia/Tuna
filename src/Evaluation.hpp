@@ -49,12 +49,15 @@ extern U64 pawn_storm_kingside[2];
 
 
 void init_eval_utils();
+
 void init_piece_to_value();
+
 void init_piece_square_tables();
 
 void index_remap(int* array);
 
 int lookup_ps_table_m(unsigned int index, unsigned int piece, int current_turn);
+
 int lookup_ps_table_e(unsigned int index, unsigned int piece, int current_turn);
 
 #endif /* Evaluation_hpp */
