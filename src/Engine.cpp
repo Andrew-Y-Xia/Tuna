@@ -17,19 +17,31 @@ namespace Engine {
         TT tt;
         OpeningBook opening_book;
 
-        while (1) {
-            std::string input;
-            std::cin >> input;
+        while (true) {
+            std::vector<std::string> cmd = Thread::cmd_queue.dequeue();
 
-            if (input == "perft") {
-                Search search(board, tt, opening_book);
-                auto t1 = std::chrono::high_resolution_clock::now();
-                long perft_score = search.perft(6);
-                auto t2 = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::milli> ms_double = t2 - t1;
-                std::cout << perft_score;
+            try {
+                if (cmd.at(0) == "quit") {
+                    return;
+                }
+                else if (cmd.at(0) == "go") {
+                    if (cmd.at(1) == "perft") {
+                        int perft_depth = std::stoi(cmd.at(2));
 
-                std::cout << "\nTime: " << ms_double.count() << "ms\n";
+                        Search search(board, tt, opening_book);
+                        auto t1 = std::chrono::high_resolution_clock::now();
+                        long perft_score = search.perft(perft_depth);
+                        auto t2 = std::chrono::high_resolution_clock::now();
+                        std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+                        std::ostringstream buffer;
+                        buffer << perft_score;
+                        buffer << "\nTime: " << ms_double.count() << "ms\n";
+                        Thread::synced_cout.print(buffer.str());
+                    }
+                }
+            }
+            catch (std::out_of_range& e) {
+                std::cerr << "Insufficient parameters\n";
             }
         }
     }

@@ -12,6 +12,8 @@
 #include "depend.hpp"
 #include "Data_structs.hpp"
 
+#include <sstream>
+
 // Math function: sign
 template<typename T>
 int sgn(T val) {
@@ -39,6 +41,7 @@ void print_move(Move move, bool reg = false);
 
 unsigned int txt_square_to_index(std::string str);
 
+std::vector<std::string> split(const std::string& line);
 
 namespace converter {
 

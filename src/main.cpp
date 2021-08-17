@@ -84,8 +84,11 @@ int main() {
 
     std::cout << "Start\n";
 
+    Thread::should_end_search = false;
+
     std::thread t(Engine::loop);
     UCI::loop();
-
     t.join();
+
+    return 0;
 }

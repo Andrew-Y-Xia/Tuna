@@ -9,6 +9,10 @@
 #ifndef UCI_hpp
 #define UCI_hpp
 
+#include "depend.hpp"
+#include "Thread.hpp"
+#include "Utility.hpp"
+
 namespace UCI {
 
 

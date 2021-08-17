@@ -10,6 +10,8 @@
 
 std::vector<std::vector<Move>> opening_lines;
 
+std::vector<std::string> split(const std::string& line);
+
 OpeningBook::OpeningBook() {
     use_book = true;
 }
@@ -89,13 +91,7 @@ void init_opening_book() {
         opening_lines.reserve(5000);
 
         while (std::getline(file, line)) {
-
-            // equivalent of python's str.split()
-            std::istringstream iss(line);
-            std::vector<std::string> move_strs;
-            std::copy(std::istream_iterator<std::string>(iss),
-                      std::istream_iterator<std::string>(),
-                      std::back_inserter(move_strs));
+            std::vector<std::string> move_strs = split(line);
 
 
 

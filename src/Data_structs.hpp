@@ -51,11 +51,6 @@ enum MoveGenType {
     CAPTURES_ONLY,
 };
 
-enum CommandType {
-    go_search,
-    go_perft,
-};
-
 
 struct Cords {
     int x: 8;

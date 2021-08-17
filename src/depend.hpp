@@ -17,6 +17,7 @@
 #include <forward_list>
 #include <vector>
 #include <stdint.h>
+#include <stdexcept>
 #include <random>
 
 #include <assert.h>
