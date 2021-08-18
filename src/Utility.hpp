@@ -39,6 +39,8 @@ bool is_within_bounds(int x, int y);
 
 void print_move(Move move, bool reg = false);
 
+std::string move_to_str(Move move, bool reg = false);
+
 unsigned int txt_square_to_index(std::string str);
 
 std::vector<std::string> split(const std::string& line);

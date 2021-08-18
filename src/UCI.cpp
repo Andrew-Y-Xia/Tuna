@@ -8,29 +8,23 @@
 
 #include "UCI.hpp"
 
-namespace UCI {
+UCI::UCI(Thread::SyncedCout& s, Thread::SafeQueue<std::vector<std::string>>& c, std::atomic<bool>& b) : synced_cout(s), cmd_queue(c), should_end_search(b) {};
 
-    void init() {
-
-    }
-
-    void loop() {
-        Thread::should_end_search = false;
-        while (true) {
-            std::string line;
-            std::getline(std::cin, line);
-            auto cmd = split(line);
-            Thread::cmd_queue.enqueue(cmd);
-            if (!cmd.empty()) {
-                if (cmd[0] == "quit") {
-                    Thread::should_end_search = true;
-                    return;
-                }
-                else if (cmd[0] == "stop") {
-                    Thread::should_end_search = true;
-                }
+void UCI::loop() {
+    synced_cout.print("Start\n");
+    while (true) {
+        std::string line;
+        std::getline(std::cin, line);
+        auto cmd = split(line);
+        cmd_queue.enqueue(cmd);
+        if (!cmd.empty()) {
+            if (cmd[0] == "quit") {
+                should_end_search = true;
+                return;
+            }
+            else if (cmd[0] == "stop") {
+                should_end_search = true;
             }
         }
     }
-
 }

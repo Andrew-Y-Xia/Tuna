@@ -82,12 +82,17 @@ int main() {
     init_zobrist_bitstrings();
     init_opening_book();
 
-    std::cout << "Start\n";
 
-    Thread::should_end_search = false;
+    // Synchronization utils
+    Thread::SyncedCout synced_cout;
+    Thread::SafeQueue<std::vector<std::string>> cmd_queue;
+    std::atomic<bool> should_end_search(false);
 
-    std::thread t(Engine::loop);
-    UCI::loop();
+
+    Engine engine(synced_cout, cmd_queue, should_end_search);
+    UCI uci(synced_cout, cmd_queue, should_end_search);
+    std::thread t = engine.spawn();
+    uci.loop();
     t.join();
 
     return 0;

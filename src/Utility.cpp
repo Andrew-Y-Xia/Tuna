@@ -161,6 +161,44 @@ void print_move(Move move, bool reg) {
     }
 }
 
+std::string move_to_str(Move move, bool reg) {
+    std::ostringstream buffer;
+    if (!reg) {
+        buffer << "\n\n\nFrom index: " << move.get_from() << '\n';
+        buffer << "To index: " << move.get_to() << '\n';
+        buffer << "Special move flag: " << move.get_special_flag() << '\n';
+        buffer << "Promote to piece: " << move.get_promote_to() << '\n';
+        buffer << "Piece moved: " << move.get_piece_moved() << '\n';
+        buffer << "Piece captured: " << move.get_piece_captured() << '\n';
+        buffer << "Move score: " << move.get_move_score() << '\n';
+    } else {
+        Cords from_c = index_to_cords(move.get_from());
+        Cords to_c = index_to_cords(move.get_to());
+        buffer << num_to_char(from_c.x) << 8 - from_c.y << num_to_char(to_c.x) << 8 - to_c.y;
+        if (move.get_special_flag() == MOVE_PROMOTION) {
+            switch (move.get_promote_to()) {
+                case PROMOTE_TO_QUEEN: {
+                    buffer << 'q';
+                    break;
+                }
+                case PROMOTE_TO_ROOK: {
+                    buffer << 'r';
+                    break;
+                }
+                case PROMOTE_TO_BISHOP: {
+                    buffer << 'b';
+                    break;
+                }
+                case PROMOTE_TO_KNIGHT: {
+                    buffer << 'n';
+                    break;
+                }
+            }
+        }
+    }
+    return buffer.str();
+}
+
 std::vector<std::string> split(const std::string& line) {
     // equivalent of python's str.split()
     std::istringstream iss(line);

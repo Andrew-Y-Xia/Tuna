@@ -47,7 +47,7 @@ inline Move MovePicker::operator++() {
 }
 
 
-Search::Search(Board b, TT& t, OpeningBook& ob) : board(b), tt(t), opening_book(ob) {}
+Search::Search(Board b, TT& t, OpeningBook& ob, TimeHandler& th) : board(b), tt(t), opening_book(ob), time_handler(th) {}
 
 
 void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
@@ -98,22 +98,17 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         return quiescence_search(0, alpha, beta, ply_from_root + 1);
 //        int eval = board.static_eval();
 //        return eval;
-    } else if (depth >= 5) {
-        // Check if time is up
-        // If so, exit
-        std::chrono::duration<double, std::milli> ms_double = std::chrono::steady_clock::now() - start_time;
-        if (ms_double.count() >= max_time_ms) {
-            // Reset board to original state
-            for (int i = ply_from_root; i != 0; i--) {
-                if (board.get_move_stack().back().is_null_move) {
-                    board.unmake_null_move();
-                } else {
-                    board.unmake_move();
-                }
+    } else if (time_handler.should_stop()) {
+        // Reset board to original state
+        for (int i = ply_from_root; i != 0; i--) {
+            if (board.get_move_stack().back().is_null_move) {
+                board.unmake_null_move();
+            } else {
+                board.unmake_move();
             }
-            // Throw error to escape
-            throw SearchTimeout();
         }
+        // Throw error to escape
+        throw SearchTimeout();
     }
 
 
@@ -237,18 +232,18 @@ static void search_finished_message(int depth, unsigned int nodes_searched, int 
     std::cout << "\nDepth searched: " << depth << "\n\n";
 }
 
-Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
+Move Search::find_best_move(unsigned int max_depth) {
     board.hash();
-    max_time_ms = max_time_ms_input;
     type2collision = 0;
     nodes_searched = 0;
 
-    start_time = std::chrono::steady_clock::now();
+    time_handler.start();
 
     // Check opening_book
     if (opening_book.can_use_book() && board.get_reg_starting_pos()) {
         Move book_move = opening_book.request(board.get_move_stack());
         if (!book_move.is_illegal()) {
+            time_handler.stop();
             return book_move;
         }
     }
@@ -303,6 +298,7 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
                     eval = -negamax(depth - 1, -(expected_eval + upper_bound), -local_max_eval, 1, true);
                 } catch (SearchTimeout& e) {
                     search_finished_message(depth - 1, nodes_searched, local_max_eval);
+                    time_handler.stop();
                     return best_move;
                 }
                 board.unmake_move();
@@ -353,11 +349,13 @@ Move Search::find_best_move(unsigned int max_depth, double max_time_ms_input) {
 
         if (max_eval >= MINMATE && MAXMATE - max_eval <= depth) {
             search_finished_message(depth, nodes_searched, max_eval);
+            time_handler.stop();
             return best_move;
         }
     }
 
     search_finished_message(max_depth, nodes_searched, max_eval);
+    time_handler.stop();
     return best_move;
 }
 

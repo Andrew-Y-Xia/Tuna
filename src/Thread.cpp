@@ -9,15 +9,44 @@
 #include "Thread.hpp"
 
 namespace Thread {
-
     std::atomic<bool> should_end_search;
-    SafeQueue<std::vector<std::string>> cmd_queue;
 
-    void SyncedCout::print(const std::string& str) {
-        std::lock_guard<std::mutex> guard(m);
-        std::cout << str;
+#define STR_VECT std::vector<std::string>
+    template SafeQueue<STR_VECT>::SafeQueue();
+    template void SafeQueue<STR_VECT>::enqueue(STR_VECT t);
+    template STR_VECT SafeQueue<STR_VECT>::dequeue();
+
+    template<class T>
+    SafeQueue<T>::SafeQueue() : q(), m(), c() {};
+
+    template<class T>
+    void SafeQueue<T>::enqueue(T t) {
+        // Add an element to the queue.
+        std::lock_guard<std::mutex> lock(m);
+        q.push(t);
+        c.notify_one();
     }
 
-    SyncedCout synced_cout;
+    template<class T>
+    T SafeQueue<T>::dequeue() {
+        // Get the "front"-element.
+        // If the queue is empty, wait till an element is available.
+        std::unique_lock<std::mutex> lock(m);
+        while (q.empty()) {
+            // release lock as long as the wait and re-acquire it afterwards.
+            c.wait(lock);
+        }
+        T val = q.front();
+        q.pop();
+        return val;
+    }
+
+    void SyncedCout::print(const std::string& str) {
+        std::unique_lock<std::mutex> guard(m);
+        std::cout << str;
+        std::cout.flush();
+    }
+
+    SyncedCout::SyncedCout() : m() {};
 
 }

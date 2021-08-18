@@ -18,8 +18,6 @@
 
 namespace Thread {
 
-    extern std::atomic<bool> should_end_search;
-
 
     template<class T>
     class SafeQueue {
@@ -28,39 +26,20 @@ namespace Thread {
         mutable std::mutex m;
         std::condition_variable c;
     public:
-        SafeQueue() : q(), m(), c() {};
+        SafeQueue();
 
-        // Add an element to the queue.
-        void enqueue(T t) {
-            std::lock_guard<std::mutex> lock(m);
-            q.push(t);
-            c.notify_one();
-        }
+        void enqueue(T t);
 
-        // Get the "front"-element.
-        // If the queue is empty, wait till an element is available.
-        T dequeue() {
-            std::unique_lock<std::mutex> lock(m);
-            while (q.empty()) {
-                // release lock as long as the wait and re-acquire it afterwards.
-                c.wait(lock);
-            }
-            T val = q.front();
-            q.pop();
-            return val;
-        }
+        T dequeue();
     };
-
-    extern SafeQueue<std::vector<std::string>> cmd_queue;
 
     class SyncedCout {
     private:
         std::mutex m;
     public:
+        SyncedCout();
         void print(const std::string& str);
     };
-
-    extern SyncedCout synced_cout;
 }
 
 #endif /* Thread_hpp */

@@ -12,6 +12,7 @@
 #include "Board.hpp"
 #include "Transposition_table.hpp"
 #include "Opening_book.hpp"
+#include "Time_handler.hpp"
 
 #define USE_NULL_MOVE_PRUNING 1
 #define R 2
@@ -19,7 +20,7 @@
 class MovePicker {
 private:
     MoveList& moves;
-    bool visited[256] = {0};
+    bool visited[256] = {false};
     int size, visit_count;
 public:
     MovePicker(MoveList& init_moves);
@@ -39,14 +40,12 @@ private:
     Board board;
     TT& tt;
     OpeningBook& opening_book;
-
+    TimeHandler& time_handler;
 
     unsigned int nodes_searched;
-    std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<long long, std::ratio<1LL, 1000000000LL>>> start_time;
-    double max_time_ms;
 public:
 
-    Search(Board b, TT& t, OpeningBook& ob);
+    Search(Board b, TT& t, OpeningBook& ob, TimeHandler& th);
 
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                           unsigned int ply_from_root);
@@ -55,7 +54,7 @@ public:
 
     int quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root);
 
-    Move find_best_move(unsigned int max_depth, double max_time_ms);
+    Move find_best_move(unsigned int max_depth);
 
     long perft(unsigned int depth);
 

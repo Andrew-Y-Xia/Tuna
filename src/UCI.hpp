@@ -13,13 +13,17 @@
 #include "Thread.hpp"
 #include "Utility.hpp"
 
-namespace UCI {
+class UCI {
+private:
+    Thread::SyncedCout& synced_cout;
+    Thread::SafeQueue<std::vector<std::string>>& cmd_queue;
+    std::atomic<bool>& should_end_search;
 
-
-    void init();
+public:
+    UCI(Thread::SyncedCout& s, Thread::SafeQueue<std::vector<std::string>>& c, std::atomic<bool>& b);
 
     void loop();
 
-}
+};
 
 #endif /* UCI_hpp */
