@@ -393,6 +393,41 @@ Move Board::read_SAN(std::string str) {
     return move;
 }
 
+Move Board::read_LAN(std::string str) {
+    MoveList moves;
+    generate_moves(moves);
+
+    Move move;
+    move.set_from(txt_square_to_index(str.substr(0,2)));
+    move.set_to(txt_square_to_index(str.substr(2, 2)));
+
+    for (auto it = moves.begin(); it != moves.end(); it++) {
+        if (it->first_twelfth_eq(move)) {
+            move = *it;
+            if (move.get_special_flag() == MOVE_PROMOTION) {
+                switch (str[4]) {
+                    case 'n':
+                        move.set_promote_to(PROMOTE_TO_KNIGHT);
+                        break;
+                    case 'b':
+                        move.set_promote_to(PROMOTE_TO_BISHOP);
+                        break;
+                    case 'r':
+                        move.set_promote_to(PROMOTE_TO_ROOK);
+                        break;
+                    case 'q':
+                        move.set_promote_to(PROMOTE_TO_QUEEN);
+                        break;
+                }
+            }
+            return move;
+        }
+    }
+    Move i_move;
+    i_move.set_as_illegal();
+    return move;
+}
+
 void Board::standard_setup() {
 //     Called during initialization
     calculate_piece_values();

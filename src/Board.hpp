@@ -65,6 +65,8 @@ public:
 
     Move read_SAN(std::string str);
 
+    Move read_LAN(std::string str);
+
     void standard_setup();
 
     void hash();

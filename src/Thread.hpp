@@ -31,6 +31,8 @@ namespace Thread {
         void enqueue(T t);
 
         T dequeue();
+
+        bool is_empty();
     };
 
     class SyncedCout {
@@ -41,5 +43,7 @@ namespace Thread {
         void print(const std::string& str);
     };
 }
+
+Thread::SyncedCout& get_synced_cout();
 
 #endif /* Thread_hpp */

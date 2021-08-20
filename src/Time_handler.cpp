@@ -4,7 +4,7 @@
 
 #include "Time_handler.hpp"
 
-TimeHandler::TimeHandler(std::atomic<bool>& b, double max_time_ms_input) : should_end_search(b), max_time_ms(max_time_ms_input) {};
+TimeHandler::TimeHandler(std::atomic<bool>& b, TimerType t_type, double max_time_ms_input) : should_end_search(b), timer_type(t_type), max_time_ms(max_time_ms_input) {};
 
 TimeHandler::~TimeHandler() {
     if (t) {
@@ -30,13 +30,18 @@ void TimeHandler::start() {
 }
 
 void TimeHandler::loop() {
-    while (true) {
-        std::chrono::duration<double, std::milli> ms_double = std::chrono::steady_clock::now() - start_time;
-        if (ms_double.count() >= max_time_ms || should_end_search) {
-            should_end_search = true;
-            return;
+    if (timer_type == constant_time) {
+        while (true) {
+            std::chrono::duration<double, std::milli> ms_double = std::chrono::steady_clock::now() - start_time;
+            if (ms_double.count() >= max_time_ms || should_end_search) {
+                should_end_search = true;
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    else if (timer_type == inf) {
+        return;
     }
 }
 

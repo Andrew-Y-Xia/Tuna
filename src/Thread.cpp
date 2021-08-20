@@ -15,6 +15,7 @@ namespace Thread {
     template SafeQueue<STR_VECT>::SafeQueue();
     template void SafeQueue<STR_VECT>::enqueue(STR_VECT t);
     template STR_VECT SafeQueue<STR_VECT>::dequeue();
+    template bool SafeQueue<STR_VECT>::is_empty();
 
     template<class T>
     SafeQueue<T>::SafeQueue() : q(), m(), c() {};
@@ -41,6 +42,12 @@ namespace Thread {
         return val;
     }
 
+    template<class T>
+    bool SafeQueue<T>::is_empty() {
+        std::lock_guard<std::mutex> lock(m);
+        return q.empty();
+    }
+
     void SyncedCout::print(const std::string& str) {
         std::unique_lock<std::mutex> guard(m);
         std::cout << str;
@@ -49,4 +56,9 @@ namespace Thread {
 
     SyncedCout::SyncedCout() : m() {};
 
+}
+
+Thread::SyncedCout& get_synced_cout() {
+    static Thread::SyncedCout synced_cout;
+    return synced_cout;
 }

@@ -15,6 +15,7 @@
 #include "Time_handler.hpp"
 
 #define USE_NULL_MOVE_PRUNING 1
+#define USE_BOOK 0
 #define R 2
 
 class MovePicker {
@@ -49,6 +50,10 @@ public:
 
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                           unsigned int ply_from_root);
+
+    void log_search_info(int depth, int eval);
+
+    void search_finished_message(Move best_move, int depth, int eval);
 
     int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move);
 

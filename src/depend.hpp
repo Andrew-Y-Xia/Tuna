@@ -22,6 +22,8 @@
 
 #include <assert.h>
 
+#define VERSION "v1.1.0";
+
 #define ASDF std::cout << "asdf" << std::endl
 
 
