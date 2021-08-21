@@ -398,7 +398,7 @@ Move Board::read_LAN(std::string str) {
     generate_moves(moves);
 
     Move move;
-    move.set_from(txt_square_to_index(str.substr(0,2)));
+    move.set_from(txt_square_to_index(str.substr(0, 2)));
     move.set_to(txt_square_to_index(str.substr(2, 2)));
 
     for (auto it = moves.begin(); it != moves.end(); it++) {

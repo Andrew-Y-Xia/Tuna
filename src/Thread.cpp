@@ -12,10 +12,14 @@ namespace Thread {
     std::atomic<bool> should_end_search;
 
 #define STR_VECT std::vector<std::string>
-    template SafeQueue<STR_VECT>::SafeQueue();
-    template void SafeQueue<STR_VECT>::enqueue(STR_VECT t);
-    template STR_VECT SafeQueue<STR_VECT>::dequeue();
-    template bool SafeQueue<STR_VECT>::is_empty();
+
+    template SafeQueue<STR_VECT >::SafeQueue();
+
+    template void SafeQueue<STR_VECT >::enqueue(STR_VECT t);
+
+    template STR_VECT SafeQueue<STR_VECT >::dequeue();
+
+    template bool SafeQueue<STR_VECT >::is_empty();
 
     template<class T>
     SafeQueue<T>::SafeQueue() : q(), m(), c() {};

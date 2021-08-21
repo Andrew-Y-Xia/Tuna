@@ -9,8 +9,8 @@
 #include "Engine.hpp"
 
 
-
-Engine::Engine(Thread::SafeQueue<std::vector<std::string>>& c, std::atomic<bool>& b) : cmd_queue(c), should_end_search(b) {};
+Engine::Engine(Thread::SafeQueue<std::vector<std::string>>& c, std::atomic<bool>& b) : cmd_queue(c),
+                                                                                       should_end_search(b) {};
 
 void Engine::loop() {
     Board board;
@@ -24,8 +24,7 @@ void Engine::loop() {
         try {
             if (cmd.at(0) == "quit") {
                 return;
-            }
-            else if (cmd.at(0) == "go") {
+            } else if (cmd.at(0) == "go") {
                 if (cmd.at(1) == "perft") {
                     int perft_depth = std::stoi(cmd.at(2));
 
@@ -38,12 +37,10 @@ void Engine::loop() {
                     buffer << perft_score;
                     buffer << "\nTime: " << ms_double.count() << "ms\n";
                     get_synced_cout().print(buffer.str());
-                }
-                else if (cmd.at(1) == "infinite") {
+                } else if (cmd.at(1) == "infinite") {
                     Search search(board, tt, opening_book, inf_time);
                     search.find_best_move(64);
-                }
-                else {
+                } else {
                     int max_depth = 64;
                     double time_ms = 0;
                     TimerType t_type = constant_time;
@@ -55,14 +52,11 @@ void Engine::loop() {
                         if (cmd.at(i) == "movetime") {
                             time_ms = std::stoi(cmd.at(i + 1));
                             time_ms -= 100;
-                        }
-                        else if (cmd.at(i) == "wtime") {
+                        } else if (cmd.at(i) == "wtime") {
                             wtime = std::stoi(cmd.at(i + 1));
-                        }
-                        else if (cmd.at(i) == "btime") {
+                        } else if (cmd.at(i) == "btime") {
                             btime = std::stoi(cmd.at(i + 1));
-                        }
-                        else if (cmd.at(i) == "movestogo") {
+                        } else if (cmd.at(i) == "movestogo") {
                             moves_to_go = std::stoi(cmd.at(i + 1));
                         }
                     }
@@ -80,8 +74,7 @@ void Engine::loop() {
                     Search search(board, tt, opening_book, time_handler);
                     search.find_best_move(max_depth);
                 }
-            }
-            else if (cmd.at(0) == "position") {
+            } else if (cmd.at(0) == "position") {
                 int j = 1;
                 while (j < cmd.size()) {
                     if (cmd.at(j) == "fen") {
@@ -92,11 +85,9 @@ void Engine::loop() {
                         }
                         fen.pop_back();
                         board = Board(fen);
-                    }
-                    else if (cmd.at(j) == "startpos") {
+                    } else if (cmd.at(j) == "startpos") {
                         board = Board();
-                    }
-                    else if (cmd.at(j) == "moves") {
+                    } else if (cmd.at(j) == "moves") {
                         for (int i = j + 1; i < cmd.size(); i++) {
                             Move move = board.read_LAN(cmd.at(i));
                             board.make_move(move);
@@ -104,11 +95,9 @@ void Engine::loop() {
                     }
                     j++;
                 }
-            }
-            else if (cmd.at(0) == "printboard") {
+            } else if (cmd.at(0) == "printboard") {
                 board.print_board();
-            }
-            else if (cmd.at(0) == "ucinewgame") {
+            } else if (cmd.at(0) == "ucinewgame") {
                 board = Board();
                 tt.clear();
                 opening_book.reset();

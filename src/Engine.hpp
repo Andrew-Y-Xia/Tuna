@@ -23,7 +23,9 @@ private:
     std::atomic<bool>& should_end_search;
 public:
     Engine(Thread::SafeQueue<std::vector<std::string>>& c, std::atomic<bool>& b);
+
     void loop();
+
     std::thread spawn();
 };
 

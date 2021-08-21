@@ -4,11 +4,14 @@
 
 #include "Time_handler.hpp"
 
-TimeHandler::TimeHandler(std::atomic<bool>& b, TimerType t_type, double max_time_ms_input) : should_end_search(b), timer_type(t_type), max_time_ms(max_time_ms_input) {};
+TimeHandler::TimeHandler(std::atomic<bool>& b, TimerType t_type, double max_time_ms_input) : should_end_search(b),
+                                                                                             timer_type(t_type),
+                                                                                             max_time_ms(
+                                                                                                     max_time_ms_input) {};
 
 TimeHandler::~TimeHandler() {
     if (t) {
-        if (t->joinable()){
+        if (t->joinable()) {
             t->join();
         }
         delete t;
@@ -19,7 +22,7 @@ TimeHandler::~TimeHandler() {
 void TimeHandler::start() {
     should_end_search = true;
     if (t) {
-        if (t->joinable()){
+        if (t->joinable()) {
             t->join();
         }
         delete t;
@@ -39,8 +42,7 @@ void TimeHandler::loop() {
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-    }
-    else if (timer_type == inf) {
+    } else if (timer_type == inf) {
         return;
     }
 }

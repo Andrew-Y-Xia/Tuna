@@ -23,8 +23,10 @@ private:
     double max_time_ms;
 
     void loop();
+
 public:
     explicit TimeHandler(std::atomic<bool>& b, TimerType t_type = inf, double max_time_ms_input = 0);
+
     ~TimeHandler();
 
     void start();

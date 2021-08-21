@@ -17,8 +17,7 @@ void init_uci() {
         auto cmd = split(line);
         if (cmd[0] == "isready") {
             return;
-        }
-        else if (cmd[0] == "uci") {
+        } else if (cmd[0] == "uci") {
             get_synced_cout().print("id name Bitboard_Chess\n");
             get_synced_cout().print("id author Andrew_Xia\n");
             get_synced_cout().print("uciok\n");
@@ -37,11 +36,9 @@ void UCI::loop() {
             if (cmd[0] == "quit") {
                 should_end_search = true;
                 return;
-            }
-            else if (cmd[0] == "stop") {
+            } else if (cmd[0] == "stop") {
                 should_end_search = true;
-            }
-            else if (cmd[0] == "isready") {
+            } else if (cmd[0] == "isready") {
                 while (!cmd_queue.is_empty()) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 }

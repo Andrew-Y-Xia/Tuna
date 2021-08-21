@@ -40,6 +40,7 @@ namespace Thread {
         std::mutex m;
     public:
         SyncedCout();
+
         void print(const std::string& str);
     };
 }
