@@ -52,6 +52,11 @@ void Board::read_FEN(std::string str) {
     for (int i = WhitePieces; i <= Pawns; i++) {
         Bitboards[i] = EmptyBoard;
     }
+    // clear flags
+    white_can_castle_queenside = false;
+    white_can_castle_kingside = false;
+    black_can_castle_queenside = false;
+    black_can_castle_kingside = false;
 
     // state_flag is track which section of the FEN we are currently processing
     int state_flag = 0;
@@ -434,6 +439,7 @@ void Board::standard_setup() {
     calculate_piece_square_values();
 //    calculate_piece_count();
     hash();
+    move_stack.clear();
 }
 
 void Board::hash() {
@@ -654,6 +660,7 @@ void Board::generate_moves(MoveList& moves, bool& is_in_check) {
 
     U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces]; // BB with all the occupied squares
     U64 friendly_pieces = Bitboards[current_turn];
+    assert(Bitboards[Kings] & friendly_pieces);
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
 
     king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ); // Find all king_attackers
@@ -1309,6 +1316,7 @@ int Board::calculate_mobility(bool& is_in_check) {
 
     U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces]; // BB with all the occupied squares
     U64 friendly_pieces = Bitboards[current_turn];
+    assert(Bitboards[Kings] & friendly_pieces);
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
 
     king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ); // Find all king_attackers

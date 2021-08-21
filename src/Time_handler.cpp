@@ -7,7 +7,9 @@
 TimeHandler::TimeHandler(std::atomic<bool>& b, TimerType t_type, double max_time_ms_input) : should_end_search(b),
                                                                                              timer_type(t_type),
                                                                                              max_time_ms(
-                                                                                                     max_time_ms_input) {};
+                                                                                                     max_time_ms_input) {
+    t = nullptr;
+};
 
 TimeHandler::~TimeHandler() {
     if (t) {

@@ -291,45 +291,65 @@ Move Search::find_best_move(unsigned int max_depth) {
         unsigned int times_researched = 0;
 
         // Aspiration window re-search loop
-        while (1) {
+        while (true) {
             times_researched++;
 
-            int local_max_eval = expected_eval - lower_bound; // Best score for this search
+//            std::cout << "Windows: ("  << alpha << ", " << (expected_eval + upper_bound) << ")\n";
+
+            int alpha; // Best score for this search
+            int beta;
             Move local_best_move; // Best move for this search
-//            std::cout << "Windows: ("  << local_max_eval << ", " << (expected_eval + upper_bound) << ")\n";
+
+            if (!USE_ASPIRATION_WINDOWS) {
+                upper_bound = MAXMATE + 1; // If not using aspiration windows, set it to -inf
+                lower_bound = MAXMATE + 1; // Same for beta, this time +inf
+                expected_eval = 0;
+            }
+
+            alpha = expected_eval - lower_bound;
+            beta = expected_eval + upper_bound;
+
 
             MovePicker move_picker(moves);
 
             while (!move_picker.finished()) {
                 int eval;
-
-
                 auto it = ++move_picker;
 
                 nodes_searched++;
                 board.make_move(it);
                 try {
-                    eval = -negamax(depth - 1, -(expected_eval + upper_bound), -local_max_eval, 1, true);
+                    eval = -negamax(depth - 1, -beta, -alpha, 1, true);
                 } catch (SearchTimeout& e) {
-                    search_finished_message(best_move, depth - 1, local_max_eval);
+                    Move m;
+                    if (alpha <= expected_eval - lower_bound || beta >= expected_eval + upper_bound) {
+                        m = best_move;
+                    }
+                    else {
+                        m = local_best_move;
+                    }
+                    search_finished_message(best_move, depth - 1, max_eval);
                     time_handler.stop();
                     return best_move;
                 }
                 board.unmake_move();
 
-//                std::cout << "\nMove: ";
-//                print_move(it, true);
-//                std::cout << "\nEval: " << eval;
-
-                if (eval > local_max_eval) {
-                    local_max_eval = eval;
+                if (eval >= beta) {
+                    // In case of fail-high break loop early
+                    assert(USE_ASPIRATION_WINDOWS); // beta cutoff should only occur in aspirated search
+                    alpha = eval;
+                    break;
+                }
+                if (eval > alpha) {
+                    alpha = eval;
                     local_best_move = it;
                 }
             }
 
             // Check if score is within bounds
-            if (local_max_eval >= expected_eval + upper_bound) {
+            if (alpha >= expected_eval + upper_bound) {
                 // If so, do a re-search
+                assert(USE_ASPIRATION_WINDOWS); // Should not fail when not using asp_windows
                 if (times_researched >= 4) {
                     // If we've searched too many times and there's still no viable result, give up and widen bounds all the way
                     expected_eval = 0;
@@ -338,7 +358,8 @@ Move Search::find_best_move(unsigned int max_depth) {
                 } else {
                     upper_bound *= 4;
                 }
-            } else if (local_max_eval <= expected_eval - lower_bound) {
+            } else if (alpha <= expected_eval - lower_bound) {
+                assert(USE_ASPIRATION_WINDOWS); // Should not fail when not using asp_windows
                 if (times_researched >= 4) {
                     expected_eval = 0;
                     upper_bound = MAXMATE + 1;
@@ -347,9 +368,9 @@ Move Search::find_best_move(unsigned int max_depth) {
                     lower_bound *= 4;
                 }
             } else {
-                // Continue on to next stage of iterative deepening
-                expected_eval = local_max_eval;
-                max_eval = local_max_eval;
+                // Search didn't fail high or fail low, so continue on to next stage of iterative deepening
+                expected_eval = alpha;
+                max_eval = alpha;
                 best_move = local_best_move;
                 break;
             }
@@ -361,6 +382,7 @@ Move Search::find_best_move(unsigned int max_depth) {
         h_best_move = best_move;
         store_pos_result(h_best_move, depth, NODE_EXACT, max_eval, 0);
 
+        // If we've found the shortest possible checkmate, exit early
         if (max_eval >= MINMATE && MAXMATE - max_eval <= depth) {
             search_finished_message(best_move, depth, max_eval);
             time_handler.stop();
