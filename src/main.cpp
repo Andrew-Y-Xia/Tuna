@@ -13,6 +13,21 @@
 #include "UCI.hpp"
 #include "Thread.hpp"
 
+
+std::string directory_from_file(std::string str) {
+    if (str.back() == '/') {
+        str.pop_back();
+    }
+    int index = str.size() - 1;
+    for (auto it = str.rbegin(); it != str.rend(); it++) {
+        if ((*it) == '/') {
+            break;
+        }
+        index--;
+    }
+    return str.substr(0, index + 1);
+}
+
 // Define resource_path();
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 std::string resource_path() {
@@ -43,7 +58,7 @@ std::string resource_path() {
     uint32_t size = sizeof(path);
     if (_NSGetExecutablePath(path, &size) == 0) {
         std::string str = std::string(path);
-        str = str.substr(0, str.size() - 14);
+        str = directory_from_file(str);
         str += "Resources/";
         return str;
     } else {
@@ -61,7 +76,7 @@ std::string resource_path() {
     if(bytes >= 0) {
         pBuf[bytes] = '\0';
         std::string str = std::string(pBuf);
-        str = str.substr(0, str.size() - 14);
+        str = directory_from_file(str);
         str += "Resources/";
         return str;
     }

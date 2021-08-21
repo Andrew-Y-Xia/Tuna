@@ -82,23 +82,36 @@ void Engine::loop() {
                 }
             }
             else if (cmd.at(0) == "position") {
-                if (cmd.at(1) == "fen") {
-                    std::string fen;
-                    for (int i = 2; i < 8; i++) {
-                        fen += cmd.at(i) + ' ';
+                int j = 1;
+                while (j < cmd.size()) {
+                    if (cmd.at(j) == "fen") {
+                        std::string fen;
+                        int j_save = j;
+                        for (int i = j + 1; i < j_save + 7; i++) {
+                            fen += cmd.at(i) + ' ';
+                        }
+                        fen.pop_back();
+                        board = Board(fen);
                     }
-                    fen.pop_back();
-                    board = Board(fen);
-                }
-                else if (cmd.at(1) == "startpos") {
-                    board = Board();
-                    if (cmd.at(2) == "moves") {
-                        for (int i = 3; i < cmd.size(); i++) {
+                    else if (cmd.at(j) == "startpos") {
+                        board = Board();
+                    }
+                    else if (cmd.at(j) == "moves") {
+                        for (int i = j + 1; i < cmd.size(); i++) {
                             Move move = board.read_LAN(cmd.at(i));
                             board.make_move(move);
                         }
                     }
+                    j++;
                 }
+            }
+            else if (cmd.at(0) == "printboard") {
+                board.print_board();
+            }
+            else if (cmd.at(0) == "ucinewgame") {
+                board = Board();
+                tt.clear();
+                opening_book.reset();
             }
         }
         catch (std::out_of_range& e) {
