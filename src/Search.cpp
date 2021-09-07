@@ -164,13 +164,45 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     HashMove best_move;
 
     unsigned int node_type = NODE_UPPERBOUND;
+
+    if (USE_PV_SEARCH) {
+        int first_eval;
+        auto first_move = ++move_picker;
+        nodes_searched++;
+
+        board.make_move(first_move);
+        first_eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+        board.unmake_move();
+
+        if (first_eval >= beta) {
+            store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
+            return beta;
+        }
+        if (first_eval > alpha) {
+            node_type = NODE_EXACT;
+            best_move = first_move;
+            alpha = first_eval;
+        }
+    }
+
+
     while (!move_picker.finished()) {
         int eval;
         auto it = ++move_picker;
-
         nodes_searched++;
+
         board.make_move(it);
-        eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+        if (USE_PV_SEARCH) {
+            // null window search
+            eval = -negamax(depth - 1, -alpha - 1, -alpha, ply_from_root + 1, true);
+            // Check if within bounds
+            if (eval > alpha && eval < beta) {
+                // If so, research with full window
+                eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+            }
+        } else {
+            eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+        }
         board.unmake_move();
 
 
@@ -319,6 +351,27 @@ Move Search::find_best_move(unsigned int max_depth) {
 
             MovePicker move_picker(moves);
 
+            if (USE_PV_SEARCH) {
+                int first_eval;
+                auto first_move = ++move_picker;
+                nodes_searched++;
+
+                board.make_move(first_move);
+                first_eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                board.unmake_move();
+
+                if (first_eval >= beta) {
+                    // This will cause the rest of the moves to be skipped
+                    while (!move_picker.finished()) {
+                        ++move_picker;
+                    }
+                }
+                if (first_eval > alpha) {
+                    best_move = first_move;
+                    alpha = first_eval;
+                }
+            }
+
             while (!move_picker.finished()) {
                 int eval;
                 auto it = ++move_picker;
@@ -326,7 +379,17 @@ Move Search::find_best_move(unsigned int max_depth) {
                 nodes_searched++;
                 board.make_move(it);
                 try {
-                    eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                    if (USE_PV_SEARCH) {
+                        // null window search
+                        eval = -negamax(depth - 1, -alpha - 1, -alpha, 1, true);
+                        // Check if within bounds
+                        if (eval > alpha && eval < beta) {
+                            // If so, research with full window
+                            eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                        }
+                    } else {
+                        eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                    }
                 } catch (SearchTimeout& e) {
                     Move m;
                     if (alpha <= expected_eval - lower_bound || beta >= expected_eval + upper_bound) {
@@ -351,7 +414,7 @@ Move Search::find_best_move(unsigned int max_depth) {
                     alpha = eval;
                     local_best_move = it;
                 }
-            }
+            } // Move picker loop
 
             // Check if score is within bounds
             if (alpha >= expected_eval + upper_bound) {
