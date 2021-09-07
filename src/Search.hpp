@@ -15,7 +15,7 @@
 #include "Time_handler.hpp"
 
 #define USE_NULL_MOVE_PRUNING 1
-#define USE_ASPIRATION_WINDOWS 0
+#define USE_ASPIRATION_WINDOWS 1
 #define USE_BOOK 0
 #define R 2
 

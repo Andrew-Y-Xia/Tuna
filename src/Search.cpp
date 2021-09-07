@@ -64,6 +64,17 @@ void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned i
 
 
 int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move) {
+//    tt.prefetch(board.get_z_key());
+
+    if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
+        bool is_in_check_pre;
+        board.calculate_mobility(is_in_check_pre);
+        if (is_in_check_pre) {
+            return -MAXMATE + ply_from_root;
+        }
+        return 0;
+    }
+
     // Check for hits on the TT
     const TT_entry tt_hit = tt.get(board.get_z_key());
 
@@ -126,10 +137,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
     }
 
-    // Check for repetition
-    if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
-        return 0;
-    }
 
     // Null move pruning
     if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check) {

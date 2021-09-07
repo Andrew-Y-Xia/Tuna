@@ -65,6 +65,11 @@ TT_entry TT::get(U64 key) const {
     return *(hash_table + lower_key);
 }
 
+void TT::prefetch(U64 key) const {
+    U64 lower_key = key & TT_LOOKUP_MASK();
+    __builtin_prefetch(hash_table + lower_key, 1);
+}
+
 void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score) {
     U64 lower_key = key & TT_LOOKUP_MASK();
     (hash_table + lower_key)->key = key;

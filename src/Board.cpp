@@ -650,6 +650,7 @@ unsigned int Board::find_piece_captured_without_occ(int index) {
 template<MoveGenType gen_type>
 void Board::generate_moves(MoveList& moves, bool& is_in_check) {
     // Routine for generating moves
+    assert(moves.size() == 0);
 
     U64 king_attackers; // Holds opponent pieces attacking the king
     U64 bishop_pinned, rook_pinned; // These hold the pieces pinned by the opponent. 'rook' and 'bishop' indicate the way they are pinned

@@ -54,6 +54,8 @@ public:
 
     TT_entry get(U64 key) const;
 
+    void prefetch(U64 key) const;
+
     void set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score);
 
     void clear();
