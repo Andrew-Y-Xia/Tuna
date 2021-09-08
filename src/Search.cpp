@@ -68,8 +68,8 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
         bool is_in_check_pre;
-        board.calculate_mobility(is_in_check_pre);
-        if (is_in_check_pre) {
+        int move_count = board.calculate_mobility(is_in_check_pre);
+        if (is_in_check_pre && move_count == 0) {
             return -MAXMATE + ply_from_root;
         }
         return 0;
@@ -357,7 +357,13 @@ Move Search::find_best_move(unsigned int max_depth) {
                 nodes_searched++;
 
                 board.make_move(first_move);
-                first_eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                try {
+                    first_eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                } catch (SearchTimeout& e) {
+                    search_finished_message(best_move, depth - 1, max_eval);
+                    time_handler.stop();
+                    return best_move;
+                }
                 board.unmake_move();
 
                 if (first_eval >= beta) {
@@ -392,15 +398,15 @@ Move Search::find_best_move(unsigned int max_depth) {
                     }
                 } catch (SearchTimeout& e) {
                     Move m;
-                    if (alpha <= expected_eval - lower_bound || beta >= expected_eval + upper_bound) {
+                    if (alpha <= expected_eval - lower_bound || alpha >= expected_eval + upper_bound) {
                         m = best_move;
                     }
                     else {
                         m = local_best_move;
                     }
-                    search_finished_message(best_move, depth - 1, max_eval);
+                    search_finished_message(m, depth - 1, max_eval);
                     time_handler.stop();
-                    return best_move;
+                    return m;
                 }
                 board.unmake_move();
 
