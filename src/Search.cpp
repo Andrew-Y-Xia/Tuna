@@ -368,6 +368,8 @@ Move Search::find_best_move(unsigned int max_depth) {
 
                 if (first_eval >= beta) {
                     // This will cause the rest of the moves to be skipped
+                    assert(USE_ASPIRATION_WINDOWS); // beta cutoff should only occur in aspirated search
+                    alpha = first_eval;
                     while (!move_picker.finished()) {
                         ++move_picker;
                     }
