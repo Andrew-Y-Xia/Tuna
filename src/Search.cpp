@@ -152,12 +152,13 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
 
 
-//    board.sort_moves(moves);
     if (tt_hit.key == board.get_z_key()) {
         board.assign_move_scores(moves, tt_hit.hash_move);
     } else {
         board.assign_move_scores(moves, HashMove());
     }
+
+    bool do_pvs = depth > 2;
 
 
     MovePicker move_picker(moves);
@@ -165,7 +166,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     unsigned int node_type = NODE_UPPERBOUND;
 
-    if (USE_PV_SEARCH) {
+    if (USE_PV_SEARCH && do_pvs) {
         int first_eval;
         auto first_move = ++move_picker;
         nodes_searched++;
@@ -192,7 +193,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         nodes_searched++;
 
         board.make_move(it);
-        if (USE_PV_SEARCH) {
+        if (USE_PV_SEARCH && do_pvs) {
             // null window search
             eval = -negamax(depth - 1, -alpha - 1, -alpha, ply_from_root + 1, true);
             // Check if within bounds
@@ -375,7 +376,7 @@ Move Search::find_best_move(unsigned int max_depth) {
                     }
                 }
                 if (first_eval > alpha) {
-                    best_move = first_move;
+                    local_best_move = first_move;
                     alpha = first_eval;
                 }
             }
