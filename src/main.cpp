@@ -12,6 +12,7 @@
 #include "Engine.hpp"
 #include "UCI.hpp"
 #include "Thread.hpp"
+#include "tests.hpp"
 
 
 std::string directory_from_file(std::string str) {

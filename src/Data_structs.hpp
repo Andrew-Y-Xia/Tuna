@@ -51,6 +51,11 @@ enum MoveGenType {
     CAPTURES_ONLY,
 };
 
+enum SerializationType {
+    SERIALIZE_MOVES,
+    COUNT_MOVES,
+};
+
 
 struct Cords {
     int x: 8;

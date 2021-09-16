@@ -86,73 +86,47 @@ public:
     unsigned int find_piece_captured_without_occ(int index);
 
     // Move generation:
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_moves_inner(MoveList& moves, bool& is_in_check);
+
     template<MoveGenType gen_type = ALL_MOVES>
     void generate_moves(MoveList& moves, bool& is_in_check);
 
     template<MoveGenType gen_type = ALL_MOVES>
     void generate_moves(MoveList& moves);
 
-    template<MoveGenType gen_type>
-    void generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers);
-
-    template<MoveGenType gen_type>
-    void generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                              U64 rook_pinned, U64 bishop_pinned, int king_index);
-
-    template<MoveGenType gen_type>
-    void generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                              U64 rook_pinned, U64 bishop_pinned, int king_index);
-
-    template<MoveGenType gen_type>
-    void generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
-                               U64 bishop_pinned);
-
-    template<MoveGenType gen_type>
-    void generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                               U64 rook_pinned, U64 bishop_pinned, int king_index);
-
-    template<MoveGenType gen_type>
-    void generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                             U64 rook_pinned, U64 bishop_pinned, int king_index);
-
-    template<MoveGenType gen_type>
-    void generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                              U64 rook_pinned, U64 bishop_pinned, int king_index);
-
-    // Mobility:
-    template<MoveGenType gen_type = ALL_MOVES>
-    int calculate_mobility(bool& is_in_check);
-
     template<MoveGenType gen_type = ALL_MOVES>
     int calculate_mobility();
 
-    template<MoveGenType gen_type>
-    int calculate_king_mobility(U64 occ, U64 friendly_pieces, int king_index, int num_attackers);
+    template<MoveGenType gen_type = ALL_MOVES>
+    int calculate_mobility(bool& is_in_check);
 
-    template<MoveGenType gen_type>
-    int calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                 U64 bishop_pinned, int king_index);
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers);
 
-    template<MoveGenType gen_type>
-    int calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                 U64 bishop_pinned, int king_index);
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                              U64 rook_pinned, U64 bishop_pinned, int king_index);
 
-    template<MoveGenType gen_type>
-    int
-    calculate_knight_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned, U64 bishop_pinned);
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                              U64 rook_pinned, U64 bishop_pinned, int king_index);
 
-    template<MoveGenType gen_type>
-    int calculate_bishop_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                  U64 bishop_pinned, int king_index);
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
+                               U64 bishop_pinned);
 
-    template<MoveGenType gen_type>
-    int calculate_rook_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                U64 bishop_pinned, int king_index);
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                               U64 rook_pinned, U64 bishop_pinned, int king_index);
 
-    template<MoveGenType gen_type>
-    int calculate_queen_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                 U64 bishop_pinned, int king_index);
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                             U64 rook_pinned, U64 bishop_pinned, int king_index);
 
+    template<MoveGenType gen_type, SerializationType serialize_type>
+    int generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                              U64 rook_pinned, U64 bishop_pinned, int king_index);
 
     // Legality portion
     U64 attacks_to(int index, U64 occ);

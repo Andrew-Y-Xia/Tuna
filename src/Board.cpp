@@ -647,664 +647,11 @@ unsigned int Board::find_piece_captured_without_occ(int index) {
 // MOVE GENERATION BEGIN
 
 
-template<MoveGenType gen_type>
-void Board::generate_moves(MoveList& moves, bool& is_in_check) {
+template<MoveGenType gen_type, SerializationType serialize_type>
+inline int
+Board::generate_moves_inner(MoveList& moves, bool& is_in_check) {
     // Routine for generating moves
     assert(moves.size() == 0);
-
-    U64 king_attackers; // Holds opponent pieces attacking the king
-    U64 bishop_pinned, rook_pinned; // These hold the pieces pinned by the opponent. 'rook' and 'bishop' indicate the way they are pinned
-    int num_attackers; // Number of attackers attacking the king
-    U64 block_masks = UniverseBoard; // Holds which squares pieces must go to in order to nullify a check (capture attacker, block check if attacker is Q, B, or R.
-
-    int pinners[8]; // Since the king can only be pinned from the eight directions, hold the index of the possible pinners in this array (use Directions enum to look up with)
-
-    U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces]; // BB with all the occupied squares
-    U64 friendly_pieces = Bitboards[current_turn];
-    assert(Bitboards[Kings] & friendly_pieces);
-    int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
-
-    king_attackers = attacks_to(bitscan_forward(Bitboards[Kings] & friendly_pieces), occ); // Find all king_attackers
-    num_attackers = pop_count(king_attackers); // Count the number of attackers
-
-    // During the search it may be useful to know whether the player is under check
-    // Since we want to avoid a recaculation, we'd like to save the info
-    is_in_check = num_attackers >= 1;
-
-    // Generate king moves first
-    generate_king_moves<gen_type>(moves, occ, friendly_pieces, king_index, num_attackers);
-
-    if (num_attackers == 1) {
-        // In the case of check, we'll need to calculate the block masks
-        block_masks = calculate_block_masks(king_attackers);
-    } else if (num_attackers > 1) {
-        // If num_attackers is 2, then we have a double attack
-        // This type of check is unblockable, which means the only way to get out of check is to move the king
-        // Since we've already generated the king's moves, we can safely exit generate_moves()
-        return;
-    }
-
-
-    // Calculate the pinned pieces
-    bishop_pinned = calculate_bishop_pins(pinners, occ, friendly_pieces);
-    rook_pinned = calculate_rook_pins(pinners, occ, friendly_pieces);
-
-    // There are two pawn move generators (depending on who's turn it is)
-    // This is done for efficiency reasons
-    if (current_turn == WHITE) {
-        generate_pawn_movesW<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                       king_index);
-    } else {
-        generate_pawn_movesB<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                       king_index);
-    }
-    generate_knight_moves<gen_type>(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
-    generate_bishop_moves<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                    king_index);
-    generate_rook_moves<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                  king_index);
-    generate_queen_moves<gen_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                   king_index);
-}
-
-template<MoveGenType gen_type>
-void Board::generate_moves(MoveList& moves) {
-    bool b;
-    generate_moves<gen_type>(moves, b);
-}
-
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
-
-    // Castling section
-
-    if (gen_type == ALL_MOVES) {
-        if (current_turn == WHITE) {
-            if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) &&
-                !is_attacked(2, occ)) {
-                moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
-            }
-
-            if (white_can_castle_kingside && !num_attackers && !(C64(0x60) & occ) && !is_attacked(5, occ) &&
-                !is_attacked(6, occ)) {
-                moves.push_back(Move(4, 6, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
-            }
-        } else {
-            if (black_can_castle_queenside && !num_attackers && !(C64(0xE00000000000000) & occ) &&
-                !is_attacked(59, occ) && !is_attacked(58, occ)) {
-                moves.push_back(Move(60, 58, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
-            }
-
-            if (black_can_castle_kingside && !num_attackers && !(C64(0x6000000000000000) & occ) &&
-                !is_attacked(61, occ) && !is_attacked(62, occ)) {
-                moves.push_back(Move(60, 62, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
-            }
-        }
-    }
-    // Castling section end
-
-    // Look up possible king moves and remove locations where there's a friendly piece (because you can't capture your own piece)
-    U64 move_targets = king_paths[king_index] & ~friendly_pieces;
-
-    // If we only want captures, we'll intersect move_targets with the occupied squares
-    if (gen_type == CAPTURES_ONLY) {
-        move_targets &= occ;
-    }
-
-    // Given a rank in the chess board:
-    // R * * k * * * *
-    // is_attacked() will be tricked into thinking that the king is blocking the rightmost squares from being attacked
-    // In truth, the king cannot move to the right, so we must hide the king from is_attacked()
-    U64 occ_without_friendly_king = occ ^ (C64(1) << king_index);
-
-    if (move_targets)
-        do {
-            int to_index = bitscan_forward(move_targets);
-
-            // King cannot move into check (see above for why occ_without_friendly_king is used instead of normal occ)
-            if (!is_attacked(to_index, occ_without_friendly_king)) {
-                moves.push_back(Move(king_index, to_index, MOVE_NORMAL, 0, PIECE_KING, find_piece_captured(to_index)));
-            }
-        } while (move_targets &= move_targets - 1); // Remove the target we just processed from move_target
-}
-
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
-
-    // First handle pawns that are not pinned
-    U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
-
-    if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
-        // Generate pawn attacks and pushes for all pawns at the same time
-
-        // East attacks:
-        U64 east_attacks = ((pawns << 9) & ~a_file) & Bitboards[BlackPieces];
-        east_attacks &= block_check_masks;
-        // seperate out promotions
-        U64 east_promotion_attacks = east_attacks & eighth_rank;
-        U64 east_regular_attacks = east_attacks & ~eighth_rank;
-
-
-        // West attacks:
-        U64 west_attacks = ((pawns << 7) & ~h_file) & Bitboards[BlackPieces];
-        west_attacks &= block_check_masks;
-        U64 west_promotion_attacks = west_attacks & eighth_rank;
-        U64 west_regular_attacks = west_attacks & ~eighth_rank;
-
-
-
-        // Serialize into moves:
-        if (east_regular_attacks)
-            do {
-                int to_index = bitscan_forward(east_regular_attacks);
-                moves.push_back(Move(to_index - 9, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
-                                     find_piece_captured_without_occ(to_index)));
-            } while (east_regular_attacks &= east_regular_attacks - 1);
-
-        if (east_promotion_attacks)
-            do {
-                int to_index = bitscan_forward(east_promotion_attacks);
-                auto piece_captured = find_piece_captured_without_occ(to_index);
-                moves.push_back(
-                        Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
-            } while (east_promotion_attacks &= east_promotion_attacks - 1);
-
-        if (west_regular_attacks)
-            do {
-                int to_index = bitscan_forward(west_regular_attacks);
-                moves.push_back(Move(to_index - 7, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
-                                     find_piece_captured_without_occ(to_index)));
-            } while (west_regular_attacks &= west_regular_attacks - 1);
-
-        if (west_promotion_attacks)
-            do {
-                int to_index = bitscan_forward(west_promotion_attacks);
-                auto piece_captured = find_piece_captured_without_occ(to_index);
-                moves.push_back(
-                        Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
-            } while (west_promotion_attacks &= west_promotion_attacks - 1);
-
-
-        // Quiet moves:
-        if (gen_type == ALL_MOVES) {
-
-            // Add Northern rook pins (only type of pin that pawn_push can move in)
-            U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
-
-            // Shift all pawns up and exclude squares that are already occupied
-            U64 pawn_regular_pushes =
-                    (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) << 8) & ~eighth_rank) &
-                    ~(occ);
-            // Push up pawns that can single push and are on the second rank and are not pushing into an occupied square
-            U64 pawn_double_pushes = ((pawn_regular_pushes & (first_rank << 16)) << 8) & ~(occ);
-
-            pawn_regular_pushes &= block_check_masks;
-            pawn_double_pushes &= block_check_masks;
-
-            U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
-            pawn_promotion_pushes &= block_check_masks;
-
-            // Serialize into moves
-            if (pawn_regular_pushes)
-                do {
-                    int to_index = bitscan_forward(pawn_regular_pushes);
-                    moves.push_back(Move(to_index - 8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-                } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
-
-            if (pawn_double_pushes)
-                do {
-                    int to_index = bitscan_forward(pawn_double_pushes);
-                    moves.push_back(Move(to_index - 16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-                } while (pawn_double_pushes &= pawn_double_pushes - 1);
-
-            if (pawn_promotion_pushes)
-                do {
-                    int to_index = bitscan_forward(pawn_promotion_pushes);
-                    moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
-                    moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
-                    moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
-                    moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
-                } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
-        } // if (include_quiet)
-    }
-
-    // Pinned pawns are handled individually:
-    U64 pinned_pawn_attacks =
-            Bitboards[Pawns] & bishop_pinned; // No rook pinned since attacks can't happen when pinned by rook
-
-    if (pinned_pawn_attacks)
-        do {
-            int from_index = bitscan_forward(pinned_pawn_attacks);
-            U64 move_targets = pawn_attacks[WhitePieces][from_index];
-            move_targets &= block_check_masks;
-            move_targets &= C64(1) << *(pinners + direction_between[king_index][from_index]);
-
-            if (move_targets) {
-                int to_index = bitscan_forward(move_targets);
-                auto piece_captured = find_piece_captured_without_occ(to_index);
-                if (from_index >= 48) {
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                } else {
-                    moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_PAWN, piece_captured));
-                }
-            }
-
-        } while (pinned_pawn_attacks &= pinned_pawn_attacks - 1);
-
-    // En Passant:
-    if (en_passant_square != -1 && (((C64(1) << en_passant_square) & block_check_masks) ||
-                                    (C64(1) << (en_passant_square - 8) & block_check_masks))) {
-        U64 en_passant_pawn_source = pawns & pawn_attacks[BlackPieces][en_passant_square];
-
-
-        if (en_passant_pawn_source)
-            do {
-                int from_index = bitscan_forward(en_passant_pawn_source);
-
-                // Find if en_passant square has the possibility of being pinned:
-                if ((C64(1) << from_index) & (rays[East][king_index] | rays[West][king_index])) {
-                    U64 occ_minus_ep_pawns = occ ^ ((C64(1) << (en_passant_square - 8)) | (C64(1) << from_index));
-                    if ((get_negative_ray_attacks(king_index, West, occ_minus_ep_pawns) |
-                         get_positive_ray_attacks(king_index, East, occ_minus_ep_pawns)) &
-                        (Bitboards[Rooks] | Bitboards[Queens]) & Bitboards[!current_turn]) {
-                        continue;
-                    }
-                }
-
-                moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
-            } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
-
-        // En Passant pins:
-        U64 positive_diag_rays_from_king = rays[NorthWest][king_index] | rays[NorthEast][king_index];
-        U64 en_passants_along_pin_path = positive_diag_rays_from_king & (C64(1) << en_passant_square);
-        U64 pinned_en_passant = Bitboards[Pawns] & bishop_pinned & pawn_attacks[BlackPieces][en_passant_square];
-        pinned_en_passant &= block_check_masks;
-
-        if (pinned_en_passant && en_passants_along_pin_path) {
-            moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN,
-                                 PIECE_PAWN));
-        }
-    }
-}
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
-    U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
-
-    if (Bitboards[Pawns] & friendly_pieces & ~bishop_pinned) {
-        // East attacks:
-        U64 east_attacks = ((pawns >> 7) & ~a_file) & Bitboards[WhitePieces];
-        east_attacks &= block_check_masks;
-        // filter out promotions
-        U64 east_promotion_attacks = east_attacks & first_rank;
-        U64 east_regular_attacks = east_attacks & ~first_rank;
-
-
-        // West attacks:
-        U64 west_attacks = ((pawns >> 9) & ~h_file) & Bitboards[WhitePieces];
-        west_attacks &= block_check_masks;
-        U64 west_promotion_attacks = west_attacks & first_rank;
-        U64 west_regular_attacks = west_attacks & ~first_rank;
-
-
-
-        // Serialize into moves:
-        if (east_regular_attacks)
-            do {
-                int to_index = bitscan_forward(east_regular_attacks);
-                moves.push_back(Move(to_index + 7, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
-                                     find_piece_captured_without_occ(to_index)));
-            } while (east_regular_attacks &= east_regular_attacks - 1);
-
-        if (east_promotion_attacks)
-            do {
-                int to_index = bitscan_forward(east_promotion_attacks);
-                auto piece_captured = find_piece_captured_without_occ(to_index);
-                moves.push_back(
-                        Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
-            } while (east_promotion_attacks &= east_promotion_attacks - 1);
-
-        if (west_regular_attacks)
-            do {
-                int to_index = bitscan_forward(west_regular_attacks);
-                moves.push_back(Move(to_index + 9, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
-                                     find_piece_captured_without_occ(to_index)));
-            } while (west_regular_attacks &= west_regular_attacks - 1);
-
-        if (west_promotion_attacks)
-            do {
-                int to_index = bitscan_forward(west_promotion_attacks);
-                auto piece_captured = find_piece_captured_without_occ(to_index);
-                moves.push_back(
-                        Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                moves.push_back(
-                        Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
-            } while (west_promotion_attacks &= west_promotion_attacks - 1);
-
-
-        // Quiet moves:
-        if (gen_type == ALL_MOVES) {
-            // Add Southern rook pins (only type of pin that pawn_push can move in)
-            U64 north_and_south_of_king = rays[North][king_index] | rays[South][king_index];
-
-            U64 pawn_regular_pushes =
-                    (((pawns | (north_and_south_of_king & Bitboards[Pawns] & rook_pinned)) >> 8) & ~first_rank) &
-                    ~(occ);
-            U64 pawn_double_pushes = ((pawn_regular_pushes & (eighth_rank >> 16)) >> 8) & ~(occ);
-
-            pawn_regular_pushes &= block_check_masks;
-            pawn_double_pushes &= block_check_masks;
-
-            U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(occ);
-            pawn_promotion_pushes &= block_check_masks;
-
-
-            if (pawn_regular_pushes)
-                do {
-                    int to_index = bitscan_forward(pawn_regular_pushes);
-                    moves.push_back(Move(to_index + 8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-                } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
-
-            if (pawn_double_pushes)
-                do {
-                    int to_index = bitscan_forward(pawn_double_pushes);
-                    moves.push_back(Move(to_index + 16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
-                } while (pawn_double_pushes &= pawn_double_pushes - 1);
-
-            if (pawn_promotion_pushes)
-                do {
-                    int to_index = bitscan_forward(pawn_promotion_pushes);
-                    moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
-                    moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
-                    moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
-                    moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
-                } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
-        } // if (include_quiet)
-    }
-
-    // Pinned pawns are handled individually:
-    U64 pinned_pawn_attacks =
-            Bitboards[Pawns] & bishop_pinned; // No rook pinned since attacks can't happen when pinned by rook
-
-    if (pinned_pawn_attacks)
-        do {
-            int from_index = bitscan_forward(pinned_pawn_attacks);
-            U64 move_targets = pawn_attacks[BlackPieces][from_index];
-            move_targets &= block_check_masks;
-            move_targets &= C64(1) << *(pinners + direction_between[king_index][from_index]);
-
-            if (move_targets) {
-                int to_index = bitscan_forward(move_targets);
-                auto piece_captured = find_piece_captured_without_occ(to_index);
-                if (from_index <= 7) {
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, piece_captured));
-                } else {
-                    moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_PAWN, piece_captured));
-                }
-            }
-
-        } while (pinned_pawn_attacks &= pinned_pawn_attacks - 1);
-
-    // En Passant:
-    if (en_passant_square != -1 && (((C64(1) << en_passant_square) & block_check_masks) ||
-                                    (C64(1) << (en_passant_square + 8) & block_check_masks))) {
-        U64 en_passant_pawn_source = pawns & pawn_attacks[WhitePieces][en_passant_square];
-
-        if (en_passant_pawn_source)
-            do {
-                int from_index = bitscan_forward(en_passant_pawn_source);
-
-                // Find if en_passant square has the possibility of being pinned:
-                if ((C64(1) << from_index) & (rays[East][king_index] | rays[West][king_index])) {
-                    U64 occ_minus_ep_pawns = occ ^ ((C64(1) << (en_passant_square + 8)) | (C64(1) << from_index));
-                    if ((get_negative_ray_attacks(king_index, West, occ_minus_ep_pawns) |
-                         get_positive_ray_attacks(king_index, East, occ_minus_ep_pawns)) &
-                        (Bitboards[Rooks] | Bitboards[Queens]) & Bitboards[!current_turn]) {
-                        continue;
-                    }
-                }
-
-                moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
-            } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
-
-        // En Passant pins:
-        U64 negative_diag_rays_from_king = rays[SouthWest][king_index] | rays[SouthEast][king_index];
-        U64 en_passants_along_pin_path = negative_diag_rays_from_king & (C64(1) << en_passant_square);
-        U64 pinned_en_passant = Bitboards[Pawns] & bishop_pinned & pawn_attacks[WhitePieces][en_passant_square];
-        pinned_en_passant &= block_check_masks;
-
-        if (pinned_en_passant && en_passants_along_pin_path) {
-            moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN,
-                                 PIECE_PAWN));
-        }
-    }
-}
-
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
-                             U64 bishop_pinned) {
-    U64 knights = Bitboards[Knights] & friendly_pieces & ~rook_pinned &
-                  ~bishop_pinned; // Knights can't move at all when pinned
-
-    if (knights)
-        do {
-            int from_index = bitscan_forward(knights);
-            U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
-            move_targets &= block_check_masks;
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_KNIGHT, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (knights &= knights - 1);
-}
-
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                             U64 rook_pinned, U64 bishop_pinned, int king_index) {
-    U64 bishops = Bitboards[Bishops] & friendly_pieces & ~rook_pinned &
-                  ~bishop_pinned; // Bishops can't move when pinned by a rook
-    U64 bishops_bishop_pinned = Bitboards[Bishops] & bishop_pinned;
-
-    if (bishops)
-        do {
-            int from_index = bitscan_forward(bishops);
-            U64 move_targets = bishop_attacks(from_index, occ);
-            move_targets &= ~friendly_pieces;
-            move_targets &= block_check_masks;
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_BISHOP, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (bishops &= bishops - 1);
-
-    if (bishops_bishop_pinned)
-        do {
-            int from_index = bitscan_forward(bishops_bishop_pinned);
-            U64 move_targets = bishop_attacks(from_index, occ);
-            move_targets &= block_check_masks;
-            move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_BISHOP, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (bishops_bishop_pinned &= bishops_bishop_pinned - 1);
-}
-
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                           U64 rook_pinned, U64 bishop_pinned, int king_index) {
-    U64 rooks = Bitboards[Rooks] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
-    U64 rooks_rook_pinned = Bitboards[Rooks] & rook_pinned;
-
-    if (rooks)
-        do {
-            int from_index = bitscan_forward(rooks);
-            U64 move_targets = rook_attacks(from_index, occ);
-            move_targets &= ~friendly_pieces;
-            move_targets &= block_check_masks;
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_ROOK, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (rooks &= rooks - 1);
-
-    if (rooks_rook_pinned)
-        do {
-            int from_index = bitscan_forward(rooks_rook_pinned);
-            U64 move_targets = rook_attacks(from_index, occ);
-            move_targets &= block_check_masks;
-            move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_ROOK, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (rooks_rook_pinned &= rooks_rook_pinned - 1);
-}
-
-
-template<MoveGenType gen_type>
-inline void
-Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
-                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
-    U64 queens = Bitboards[Queens] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
-    U64 queens_pinned = Bitboards[Queens] & (rook_pinned | bishop_pinned);
-
-    if (queens)
-        do {
-            int from_index = bitscan_forward(queens);
-            U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
-            move_targets &= ~friendly_pieces;
-            move_targets &= block_check_masks;
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_QUEEN, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (queens &= queens - 1);
-
-    if (queens_pinned)
-        do {
-            int from_index = bitscan_forward(queens_pinned);
-            U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
-            move_targets &= block_check_masks;
-            move_targets &= in_between_mask(king_index, *(pinners + direction_between[king_index][from_index]));
-
-            if (gen_type == CAPTURES_ONLY) {
-                move_targets &= occ;
-            }
-
-            if (move_targets)
-                do {
-                    int to_index = bitscan_forward(move_targets);
-                    moves.push_back(
-                            Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_QUEEN, find_piece_captured(to_index)));
-                } while (move_targets &= move_targets - 1);
-
-        } while (queens_pinned &= queens_pinned - 1);
-}
-
-
-// Mobility section
-
-template<MoveGenType gen_type>
-int Board::calculate_mobility(bool& is_in_check) {
-    // Routine for generating moves
 
     int move_count = 0;
 
@@ -1328,7 +675,7 @@ int Board::calculate_mobility(bool& is_in_check) {
     is_in_check = num_attackers >= 1;
 
     // Generate king moves first
-    move_count += calculate_king_mobility<gen_type>(occ, friendly_pieces, king_index, num_attackers);
+    move_count += generate_king_moves<gen_type, serialize_type>(moves, occ, friendly_pieces, king_index, num_attackers);
 
     if (num_attackers == 1) {
         // In the case of check, we'll need to calculate the block masks
@@ -1348,32 +695,51 @@ int Board::calculate_mobility(bool& is_in_check) {
     // There are two pawn move generators (depending on who's turn it is)
     // This is done for efficiency reasons
     if (current_turn == WHITE) {
-        move_count += calculate_pawn_mobilityW<gen_type>(block_masks, occ, friendly_pieces, pinners, rook_pinned,
-                                                         bishop_pinned, king_index);
+        move_count += generate_pawn_movesW<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
+                                       king_index);
     } else {
-        move_count += calculate_pawn_mobilityB<gen_type>(block_masks, occ, friendly_pieces, pinners, rook_pinned,
-                                                         bishop_pinned, king_index);
+        move_count += generate_pawn_movesB<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
+                                       king_index);
     }
-    move_count += calculate_knight_mobility<gen_type>(block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
-    move_count += calculate_bishop_mobility<gen_type>(block_masks, occ, friendly_pieces, pinners, rook_pinned,
-                                                      bishop_pinned, king_index);
-    move_count += calculate_rook_mobility<gen_type>(block_masks, occ, friendly_pieces, pinners, rook_pinned,
-                                                    bishop_pinned, king_index);
-    move_count += calculate_queen_mobility<gen_type>(block_masks, occ, friendly_pieces, pinners, rook_pinned,
-                                                     bishop_pinned, king_index);
+    move_count += generate_knight_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
+    move_count += generate_bishop_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
+                                    king_index);
+    move_count += generate_rook_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
+                                  king_index);
+    move_count += generate_queen_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
+                                   king_index);
 
     return move_count;
 }
 
 template<MoveGenType gen_type>
+void Board::generate_moves(MoveList& moves, bool& is_in_check) {
+    generate_moves_inner<gen_type, SERIALIZE_MOVES>(moves, is_in_check);
+}
+
+template<MoveGenType gen_type>
+void Board::generate_moves(MoveList& moves) {
+    bool b;
+    generate_moves_inner<gen_type, SERIALIZE_MOVES>(moves, b);
+}
+
+template<MoveGenType gen_type>
 int Board::calculate_mobility() {
     bool b;
-    return calculate_mobility<gen_type>(b);
+    MoveList m;
+    return generate_moves_inner<gen_type, COUNT_MOVES>(m, b);
+}
+
+template<MoveGenType gen_type>
+int Board::calculate_mobility(bool& is_in_check) {
+    MoveList m;
+    return generate_moves_inner<gen_type, COUNT_MOVES>(m, is_in_check);
 }
 
 
-template<MoveGenType gen_type>
-inline int Board::calculate_king_mobility(U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
+template<MoveGenType gen_type, SerializationType serialize_type>
+inline int
+Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
 
     // Castling section
 
@@ -1383,22 +749,38 @@ inline int Board::calculate_king_mobility(U64 occ, U64 friendly_pieces, int king
         if (current_turn == WHITE) {
             if (white_can_castle_queenside && !num_attackers && !(C64(0xE) & occ) && !is_attacked(3, occ) &&
                 !is_attacked(2, occ)) {
-                move_count++;
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(Move(4, 2, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
             }
 
             if (white_can_castle_kingside && !num_attackers && !(C64(0x60) & occ) && !is_attacked(5, occ) &&
                 !is_attacked(6, occ)) {
-                move_count++;
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(Move(4, 6, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
             }
         } else {
             if (black_can_castle_queenside && !num_attackers && !(C64(0xE00000000000000) & occ) &&
                 !is_attacked(59, occ) && !is_attacked(58, occ)) {
-                move_count++;
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(Move(60, 58, MOVE_CASTLING, CASTLE_TYPE_QUEENSIDE, PIECE_KING, PIECE_NONE));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
             }
 
             if (black_can_castle_kingside && !num_attackers && !(C64(0x6000000000000000) & occ) &&
                 !is_attacked(61, occ) && !is_attacked(62, occ)) {
-                move_count++;
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(Move(60, 62, MOVE_CASTLING, CASTLE_TYPE_KINGSIDE, PIECE_KING, PIECE_NONE));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
             }
         }
     }
@@ -1418,24 +800,29 @@ inline int Board::calculate_king_mobility(U64 occ, U64 friendly_pieces, int king
     // In truth, the king cannot move to the right, so we must hide the king from is_attacked()
     U64 occ_without_friendly_king = occ ^ (C64(1) << king_index);
 
-    if (move_targets)
+    if (move_targets) {
         do {
             int to_index = bitscan_forward(move_targets);
 
             // King cannot move into check (see above for why occ_without_friendly_king is used instead of normal occ)
             if (!is_attacked(to_index, occ_without_friendly_king)) {
-                move_count++;
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(
+                            Move(king_index, to_index, MOVE_NORMAL, 0, PIECE_KING, find_piece_captured(to_index)));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
             }
         } while (move_targets &= move_targets - 1); // Remove the target we just processed from move_target
-
+    }
     return move_count;
 }
 
 
-template<MoveGenType gen_type>
+template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                U64 bishop_pinned, int king_index) {
+Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
 
     int move_count = 0;
 
@@ -1448,7 +835,7 @@ Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pie
         // East attacks:
         U64 east_attacks = ((pawns << 9) & ~a_file) & Bitboards[BlackPieces];
         east_attacks &= block_check_masks;
-        // seperate out promotions
+        // separate out promotions
         U64 east_promotion_attacks = east_attacks & eighth_rank;
         U64 east_regular_attacks = east_attacks & ~eighth_rank;
 
@@ -1460,13 +847,62 @@ Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pie
         U64 west_regular_attacks = west_attacks & ~eighth_rank;
 
 
-        move_count += pop_count(east_regular_attacks);
+        if (serialize_type == SERIALIZE_MOVES) {
+            // Serialize into moves:
+            if (east_regular_attacks)
+                do {
+                    int to_index = bitscan_forward(east_regular_attacks);
+                    moves.push_back(Move(to_index - 9, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
+                                         find_piece_captured_without_occ(to_index)));
+                } while (east_regular_attacks &= east_regular_attacks - 1);
 
-        move_count += pop_count(east_promotion_attacks) * 4;
+            if (east_promotion_attacks)
+                do {
+                    int to_index = bitscan_forward(east_promotion_attacks);
+                    auto piece_captured = find_piece_captured_without_occ(to_index);
+                    moves.push_back(
+                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
+                    moves.push_back(
+                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                } while (east_promotion_attacks &= east_promotion_attacks - 1);
 
-        move_count += pop_count(west_regular_attacks);
+            if (west_regular_attacks)
+                do {
+                    int to_index = bitscan_forward(west_regular_attacks);
+                    moves.push_back(Move(to_index - 7, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
+                                         find_piece_captured_without_occ(to_index)));
+                } while (west_regular_attacks &= west_regular_attacks - 1);
 
-        move_count += pop_count(west_promotion_attacks) * 4;
+            if (west_promotion_attacks)
+                do {
+                    int to_index = bitscan_forward(west_promotion_attacks);
+                    auto piece_captured = find_piece_captured_without_occ(to_index);
+                    moves.push_back(
+                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
+                    moves.push_back(
+                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                } while (west_promotion_attacks &= west_promotion_attacks - 1);
+        } else if (serialize_type == COUNT_MOVES) {
+            move_count += pop_count(east_regular_attacks);
+
+            move_count += pop_count(east_promotion_attacks) * 4;
+
+            move_count += pop_count(west_regular_attacks);
+
+            move_count += pop_count(west_promotion_attacks) * 4;
+        }
 
 
         // Quiet moves:
@@ -1488,9 +924,33 @@ Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pie
             U64 pawn_promotion_pushes = ((pawns << 8) & eighth_rank) & ~(occ);
             pawn_promotion_pushes &= block_check_masks;
 
-            move_count += pop_count(pawn_regular_pushes | pawn_double_pushes);
+            if (serialize_type == SERIALIZE_MOVES) {
+                // Serialize into moves
+                if (pawn_regular_pushes)
+                    do {
+                        int to_index = bitscan_forward(pawn_regular_pushes);
+                        moves.push_back(Move(to_index - 8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+                    } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
 
-            move_count += pop_count(pawn_promotion_pushes) * 4;
+                if (pawn_double_pushes)
+                    do {
+                        int to_index = bitscan_forward(pawn_double_pushes);
+                        moves.push_back(Move(to_index - 16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+                    } while (pawn_double_pushes &= pawn_double_pushes - 1);
+
+                if (pawn_promotion_pushes)
+                    do {
+                        int to_index = bitscan_forward(pawn_promotion_pushes);
+                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
+                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
+                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
+                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
+                    } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(pawn_regular_pushes | pawn_double_pushes);
+                move_count += pop_count(pawn_promotion_pushes) * 4;
+            }
+
         } // if (include_quiet)
     }
 
@@ -1506,10 +966,31 @@ Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pie
             move_targets &= C64(1) << *(pinners + direction_between[king_index][from_index]);
 
             if (move_targets) {
+                int to_index = bitscan_forward(move_targets);
+                auto piece_captured = find_piece_captured_without_occ(to_index);
                 if (from_index >= 48) {
-                    move_count += 4;
+                    if (serialize_type == SERIALIZE_MOVES) {
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                     piece_captured));
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                                     piece_captured));
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                     piece_captured));
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                     piece_captured));
+                    } else if (serialize_type == COUNT_MOVES) {
+                        move_count += 4;
+                    }
                 } else {
-                    move_count++;
+                    if (serialize_type == SERIALIZE_MOVES) {
+                        moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_PAWN, piece_captured));
+                    } else if (serialize_type == COUNT_MOVES) {
+                        move_count++;
+                    }
                 }
             }
 
@@ -1534,8 +1015,12 @@ Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pie
                         continue;
                     }
                 }
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
 
-                move_count++;
             } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
 
         // En Passant pins:
@@ -1545,18 +1030,20 @@ Board::calculate_pawn_mobilityW(U64 block_check_masks, U64 occ, U64 friendly_pie
         pinned_en_passant &= block_check_masks;
 
         if (pinned_en_passant && en_passants_along_pin_path) {
-            move_count++;
+            if (serialize_type == SERIALIZE_MOVES) {
+                moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count++;
+            }
         }
     }
-
     return move_count;
 }
 
-template<MoveGenType gen_type>
+template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                U64 bishop_pinned, int king_index) {
-
+Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
     int move_count = 0;
 
     U64 pawns = Bitboards[Pawns] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
@@ -1577,13 +1064,61 @@ Board::calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pie
         U64 west_regular_attacks = west_attacks & ~first_rank;
 
 
-        move_count += pop_count(east_regular_attacks);
 
-        move_count += pop_count(east_promotion_attacks) * 4;
+        // Serialize into moves:
 
-        move_count += pop_count(west_regular_attacks);
+        if (serialize_type == SERIALIZE_MOVES) {
+            if (east_regular_attacks)
+                do {
+                    int to_index = bitscan_forward(east_regular_attacks);
+                    moves.push_back(Move(to_index + 7, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
+                                         find_piece_captured_without_occ(to_index)));
+                } while (east_regular_attacks &= east_regular_attacks - 1);
 
-        move_count += pop_count(west_promotion_attacks) * 4;
+            if (east_promotion_attacks)
+                do {
+                    int to_index = bitscan_forward(east_promotion_attacks);
+                    auto piece_captured = find_piece_captured_without_occ(to_index);
+                    moves.push_back(
+                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
+                    moves.push_back(
+                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                } while (east_promotion_attacks &= east_promotion_attacks - 1);
+
+            if (west_regular_attacks)
+                do {
+                    int to_index = bitscan_forward(west_regular_attacks);
+                    moves.push_back(Move(to_index + 9, to_index, MOVE_NORMAL, 0, PIECE_PAWN,
+                                         find_piece_captured_without_occ(to_index)));
+                } while (west_regular_attacks &= west_regular_attacks - 1);
+
+            if (west_promotion_attacks)
+                do {
+                    int to_index = bitscan_forward(west_promotion_attacks);
+                    auto piece_captured = find_piece_captured_without_occ(to_index);
+                    moves.push_back(
+                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                                 piece_captured));
+                    moves.push_back(
+                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
+                    moves.push_back(
+                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                } while (west_promotion_attacks &= west_promotion_attacks - 1);
+        } else if (serialize_type == COUNT_MOVES) {
+            move_count += pop_count(east_regular_attacks);
+            move_count += pop_count(east_promotion_attacks) * 4;
+            move_count += pop_count(west_regular_attacks);
+            move_count += pop_count(west_promotion_attacks) * 4;
+        }
 
 
         // Quiet moves:
@@ -1602,10 +1137,31 @@ Board::calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pie
             U64 pawn_promotion_pushes = ((pawns >> 8) & first_rank) & ~(occ);
             pawn_promotion_pushes &= block_check_masks;
 
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (pawn_regular_pushes)
+                    do {
+                        int to_index = bitscan_forward(pawn_regular_pushes);
+                        moves.push_back(Move(to_index + 8, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+                    } while (pawn_regular_pushes &= pawn_regular_pushes - 1);
 
-            move_count += pop_count(pawn_regular_pushes | pawn_double_pushes);
+                if (pawn_double_pushes)
+                    do {
+                        int to_index = bitscan_forward(pawn_double_pushes);
+                        moves.push_back(Move(to_index + 16, to_index, MOVE_NORMAL, 0, PIECE_PAWN, 0));
+                    } while (pawn_double_pushes &= pawn_double_pushes - 1);
 
-            move_count += pop_count(pawn_promotion_pushes) * 4;
+                if (pawn_promotion_pushes)
+                    do {
+                        int to_index = bitscan_forward(pawn_promotion_pushes);
+                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
+                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
+                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
+                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
+                    } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(pawn_regular_pushes | pawn_double_pushes);
+                move_count += pop_count(pawn_promotion_pushes) * 4;
+            }
         } // if (include_quiet)
     }
 
@@ -1621,10 +1177,32 @@ Board::calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pie
             move_targets &= C64(1) << *(pinners + direction_between[king_index][from_index]);
 
             if (move_targets) {
+                int to_index = bitscan_forward(move_targets);
+                auto piece_captured = find_piece_captured_without_occ(to_index);
                 if (from_index <= 7) {
-                    move_count += 4;
+                    if (serialize_type == SERIALIZE_MOVES) {
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                     piece_captured));
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                                     piece_captured));
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                     piece_captured));
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                                     piece_captured));
+                    } else if (serialize_type == COUNT_MOVES) {
+                        move_count += 4;
+                    }
+
                 } else {
-                    move_count++;
+                    if (serialize_type == SERIALIZE_MOVES) {
+                        moves.push_back(Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_PAWN, piece_captured));
+                    } else if (serialize_type == COUNT_MOVES) {
+                        move_count++;
+                    }
                 }
             }
 
@@ -1648,8 +1226,11 @@ Board::calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pie
                         continue;
                     }
                 }
-
-                move_count++;
+                if (serialize_type == SERIALIZE_MOVES) {
+                    moves.push_back(Move(from_index, en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+                } else if (serialize_type == COUNT_MOVES) {
+                    move_count++;
+                }
             } while (en_passant_pawn_source &= en_passant_pawn_source - 1);
 
         // En Passant pins:
@@ -1659,23 +1240,29 @@ Board::calculate_pawn_mobilityB(U64 block_check_masks, U64 occ, U64 friendly_pie
         pinned_en_passant &= block_check_masks;
 
         if (pinned_en_passant && en_passants_along_pin_path) {
-            move_count++;
+            if (serialize_type == SERIALIZE_MOVES) {
+                moves.push_back(
+                        Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN,
+                             PIECE_PAWN));
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count++;
+            }
         }
     }
     return move_count;
 }
 
 
-template<MoveGenType gen_type>
-inline int Board::calculate_knight_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
-                                            U64 bishop_pinned) {
-
+template<MoveGenType gen_type, SerializationType serialize_type>
+inline int
+Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
+                             U64 bishop_pinned) {
     int move_count = 0;
+
     U64 knights = Bitboards[Knights] & friendly_pieces & ~rook_pinned &
                   ~bishop_pinned; // Knights can't move at all when pinned
 
-
-    if (knights)
+    if (knights) {
         do {
             int from_index = bitscan_forward(knights);
             U64 move_targets = knight_paths[from_index] & ~friendly_pieces;
@@ -1685,24 +1272,37 @@ inline int Board::calculate_knight_mobility(U64 block_check_masks, U64 occ, U64 
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets) {
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_KNIGHT,
+                                     find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+                }
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
 
         } while (knights &= knights - 1);
-
+    }
     return move_count;
 }
 
 
-template<MoveGenType gen_type>
+template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::calculate_bishop_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                 U64 bishop_pinned, int king_index) {
+Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                             U64 rook_pinned, U64 bishop_pinned, int king_index) {
+
     int move_count = 0;
+
     U64 bishops = Bitboards[Bishops] & friendly_pieces & ~rook_pinned &
                   ~bishop_pinned; // Bishops can't move when pinned by a rook
     U64 bishops_bishop_pinned = Bitboards[Bishops] & bishop_pinned;
 
-    if (bishops)
+    if (bishops) {
         do {
             int from_index = bitscan_forward(bishops);
             U64 move_targets = bishop_attacks(from_index, occ);
@@ -1713,11 +1313,22 @@ Board::calculate_bishop_mobility(U64 block_check_masks, U64 occ, U64 friendly_pi
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets)
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_BISHOP,
+                                     find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
 
         } while (bishops &= bishops - 1);
+    }
 
-    if (bishops_bishop_pinned)
+    if (bishops_bishop_pinned) {
         do {
             int from_index = bitscan_forward(bishops_bishop_pinned);
             U64 move_targets = bishop_attacks(from_index, occ);
@@ -1728,23 +1339,35 @@ Board::calculate_bishop_mobility(U64 block_check_masks, U64 occ, U64 friendly_pi
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets)
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_BISHOP,
+                                     find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
+
 
         } while (bishops_bishop_pinned &= bishops_bishop_pinned - 1);
-
+    }
     return move_count;
 }
 
 
-template<MoveGenType gen_type>
+template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::calculate_rook_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                               U64 bishop_pinned, int king_index) {
+Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                           U64 rook_pinned, U64 bishop_pinned, int king_index) {
     int move_count = 0;
+
     U64 rooks = Bitboards[Rooks] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 rooks_rook_pinned = Bitboards[Rooks] & rook_pinned;
 
-    if (rooks)
+    if (rooks) {
         do {
             int from_index = bitscan_forward(rooks);
             U64 move_targets = rook_attacks(from_index, occ);
@@ -1755,11 +1378,21 @@ Board::calculate_rook_mobility(U64 block_check_masks, U64 occ, U64 friendly_piec
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets)
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_ROOK, find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
 
         } while (rooks &= rooks - 1);
+    }
 
-    if (rooks_rook_pinned)
+    if (rooks_rook_pinned) {
         do {
             int from_index = bitscan_forward(rooks_rook_pinned);
             U64 move_targets = rook_attacks(from_index, occ);
@@ -1770,23 +1403,34 @@ Board::calculate_rook_mobility(U64 block_check_masks, U64 occ, U64 friendly_piec
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets)
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_ROOK, find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
+
 
         } while (rooks_rook_pinned &= rooks_rook_pinned - 1);
-
+    }
     return move_count;
 }
 
 
-template<MoveGenType gen_type>
+template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::calculate_queen_mobility(U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners, U64 rook_pinned,
-                                U64 bishop_pinned, int king_index) {
+Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
     int move_count = 0;
+
     U64 queens = Bitboards[Queens] & friendly_pieces & ~rook_pinned & ~bishop_pinned;
     U64 queens_pinned = Bitboards[Queens] & (rook_pinned | bishop_pinned);
 
-    if (queens)
+    if (queens) {
         do {
             int from_index = bitscan_forward(queens);
             U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
@@ -1797,11 +1441,22 @@ Board::calculate_queen_mobility(U64 block_check_masks, U64 occ, U64 friendly_pie
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets)
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_QUEEN, find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
+
 
         } while (queens &= queens - 1);
+    }
 
-    if (queens_pinned)
+    if (queens_pinned) {
         do {
             int from_index = bitscan_forward(queens_pinned);
             U64 move_targets = bishop_attacks(from_index, occ) | rook_attacks(from_index, occ);
@@ -1812,12 +1467,22 @@ Board::calculate_queen_mobility(U64 block_check_masks, U64 occ, U64 friendly_pie
                 move_targets &= occ;
             }
 
-            move_count += pop_count(move_targets);
+            if (serialize_type == SERIALIZE_MOVES) {
+                if (move_targets)
+                    do {
+                        int to_index = bitscan_forward(move_targets);
+                        moves.push_back(
+                                Move(from_index, to_index, MOVE_NORMAL, 0, PIECE_QUEEN, find_piece_captured(to_index)));
+                    } while (move_targets &= move_targets - 1);
+            } else if (serialize_type == COUNT_MOVES) {
+                move_count += pop_count(move_targets);
+            }
 
         } while (queens_pinned &= queens_pinned - 1);
-
+    }
     return move_count;
 }
+
 
 
 // Legality section
