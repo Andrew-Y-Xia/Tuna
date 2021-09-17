@@ -133,6 +133,8 @@ public:
 
     int is_attacked(int index, U64 occ);
 
+    U64 get_att_def(int index, U64 occ);
+
     U64 calculate_block_masks(U64 king_attacker);
 
     U64 calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces);
@@ -150,10 +152,13 @@ public:
 
     void unmake_null_move();
 
+    // Move ordering:
+
+    U64 get_least_valuable_piece(U64 att_def, unsigned int by_side, unsigned int &piece);
+
+    int static_exchange_eval(Move move);
 
     void assign_move_scores(MoveList& moves, HashMove hash_move);
-
-    // Move ordering:
 
     void sort_moves(MoveList& moves);
 

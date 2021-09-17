@@ -1515,6 +1515,21 @@ inline int Board::is_attacked(int index, U64 occ) {
            || (king_paths[index] & enemy_king);
 }
 
+inline U64 Board::get_att_def(int index, U64 occ) {
+    U64 pawns = Bitboards[Pawns];
+    U64 knights = Bitboards[Knights];
+    U64 bishops_queens = (Bitboards[Bishops] | Bitboards[Queens]);
+    U64 rooks_queens = (Bitboards[Rooks] | Bitboards[Queens]);
+    U64 kings = Bitboards[Kings];
+
+    return (pawn_attacks[WHITE][index] & pawns & Bitboards[BLACK])
+    | (pawn_attacks[BLACK][index] & pawns & Bitboards[WHITE])
+    | (knight_paths[index] & knights)
+    | (bishop_attacks(index, occ) & bishops_queens)
+    | (rook_attacks(index, occ) & rooks_queens)
+    | (king_paths[index] & kings);
+}
+
 
 inline U64 Board::calculate_block_masks(U64 king_attacker) {
     U64 block_mask = 0;
@@ -2016,6 +2031,60 @@ void Board::unmake_null_move() {
 
 
 // MOVE ORDERING BEGIN
+
+U64 Board::get_least_valuable_piece(U64 att_def, unsigned int by_side, unsigned int &piece) {
+    U64 by_side_bb = Bitboards[by_side];
+    for (piece = PIECE_PAWN; piece >= PIECE_KING; piece--) {
+        U64 subset = att_def & Bitboards[piece] & by_side_bb;
+        if (subset) {
+            return subset & -subset; // single bit
+        }
+    }
+    return EmptyBoard;
+}
+
+int Board::static_exchange_eval(Move move) {
+    assert(move.is_capture());
+    int gain[32], d = 0;
+    unsigned int attacking_piece = move.get_piece_moved();
+    U64 may_xray = Bitboards[Pawns] | Bitboards[Bishops] | Bitboards[Rooks] | Bitboards[Queens];
+    U64 bishops_and_queens = Bitboards[Bishops] | Bitboards[Queens];
+    U64 rooks_and_queens = Bitboards[Rooks] | Bitboards[Queens];
+
+    U64 from_set = C64(1) << move.get_from();
+    U64 occ     = Bitboards[WhitePieces] | Bitboards[BlackPieces];
+    U64 att_def = get_att_def(move.get_to(), occ);
+    U64 all_att_def = att_def;
+
+    gain[d]     = piece_to_value[move.get_piece_captured()];
+    std::cout << piece_to_value[attacking_piece] << '\n';
+
+    do {
+        d++; // next depth and side
+        gain[d]  = piece_to_value[attacking_piece] - gain[d-1]; // speculative store, if defended
+        std::cout << piece_to_value[attacking_piece] << '\n';
+        if (std::max (-gain[d-1], gain[d]) < 0) break; // pruning does not influence the result
+        att_def ^= from_set; // reset bit in set to traverse
+        occ     ^= from_set; // reset bit in temporary occupancy (for x-Rays)
+        if (from_set & may_xray) {
+            U64 new_attacks = (bishop_attacks(move.get_to(), occ) & bishops_and_queens) | (rook_attacks(move.get_to(), occ) & rooks_and_queens);
+            new_attacks &= ~all_att_def;
+            all_att_def |= new_attacks;
+            att_def |= new_attacks;
+            std::cout << "new attacks: ";
+            print_BB(new_attacks);
+            std::cout << std::endl;
+        }
+        print_BB(from_set);
+        from_set  = get_least_valuable_piece(att_def, (d + current_turn) % 2, attacking_piece);
+    } while (from_set);
+
+    while (--d) {
+        gain[d-1] = -std::max(-gain[d-1], gain[d]);
+    }
+
+    return gain[0];
+}
 
 void Board::assign_move_scores(MoveList& moves, HashMove hash_move) {
     unsigned int score;

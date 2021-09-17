@@ -13,4 +13,6 @@
 
 void perft_tests();
 
+void tests();
+
 #endif //BITBOARD_CHESS_TESTS_HPP
