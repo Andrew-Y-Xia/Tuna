@@ -8,17 +8,17 @@
 #include "Board.hpp"
 
 
-template void Board::generate_moves<ALL_MOVES>(MoveList& moves, bool& is_in_check);
+template void Board::generate_moves<ALL_MOVES>(MoveList &moves, bool &is_in_check);
 
-template void Board::generate_moves<CAPTURES_ONLY>(MoveList& moves, bool& is_in_check);
+template void Board::generate_moves<CAPTURES_ONLY>(MoveList &moves, bool &is_in_check);
 
-template int Board::calculate_mobility<ALL_MOVES>(bool& is_in_check);
+template int Board::calculate_mobility<ALL_MOVES>(bool &is_in_check);
 
-template int Board::calculate_mobility<CAPTURES_ONLY>(bool& is_in_check);
+template int Board::calculate_mobility<CAPTURES_ONLY>(bool &is_in_check);
 
-template void Board::generate_moves<ALL_MOVES>(MoveList& moves);
+template void Board::generate_moves<ALL_MOVES>(MoveList &moves);
 
-template void Board::generate_moves<CAPTURES_ONLY>(MoveList& moves);
+template void Board::generate_moves<CAPTURES_ONLY>(MoveList &moves);
 
 template int Board::calculate_mobility<ALL_MOVES>();
 
@@ -649,7 +649,7 @@ unsigned int Board::find_piece_captured_without_occ(int index) {
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_moves_inner(MoveList& moves, bool& is_in_check) {
+Board::generate_moves_inner(MoveList &moves, bool &is_in_check) {
     // Routine for generating moves
     assert(moves.size() == 0);
 
@@ -695,30 +695,36 @@ Board::generate_moves_inner(MoveList& moves, bool& is_in_check) {
     // There are two pawn move generators (depending on who's turn it is)
     // This is done for efficiency reasons
     if (current_turn == WHITE) {
-        move_count += generate_pawn_movesW<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                       king_index);
+        move_count += generate_pawn_movesW<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners,
+                                                                     rook_pinned, bishop_pinned,
+                                                                     king_index);
     } else {
-        move_count += generate_pawn_movesB<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                       king_index);
+        move_count += generate_pawn_movesB<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners,
+                                                                     rook_pinned, bishop_pinned,
+                                                                     king_index);
     }
-    move_count += generate_knight_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, rook_pinned, bishop_pinned);
-    move_count += generate_bishop_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                    king_index);
-    move_count += generate_rook_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                  king_index);
-    move_count += generate_queen_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners, rook_pinned, bishop_pinned,
-                                   king_index);
+    move_count += generate_knight_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, rook_pinned,
+                                                                  bishop_pinned);
+    move_count += generate_bishop_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners,
+                                                                  rook_pinned, bishop_pinned,
+                                                                  king_index);
+    move_count += generate_rook_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners,
+                                                                rook_pinned, bishop_pinned,
+                                                                king_index);
+    move_count += generate_queen_moves<gen_type, serialize_type>(moves, block_masks, occ, friendly_pieces, pinners,
+                                                                 rook_pinned, bishop_pinned,
+                                                                 king_index);
 
     return move_count;
 }
 
 template<MoveGenType gen_type>
-void Board::generate_moves(MoveList& moves, bool& is_in_check) {
+void Board::generate_moves(MoveList &moves, bool &is_in_check) {
     generate_moves_inner<gen_type, SERIALIZE_MOVES>(moves, is_in_check);
 }
 
 template<MoveGenType gen_type>
-void Board::generate_moves(MoveList& moves) {
+void Board::generate_moves(MoveList &moves) {
     bool b;
     generate_moves_inner<gen_type, SERIALIZE_MOVES>(moves, b);
 }
@@ -731,7 +737,7 @@ int Board::calculate_mobility() {
 }
 
 template<MoveGenType gen_type>
-int Board::calculate_mobility(bool& is_in_check) {
+int Board::calculate_mobility(bool &is_in_check) {
     MoveList m;
     return generate_moves_inner<gen_type, COUNT_MOVES>(m, is_in_check);
 }
@@ -739,7 +745,7 @@ int Board::calculate_mobility(bool& is_in_check) {
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
+Board::generate_king_moves(MoveList &moves, U64 occ, U64 friendly_pieces, int king_index, int num_attackers) {
 
     // Castling section
 
@@ -821,7 +827,7 @@ Board::generate_king_moves(MoveList& moves, U64 occ, U64 friendly_pieces, int ki
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+Board::generate_pawn_movesW(MoveList &moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int *pinners,
                             U64 rook_pinned, U64 bishop_pinned, int king_index) {
 
     int move_count = 0;
@@ -1031,7 +1037,9 @@ Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64
 
         if (pinned_en_passant && en_passants_along_pin_path) {
             if (serialize_type == SERIALIZE_MOVES) {
-                moves.push_back(Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN, PIECE_PAWN));
+                moves.push_back(
+                        Move(bitscan_forward(pinned_en_passant), en_passant_square, MOVE_ENPASSANT, 0, PIECE_PAWN,
+                             PIECE_PAWN));
             } else if (serialize_type == COUNT_MOVES) {
                 move_count++;
             }
@@ -1042,7 +1050,7 @@ Board::generate_pawn_movesW(MoveList& moves, U64 block_check_masks, U64 occ, U64
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+Board::generate_pawn_movesB(MoveList &moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int *pinners,
                             U64 rook_pinned, U64 bishop_pinned, int king_index) {
     int move_count = 0;
 
@@ -1255,7 +1263,7 @@ Board::generate_pawn_movesB(MoveList& moves, U64 block_check_masks, U64 occ, U64
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
+Board::generate_knight_moves(MoveList &moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, U64 rook_pinned,
                              U64 bishop_pinned) {
     int move_count = 0;
 
@@ -1293,7 +1301,7 @@ Board::generate_knight_moves(MoveList& moves, U64 block_check_masks, U64 occ, U6
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+Board::generate_bishop_moves(MoveList &moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int *pinners,
                              U64 rook_pinned, U64 bishop_pinned, int king_index) {
 
     int move_count = 0;
@@ -1360,7 +1368,7 @@ Board::generate_bishop_moves(MoveList& moves, U64 block_check_masks, U64 occ, U6
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+Board::generate_rook_moves(MoveList &moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int *pinners,
                            U64 rook_pinned, U64 bishop_pinned, int king_index) {
     int move_count = 0;
 
@@ -1423,7 +1431,7 @@ Board::generate_rook_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 
 
 template<MoveGenType gen_type, SerializationType serialize_type>
 inline int
-Board::generate_queen_moves(MoveList& moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int* pinners,
+Board::generate_queen_moves(MoveList &moves, U64 block_check_masks, U64 occ, U64 friendly_pieces, int *pinners,
                             U64 rook_pinned, U64 bishop_pinned, int king_index) {
     int move_count = 0;
 
@@ -1523,11 +1531,11 @@ inline U64 Board::get_att_def(int index, U64 occ) {
     U64 kings = Bitboards[Kings];
 
     return (pawn_attacks[WHITE][index] & pawns & Bitboards[BLACK])
-    | (pawn_attacks[BLACK][index] & pawns & Bitboards[WHITE])
-    | (knight_paths[index] & knights)
-    | (bishop_attacks(index, occ) & bishops_queens)
-    | (rook_attacks(index, occ) & rooks_queens)
-    | (king_paths[index] & kings);
+           | (pawn_attacks[BLACK][index] & pawns & Bitboards[WHITE])
+           | (knight_paths[index] & knights)
+           | (bishop_attacks(index, occ) & bishops_queens)
+           | (rook_attacks(index, occ) & rooks_queens)
+           | (king_paths[index] & kings);
 }
 
 
@@ -1545,7 +1553,7 @@ inline U64 Board::calculate_block_masks(U64 king_attacker) {
     return block_mask | capture_mask;
 }
 
-inline U64 Board::calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_pieces) {
+inline U64 Board::calculate_bishop_pins(int *pinners, U64 occ, U64 friendly_pieces) {
     // Make sure to pass in int arr[8], otherwise segfault
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
     U64 pinner = xray_bishop_attacks(king_index, occ, friendly_pieces) & (Bitboards[Bishops] | Bitboards[Queens]) &
@@ -1562,7 +1570,7 @@ inline U64 Board::calculate_bishop_pins(int* pinners, U64 occ, U64 friendly_piec
     return pinned;
 }
 
-U64 Board::calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces) {
+U64 Board::calculate_rook_pins(int *pinners, U64 occ, U64 friendly_pieces) {
     // Make sure to pass in int arr[8], otherwise segfault
     int king_index = bitscan_forward(Bitboards[Kings] & friendly_pieces);
     U64 pinner = xray_rook_attacks(king_index, occ, friendly_pieces) & (Bitboards[Rooks] | Bitboards[Queens]) &
@@ -2044,7 +2052,7 @@ U64 Board::get_least_valuable_piece(U64 att_def, unsigned int by_side, unsigned 
 }
 
 int Board::static_exchange_eval(Move move) {
-    assert(move.is_capture());
+//    assert(move.is_capture());
     int gain[32], d = 0;
     unsigned int attacking_piece = move.get_piece_moved();
     U64 may_xray = Bitboards[Pawns] | Bitboards[Bishops] | Bitboards[Rooks] | Bitboards[Queens];
@@ -2052,41 +2060,36 @@ int Board::static_exchange_eval(Move move) {
     U64 rooks_and_queens = Bitboards[Rooks] | Bitboards[Queens];
 
     U64 from_set = C64(1) << move.get_from();
-    U64 occ     = Bitboards[WhitePieces] | Bitboards[BlackPieces];
+    U64 occ = Bitboards[WhitePieces] | Bitboards[BlackPieces];
     U64 att_def = get_att_def(move.get_to(), occ);
     U64 all_att_def = att_def;
 
-    gain[d]     = piece_to_value[move.get_piece_captured()];
-    std::cout << piece_to_value[attacking_piece] << '\n';
+    gain[d] = piece_to_value[move.get_piece_captured()];
 
     do {
         d++; // next depth and side
-        gain[d]  = piece_to_value[attacking_piece] - gain[d-1]; // speculative store, if defended
-        std::cout << piece_to_value[attacking_piece] << '\n';
-        if (std::max (-gain[d-1], gain[d]) < 0) break; // pruning does not influence the result
+        gain[d] = piece_to_value[attacking_piece] - gain[d - 1]; // speculative store, if defended
+        if (std::max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
         att_def ^= from_set; // reset bit in set to traverse
-        occ     ^= from_set; // reset bit in temporary occupancy (for x-Rays)
+        occ ^= from_set; // reset bit in temporary occupancy (for x-Rays)
         if (from_set & may_xray) {
-            U64 new_attacks = (bishop_attacks(move.get_to(), occ) & bishops_and_queens) | (rook_attacks(move.get_to(), occ) & rooks_and_queens);
+            U64 new_attacks = (bishop_attacks(move.get_to(), occ) & bishops_and_queens) |
+                              (rook_attacks(move.get_to(), occ) & rooks_and_queens);
             new_attacks &= ~all_att_def;
             all_att_def |= new_attacks;
             att_def |= new_attacks;
-            std::cout << "new attacks: ";
-            print_BB(new_attacks);
-            std::cout << std::endl;
         }
-        print_BB(from_set);
-        from_set  = get_least_valuable_piece(att_def, (d + current_turn) % 2, attacking_piece);
+        from_set = get_least_valuable_piece(att_def, (d + current_turn) % 2, attacking_piece);
     } while (from_set);
 
     while (--d) {
-        gain[d-1] = -std::max(-gain[d-1], gain[d]);
+        gain[d - 1] = -std::max(-gain[d - 1], gain[d]);
     }
 
     return gain[0];
 }
 
-void Board::assign_move_scores(MoveList& moves, HashMove hash_move) {
+void Board::assign_move_scores(MoveList &moves, HashMove hash_move) {
     unsigned int score;
 
     // Score all the moves
@@ -2094,7 +2097,7 @@ void Board::assign_move_scores(MoveList& moves, HashMove hash_move) {
         score = 512;
         if (it->is_capture()) {
             score += 70;
-            score += piece_to_value_small[it->get_piece_captured()] - piece_to_value_small[it->get_piece_moved()];
+            score += static_exchange_eval(*it) / 8;
         }
         if (it->get_special_flag() == MOVE_PROMOTION) {
             score += 100;
@@ -2117,7 +2120,7 @@ void Board::assign_move_scores(MoveList& moves, HashMove hash_move) {
     }
 }
 
-void Board::sort_moves(MoveList& moves) {
+void Board::sort_moves(MoveList &moves) {
     // Deprecated
     assign_move_scores(moves, HashMove());
 

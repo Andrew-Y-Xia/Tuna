@@ -191,6 +191,8 @@ void init_piece_to_value() {
     piece_to_value[PIECE_BISHOP] = BISHOP_VALUE;
     piece_to_value[PIECE_ROOK] = ROOK_VALUE;
     piece_to_value[PIECE_QUEEN] = QUEEN_VALUE;
+    piece_to_value[PIECE_KING] = 100000;
+    piece_to_value[PIECE_NONE] = 0;
 
     piece_to_value_small[PIECE_PAWN] = PAWN_VALUE / 10;
     piece_to_value_small[PIECE_KNIGHT] = KNIGHT_VALUE / 10;
