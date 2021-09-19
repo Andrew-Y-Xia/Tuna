@@ -1,5 +1,13 @@
 # Bitboard-Chess
 
+### **Compiling from source**
+#### Unix-like
+```
+cmake ./CMakeLists.txt -DCMAKE_BUILD_TYPE=Release
+make
+```
+
+
 ### **Features:**
 
 Move Generation:
