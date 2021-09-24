@@ -43,6 +43,10 @@ void HashMove::set_node_type(unsigned int node_type) {
     move_data |= (node_type & 0xF) << 28;
 }
 
+Move HashMove::to_move() {
+    return Move(move_data);
+}
+
 
 TT::TT() {
     // Constructor, allocate the hash_table

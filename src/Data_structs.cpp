@@ -40,6 +40,10 @@ Move::Move(unsigned int from, unsigned int to, unsigned int flag, unsigned int p
             ((piece_moved & 0x7) << 16) | ((piece_captured & 0x7) << 19) | ((score & 0x3FF) << 22);
 }
 
+Move::Move(unsigned int raw_data) {
+    move_data = raw_data;
+}
+
 unsigned int Move::get_raw_data() const {
     return move_data;
 }

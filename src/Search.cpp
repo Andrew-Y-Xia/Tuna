@@ -153,9 +153,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
 
     if (tt_hit.key == board.get_z_key()) {
-        board.assign_move_scores(moves, tt_hit.hash_move);
+        board.assign_move_scores(moves, tt_hit.hash_move, &killer_moves[depth][0]);
     } else {
-        board.assign_move_scores(moves, HashMove());
+        board.assign_move_scores(moves, HashMove(),&killer_moves[depth][0]);
     }
 
     bool do_pvs = depth > 2;
@@ -177,6 +177,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
         if (first_eval >= beta) {
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
+            register_killers(ply_from_root, first_move);
             return beta;
         }
         if (first_eval > alpha) {
@@ -209,6 +210,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
         if (eval >= beta) {
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
+            register_killers(ply_from_root, it);
             return beta;
         }
         if (eval > alpha) {
@@ -223,6 +225,14 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     store_pos_result(best_move, depth, node_type, alpha, ply_from_root);
 
     return alpha;
+}
+
+void Search::register_killers(unsigned int ply_from_root, Move best_move) {
+    assert(best_move.get_raw_data());
+    if (USE_KILLERS && best_move != killer_moves[ply_from_root][0] && best_move != killer_moves[ply_from_root][1]) {
+        killer_moves[ply_from_root][0] = killer_moves[ply_from_root][1];
+        killer_moves[ply_from_root][1] = best_move;
+    }
 }
 
 
@@ -241,7 +251,8 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     MoveList moves;
     board.generate_moves<CAPTURES_ONLY>(moves);
 
-    board.assign_move_scores(moves, HashMove());
+    Move blank[2]; // Blank killer moves (quiescence doesn't use killers because killers are quiet)
+    board.assign_move_scores(moves, HashMove(), blank);
 
     MovePicker move_picker(moves);
 
@@ -284,10 +295,17 @@ void Search::search_finished_message(Move best_move, int depth, int eval) {
 }
 
 
-Move Search::find_best_move(unsigned int max_depth) {
+Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
+    max_depth = std::min(max_depth, (unsigned int) MAX_DEPTH);
     board.hash();
     type2collision = 0;
     nodes_searched = 0;
+
+    // Clear killers
+    for (int i = 0; i < MAX_DEPTH; i++) {
+        killer_moves[i][0] = Move();
+        killer_moves[i][1] = Move();
+    }
 
     time_handler.start();
 
@@ -321,7 +339,6 @@ Move Search::find_best_move(unsigned int max_depth) {
 
         HashMove best_move_temp;
         best_move_temp = best_move;
-        board.assign_move_scores(moves, best_move_temp);
 
 
         int upper_bound = 25;
@@ -349,7 +366,7 @@ Move Search::find_best_move(unsigned int max_depth) {
             alpha = expected_eval - lower_bound;
             beta = expected_eval + upper_bound;
 
-
+            board.assign_move_scores(moves, best_move_temp, &killer_moves[0][0]);
             MovePicker move_picker(moves);
 
             if (USE_PV_SEARCH) {
@@ -374,6 +391,7 @@ Move Search::find_best_move(unsigned int max_depth) {
                     while (!move_picker.finished()) {
                         ++move_picker;
                     }
+                    register_killers(0, first_move);
                 }
                 if (first_eval > alpha) {
                     local_best_move = first_move;
@@ -417,6 +435,7 @@ Move Search::find_best_move(unsigned int max_depth) {
                     // In case of fail-high break loop early
                     assert(USE_ASPIRATION_WINDOWS); // beta cutoff should only occur in aspirated search
                     alpha = eval;
+                    register_killers(0, it);
                     break;
                 }
                 if (eval > alpha) {
@@ -509,8 +528,9 @@ long Search::sort_perft(unsigned int depth) {
     long nodes = 0;
 
     MoveList moves;
+    Move blank[2];
     board.generate_moves(moves);
-    board.assign_move_scores(moves, HashMove());
+    board.assign_move_scores(moves, HashMove(), blank);
 
     MovePicker move_picker(moves);
     while (!move_picker.finished()) {

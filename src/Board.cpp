@@ -2089,7 +2089,7 @@ int Board::static_exchange_eval(Move move) {
     return gain[0];
 }
 
-void Board::assign_move_scores(MoveList &moves, HashMove hash_move) {
+void Board::assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]) {
     unsigned int score;
 
     // Score all the moves
@@ -2115,16 +2115,13 @@ void Board::assign_move_scores(MoveList &moves, HashMove hash_move) {
         if (hash_move == (*it)) {
             score = 1000;
         }
+        else if (killers[0] == (*it) || killers[1] == (*it)) {
+            score += 65;
+        }
 
+        assert(score <= 1023);
         it->set_move_score(score);
     }
-}
-
-void Board::sort_moves(MoveList &moves) {
-    // Deprecated
-    assign_move_scores(moves, HashMove());
-
-    std::sort(moves.begin(), moves.end(), move_cmp);
 }
 
 

@@ -158,9 +158,8 @@ public:
 
     int static_exchange_eval(Move move);
 
-    void assign_move_scores(MoveList& moves, HashMove hash_move);
+    void assign_move_scores(MoveList& moves, HashMove hash_move, Move killers[2]);
 
-    void sort_moves(MoveList& moves);
 
     // Evaluations utils
 

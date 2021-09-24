@@ -34,6 +34,8 @@ public:
     void set_depth(unsigned int depth);
 
     void set_node_type(unsigned int node_type);
+
+    Move to_move();
 };
 
 

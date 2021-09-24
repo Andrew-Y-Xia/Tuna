@@ -14,9 +14,11 @@
 #include "Opening_book.hpp"
 #include "Time_handler.hpp"
 
+#define MAX_DEPTH 64
 #define USE_NULL_MOVE_PRUNING 1
 #define USE_ASPIRATION_WINDOWS 1
 #define USE_PV_SEARCH 1
+#define USE_KILLERS 1
 #define USE_BOOK 0
 #define R 2
 
@@ -44,6 +46,8 @@ private:
     TT& tt;
     OpeningBook& opening_book;
     TimeHandler& time_handler;
+
+    Move killer_moves[MAX_DEPTH][2];
 
     unsigned int nodes_searched;
 public:
@@ -73,6 +77,7 @@ public:
 
     long capture_perft(unsigned int depth);
 
+    void register_killers(unsigned int ply_from_root, Move best_move);
 };
 
 #endif /* Search_hpp */
