@@ -19,6 +19,7 @@
 #define USE_ASPIRATION_WINDOWS 1
 #define USE_PV_SEARCH 1
 #define USE_KILLERS 1
+#define USE_HIST_HEURISTIC 1
 #define USE_BOOK 0
 #define R 2
 
@@ -48,11 +49,15 @@ private:
     TimeHandler& time_handler;
 
     Move killer_moves[MAX_DEPTH][2];
+    unsigned int history_moves[2][64][64];
 
     unsigned int nodes_searched;
 public:
 
     Search(Board b, TT& t, OpeningBook& ob, TimeHandler& th);
+
+    template <bool use_history_heuristic = false>
+    void assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]);
 
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                           unsigned int ply_from_root);
@@ -62,6 +67,10 @@ public:
     void search_finished_message(Move best_move, int depth, int eval);
 
     int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move);
+
+    void register_killers(unsigned int ply_from_root, Move move);
+
+    void register_history_move(unsigned int depth, Move move);
 
     int quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root);
 
@@ -76,8 +85,6 @@ public:
     long hash_perft_internal(unsigned int depth);
 
     long capture_perft(unsigned int depth);
-
-    void register_killers(unsigned int ply_from_root, Move best_move);
 };
 
 #endif /* Search_hpp */

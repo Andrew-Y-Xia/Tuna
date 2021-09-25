@@ -2089,41 +2089,6 @@ int Board::static_exchange_eval(Move move) {
     return gain[0];
 }
 
-void Board::assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]) {
-    unsigned int score;
-
-    // Score all the moves
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
-        score = 512;
-        if (it->is_capture()) {
-            score += 70;
-            score += static_exchange_eval(*it) / 8;
-        }
-        if (it->get_special_flag() == MOVE_PROMOTION) {
-            score += 100;
-        } else if (it->get_special_flag() == MOVE_CASTLING) {
-            score += 60;
-        }
-
-        // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
-        /*
-         if (pawn_attacks[current_turn][it->get_to()] & Bitboards[Pawns] & Bitboards[!current_turn]) {
-         score -= piece_to_value_small[it->get_piece_moved()];
-         }
-         */
-
-        if (hash_move == (*it)) {
-            score = 1000;
-        }
-        else if (killers[0] == (*it) || killers[1] == (*it)) {
-            score += 65;
-        }
-
-        assert(score <= 1023);
-        it->set_move_score(score);
-    }
-}
-
 
 // MOVE ORDERING END
 

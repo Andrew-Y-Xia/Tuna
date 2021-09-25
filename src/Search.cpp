@@ -51,6 +51,49 @@ Search::Search(Board b, TT& t, OpeningBook& ob, TimeHandler& th) : board(b), tt(
     nodes_searched = 0;
 }
 
+template <bool use_history_heuristic>
+void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]) {
+    unsigned int score;
+
+    // Score all the moves
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        score = 512;
+
+        if (hash_move == (*it)) {
+            it->set_move_score(1000);
+            continue;
+        }
+
+        if (it->is_capture()) {
+            score += 70;
+            score += board.static_exchange_eval(*it) / 8;
+        }
+        else if (killers[0] == (*it) || killers[1] == (*it)) {
+            score += 65;
+        }
+        else if (use_history_heuristic) {
+            score += history_moves[board.get_current_turn()][it->get_from()][it->get_to()] / 8;
+        }
+
+        if (it->get_special_flag() == MOVE_PROMOTION) {
+            score += 100;
+        } else if (it->get_special_flag() == MOVE_CASTLING) {
+            score += 60;
+        }
+
+        // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
+        /*
+         if (pawn_attacks[current_turn][it->get_to()] & Bitboards[Pawns] & Bitboards[!current_turn]) {
+         score -= piece_to_value_small[it->get_piece_moved()];
+         }
+         */
+
+
+        assert(score <= 1023);
+        it->set_move_score(score);
+    }
+}
+
 
 void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                               unsigned int ply_from_root) {
@@ -151,12 +194,11 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
     }
 
-
+    HashMove move_to_assign;
     if (tt_hit.key == board.get_z_key()) {
-        board.assign_move_scores(moves, tt_hit.hash_move, &killer_moves[depth][0]);
-    } else {
-        board.assign_move_scores(moves, HashMove(),&killer_moves[depth][0]);
+        move_to_assign = tt_hit.hash_move;
     }
+    assign_move_scores<true>(moves, move_to_assign, &killer_moves[depth][0]);
 
     bool do_pvs = depth > 2;
 
@@ -178,6 +220,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         if (first_eval >= beta) {
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             register_killers(ply_from_root, first_move);
+            register_history_move(depth, first_move);
             return beta;
         }
         if (first_eval > alpha) {
@@ -211,6 +254,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         if (eval >= beta) {
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             register_killers(ply_from_root, it);
+            register_history_move(depth, it);
             return beta;
         }
         if (eval > alpha) {
@@ -227,13 +271,21 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     return alpha;
 }
 
-void Search::register_killers(unsigned int ply_from_root, Move best_move) {
-    assert(best_move.get_raw_data());
-    if (USE_KILLERS && best_move != killer_moves[ply_from_root][0] && best_move != killer_moves[ply_from_root][1]) {
+void Search::register_killers(unsigned int ply_from_root, Move move) {
+    assert(move.get_raw_data());
+    if (USE_KILLERS && move != killer_moves[ply_from_root][0] && move != killer_moves[ply_from_root][1]) {
         killer_moves[ply_from_root][0] = killer_moves[ply_from_root][1];
-        killer_moves[ply_from_root][1] = best_move;
+        killer_moves[ply_from_root][1] = move;
     }
 }
+
+void Search::register_history_move(unsigned int depth, Move move) {
+    assert(move.get_raw_data());
+    if (USE_HIST_HEURISTIC) {
+        history_moves[board.get_current_turn()][move.get_from()][move.get_to()] += depth * depth;
+    }
+}
+
 
 
 int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root) {
@@ -252,7 +304,7 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     board.generate_moves<CAPTURES_ONLY>(moves);
 
     Move blank[2]; // Blank killer moves (quiescence doesn't use killers because killers are quiet)
-    board.assign_move_scores(moves, HashMove(), blank);
+    assign_move_scores(moves, HashMove(), blank);
 
     MovePicker move_picker(moves);
 
@@ -305,6 +357,14 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
     for (int i = 0; i < MAX_DEPTH; i++) {
         killer_moves[i][0] = Move();
         killer_moves[i][1] = Move();
+    }
+    // Clear history table
+    for (int turn = 0; turn < 2; turn++) {
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                history_moves[turn][y][x] = 0;
+            }
+        }
     }
 
     time_handler.start();
@@ -366,7 +426,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
             alpha = expected_eval - lower_bound;
             beta = expected_eval + upper_bound;
 
-            board.assign_move_scores(moves, best_move_temp, &killer_moves[0][0]);
+            assign_move_scores<true>(moves, best_move_temp, &killer_moves[0][0]);
             MovePicker move_picker(moves);
 
             if (USE_PV_SEARCH) {
@@ -392,6 +452,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                         ++move_picker;
                     }
                     register_killers(0, first_move);
+                    register_history_move(depth, first_move);
                 }
                 if (first_eval > alpha) {
                     local_best_move = first_move;
@@ -436,6 +497,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     assert(USE_ASPIRATION_WINDOWS); // beta cutoff should only occur in aspirated search
                     alpha = eval;
                     register_killers(0, it);
+                    register_history_move(depth, it);
                     break;
                 }
                 if (eval > alpha) {
@@ -530,7 +592,7 @@ long Search::sort_perft(unsigned int depth) {
     MoveList moves;
     Move blank[2];
     board.generate_moves(moves);
-    board.assign_move_scores(moves, HashMove(), blank);
+    assign_move_scores(moves, HashMove(), blank);
 
     MovePicker move_picker(moves);
     while (!move_picker.finished()) {
