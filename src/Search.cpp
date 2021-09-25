@@ -72,13 +72,12 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
             score += 65;
         }
         else if (use_history_heuristic) {
-            score += history_moves[board.get_current_turn()][it->get_from()][it->get_to()] / 8;
+            unsigned int hist_lookup = history_moves[board.get_current_turn()][it->get_from()][it->get_to()];
+            score += bitscan_reverse(hist_lookup) * !!hist_lookup; // Takes a base2 log of hist_lookup
         }
 
         if (it->get_special_flag() == MOVE_PROMOTION) {
             score += 100;
-        } else if (it->get_special_flag() == MOVE_CASTLING) {
-            score += 60;
         }
 
         // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
