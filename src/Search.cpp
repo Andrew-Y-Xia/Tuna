@@ -118,15 +118,15 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
 
     // Check for hits on the TT
-    const TT_entry tt_hit = tt.get(board.get_z_key());
+    const TT_result tt_result = tt.get(board.get_z_key());
 
-    if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() >= depth) {
-//        if (tt_hit.sanity_check != board.tt_sanity_check()) {
+    if (tt_result.is_hit && tt_result.tt_entry.hash_move.get_depth() >= depth) {
+//        if (tt_result.sanity_check != board.tt_sanity_check()) {
 //            std::cout << "Transposition table type 1 collision\n";
 //        }
 
-        int score = tt_hit.score;
-        unsigned int node_type = tt_hit.hash_move.get_node_type();
+        int score = tt_result.tt_entry.score;
+        unsigned int node_type = tt_result.tt_entry.hash_move.get_node_type();
         if (score >= MINMATE) {
             score -= ply_from_root; // This gets MAXMATE - (distance between mate and root)
         } else if (score <= -MINMATE) {
@@ -144,7 +144,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
     }
 
-    if (tt_hit.key != board.get_z_key() && tt_hit.hash_move.get_raw_data() != 0) {
+    if (tt_result.is_hit && tt_result.tt_entry.hash_move.get_raw_data() != 0) {
         type2collision++;
     }
 
@@ -194,8 +194,8 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
 
     HashMove move_to_assign;
-    if (tt_hit.key == board.get_z_key()) {
-        move_to_assign = tt_hit.hash_move;
+    if (tt_result.is_hit) {
+        move_to_assign = tt_result.tt_entry.hash_move;
     }
     assign_move_scores<true>(moves, move_to_assign, &killer_moves[depth][0]);
 
@@ -617,14 +617,14 @@ long Search::hash_perft_internal(unsigned int depth) {
         return 1;
     }
 
-    TT_entry tt_hit = tt.get(board.get_z_key());
+    TT_result tt_result = tt.get(board.get_z_key());
 
-    if (tt_hit.key == board.get_z_key() && tt_hit.hash_move.get_depth() == depth) {
-//        if (tt_hit.sanity_check != board.tt_sanity_check()) {
+    if (tt_result.is_hit && tt_result.tt_entry.hash_move.get_depth() == depth) {
+//        if (tt_result.sanity_check != board.tt_sanity_check()) {
 //            std::cout << "Type 1 collision occured" << std::endl;
 //        }
-//        std::cout << tt_hit.sanity_check << ' ' << board.tt_sanity_check() << '\n';
-        return tt_hit.score;
+//        std::cout << tt_result.sanity_check << ' ' << board.tt_sanity_check() << '\n';
+        return tt_result.tt_entry.score;
     }
 
     long nodes = 0;

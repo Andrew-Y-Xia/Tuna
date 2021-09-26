@@ -15,6 +15,7 @@
 #include "Data_structs.hpp"
 
 #define TT_EXP_2_SIZE 24 // TT_SIZE is 2^x
+#define BUCKET_SIZE 4
 
 #define NODE_EXACT 0
 #define NODE_UPPERBOUND 1
@@ -40,21 +41,31 @@ public:
 
 
 struct TT_entry {
-    U64 key;
+    unsigned int key;
     HashMove hash_move;
     // No need to keep depth info because that's kept in move
     int score;
+    unsigned int age;
+};
+
+struct bucket {
+    TT_entry entries[BUCKET_SIZE];
+};
+
+struct TT_result {
+    TT_entry tt_entry;
+    bool is_hit;
 };
 
 class TT {
 private:
-    TT_entry* hash_table;
+    bucket* hash_table;
 public:
     TT();
 
     ~TT();
 
-    TT_entry get(U64 key) const;
+    TT_result get(U64 key) const;
 
     void prefetch(U64 key) const;
 
@@ -62,6 +73,17 @@ public:
 
     void clear();
 
+};
+
+// Open-addressed hash map
+// Used for PV-node lookups
+template <typename T>
+class HashMap {
+private:
+    struct Entry {
+        U64 key;
+        T data;
+    };
 };
 
 #endif /* Transposition_table_hpp */
