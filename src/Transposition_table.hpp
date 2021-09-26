@@ -14,7 +14,7 @@
 #include "depend.hpp"
 #include "Data_structs.hpp"
 
-#define TT_EXP_2_SIZE 24 // TT_SIZE is 2^x
+#define TT_EXP_2_SIZE 22 // TT_SIZE is 2^x
 #define BUCKET_SIZE 4
 
 #define NODE_EXACT 0
@@ -71,19 +71,11 @@ public:
 
     void set(U64 key, Move best_move, unsigned int depth, unsigned int node_type, int score);
 
+    void increment_age();
+
     void clear();
 
 };
 
-// Open-addressed hash map
-// Used for PV-node lookups
-template <typename T>
-class HashMap {
-private:
-    struct Entry {
-        U64 key;
-        T data;
-    };
-};
 
 #endif /* Transposition_table_hpp */

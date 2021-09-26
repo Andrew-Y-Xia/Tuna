@@ -59,6 +59,8 @@ public:
     template <bool use_history_heuristic = false>
     void assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]);
 
+    std::vector<Move> get_pv();
+
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                           unsigned int ply_from_root);
 

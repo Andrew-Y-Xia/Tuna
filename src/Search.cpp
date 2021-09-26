@@ -93,6 +93,36 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
     }
 }
 
+std::vector<Move> Search::get_pv() {
+    std::vector<Move> pv;
+    while (true) {
+        TT_result tt_result = tt.get(board.get_z_key());
+        if (!tt_result.is_hit || tt_result.tt_entry.hash_move.get_node_type() != NODE_EXACT) {
+            break;
+        }
+        Move m = tt_result.tt_entry.hash_move.to_move();
+        MoveList legal_moves;
+        board.generate_moves(legal_moves);
+        assert(legal_moves.contains(tt_result.tt_entry.hash_move.to_move()));
+        pv.push_back(m);
+        board.make_move(m);
+    }
+    for (auto i = pv.size(); i != 0; i--) {
+        board.unmake_move();
+    }
+    return pv;
+}
+
+std::string print_move_vector(std::vector<Move> moves) {
+    std::ostringstream s;
+    for (auto it = moves.begin(); it != moves.end(); it++) {
+        s << move_to_str(*it, true) << ' ';
+    }
+    std::string popped = s.str();
+    popped.pop_back();
+    return popped;
+}
+
 
 void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                               unsigned int ply_from_root) {
@@ -333,7 +363,9 @@ void Search::log_search_info(int depth, int eval) {
     buffer << "info ";
     buffer << "score cp " << eval;
     buffer << " depth " << depth;
-    buffer << " nodes " << nodes_searched << '\n';
+    buffer << " nodes " << nodes_searched;
+    buffer << " pv " << print_move_vector(get_pv());
+    buffer << '\n';
     get_synced_cout().print(buffer.str());
 }
 
@@ -349,6 +381,7 @@ void Search::search_finished_message(Move best_move, int depth, int eval) {
 Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
     max_depth = std::min(max_depth, (unsigned int) MAX_DEPTH);
     board.hash();
+    tt.increment_age();
     type2collision = 0;
     nodes_searched = 0;
 

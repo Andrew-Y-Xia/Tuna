@@ -99,37 +99,36 @@ void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type
     unsigned int upper_key = upper_bits_to_u32(key);
     bucket* b = hash_table + lower_key;
 
-    // Pass one
-    // Replace empty entries or entries with matching key
+    unsigned int min_depth = 20000;
+    int min_index = -1;
+
+    unsigned int oldest = 0;
+    int oldest_index = 0;
+
     for (int i = 0; i < BUCKET_SIZE; i++) {
         TT_entry& entry = b->entries[i];
+        unsigned int entry_depth = entry.hash_move.get_depth();
+
+        // Replace empty entries or entries with matching key
         if (entry.key == upper_key || entry.hash_move.get_raw_data() == 0) {
             set_tt_entry(entry, upper_key, best_move, depth, node_type, score);
             return;
         }
-    }
-
-    // Pass two
-    // Replace entry from older search
-    for (int i = 0; i < BUCKET_SIZE; i++) {
-        TT_entry& entry = b->entries[i];
-        if (entry.age > 0 && entry.hash_move.get_node_type() != NODE_EXACT) {
-            set_tt_entry(entry, upper_key, best_move, depth, node_type, score);
-            return;
+        // Save oldest entry index in case the above fails
+        if (entry.age > oldest) {
+            oldest = entry.age;
+            oldest_index = i;
         }
-    }
-
-    // Pass three
-    // Replace the lowest depth entry
-    unsigned int min_depth = 20000;
-    int min_index = -1;
-    for (int i = 0; i < BUCKET_SIZE; i++) {
-        TT_entry& entry = b->entries[i];
-        unsigned int entry_depth = entry.hash_move.get_depth();
-        if (entry_depth < min_depth && entry.hash_move.get_node_type() != NODE_EXACT) {
+        // Save lowest depth search in the case the above fails
+        else if (entry_depth < min_depth && entry.hash_move.get_node_type() != NODE_EXACT) {
             min_depth = entry_depth;
             min_index = i;
         }
+    }
+
+    if (oldest > 0) {
+        set_tt_entry(b->entries[oldest_index], upper_key, best_move, depth, node_type, score);
+        return;
     }
     if (min_index != -1) {
         set_tt_entry(b->entries[min_index], upper_key, best_move, depth, node_type, score);
@@ -145,7 +144,7 @@ void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type
     }
 
     // PV node specific pass
-    // PV node must be replaced
+    // since PV node must be replaced
     if (node_type == NODE_EXACT) {
         for (int i = 0; i < BUCKET_SIZE; i++) {
             TT_entry& entry = b->entries[i];
@@ -157,7 +156,17 @@ void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type
                 return;
             }
         }
-        abort();
+    }
+}
+
+void TT::increment_age() {
+    for (int i = 0; i < TT_SIZE(); i++) {
+        for (int j = 0; j < BUCKET_SIZE; j++) {
+            TT_entry& entry = (hash_table + i)->entries[j];
+            if (entry.hash_move.get_raw_data() != 0) {
+                entry.age++;
+            }
+        }
     }
 }
 
