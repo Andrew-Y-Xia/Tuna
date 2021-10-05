@@ -97,7 +97,7 @@ std::vector<Move> Search::get_pv() {
     std::vector<Move> pv;
     while (true) {
         TT_result tt_result = tt.get(board.get_z_key());
-        if (!tt_result.is_hit || tt_result.tt_entry.hash_move.get_node_type() != NODE_EXACT) {
+        if (!tt_result.is_hit || tt_result.tt_entry.hash_move.get_node_type() != NODE_EXACT || board.has_repeated_once()) {
             break;
         }
         Move m = tt_result.tt_entry.hash_move.to_move();
