@@ -318,8 +318,11 @@ void Search::register_history_move(unsigned int depth, Move move) {
 
 
 int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root) {
-    int stand_pat = board.static_eval();
-    if (ply_from_horizon >= 7) {
+    MoveList moves; bool is_in_check;
+    board.generate_moves<CAPTURES_ONLY>(moves, is_in_check);
+
+    int stand_pat = moves.size() != 0 && is_in_check ? -MAXMATE : board.static_eval();
+    if (ply_from_horizon >= 5) {
         return stand_pat;
     }
     if (stand_pat >= beta) {
@@ -329,8 +332,6 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
         alpha = stand_pat;
     }
 
-    MoveList moves;
-    board.generate_moves<CAPTURES_ONLY>(moves);
 
     Move blank[2]; // Blank killer moves (quiescence doesn't use killers because killers are quiet)
     assign_move_scores(moves, HashMove(), blank);
