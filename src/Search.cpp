@@ -181,9 +181,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     if (depth == 0) {
         // Extension part
         if (EXTENSION_LIMIT && ply_extended < EXTENSION_LIMIT && board.is_in_check()) {
-            return -negamax(1, -beta, -alpha, ply_from_root + 1, ply_extended + 1, false);
+            return negamax(1, alpha, beta, ply_from_root, ply_extended + 1, false);
         }
-        return quiescence_search(0, alpha, beta, ply_from_root + 1);
+        return quiescence_search(0, alpha, beta, ply_from_root);
     } else if (time_handler.should_stop()) {
         // Reset board to original state
         for (int i = ply_from_root; i != 0; i--) {
@@ -323,7 +323,7 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     MoveList moves; bool is_in_check;
     board.generate_moves<CAPTURES_ONLY>(moves, is_in_check);
 
-    int stand_pat = moves.size() != 0 && is_in_check ? -MAXMATE : board.static_eval();
+    int stand_pat = moves.size() != 0 && is_in_check ? -MAXMATE + ply_from_root : board.static_eval();
     if (ply_from_horizon >= 5) {
         return stand_pat;
     }
