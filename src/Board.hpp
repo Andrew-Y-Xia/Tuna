@@ -141,6 +141,8 @@ public:
 
     U64 calculate_rook_pins(int* pinners, U64 occ, U64 friendly_pieces);
 
+    bool is_in_check();
+
     // Move generation end
 
 

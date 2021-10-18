@@ -20,6 +20,7 @@
 #define USE_PV_SEARCH 1
 #define USE_KILLERS 1
 #define USE_HIST_HEURISTIC 1
+#define EXTENSION_LIMIT 5
 #define USE_BOOK 0
 #define R 2
 
@@ -68,7 +69,7 @@ public:
 
     void search_finished_message(Move best_move, int depth, int eval);
 
-    int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move);
+    int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_null_move);
 
     void register_killers(unsigned int ply_from_root, Move move);
 

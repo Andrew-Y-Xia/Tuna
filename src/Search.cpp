@@ -135,7 +135,7 @@ void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned i
 }
 
 
-int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, bool do_null_move) {
+int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_null_move) {
 //    tt.prefetch(board.get_z_key());
 
     if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
@@ -179,9 +179,11 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
 
     if (depth == 0) {
+        // Extension part
+        if (EXTENSION_LIMIT && ply_extended < EXTENSION_LIMIT && board.is_in_check()) {
+            return -negamax(1, -beta, -alpha, ply_from_root + 1, ply_extended + 1, false);
+        }
         return quiescence_search(0, alpha, beta, ply_from_root + 1);
-//        int eval = board.static_eval();
-//        return eval;
     } else if (time_handler.should_stop()) {
         // Reset board to original state
         for (int i = ply_from_root; i != 0; i--) {
@@ -214,7 +216,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check) {
         if (depth > R) {
             board.make_null_move();
-            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, false);
+            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
             board.unmake_null_move();
 
             if (null_eval >= beta) {
@@ -243,7 +245,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         nodes_searched++;
 
         board.make_move(first_move);
-        first_eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+        first_eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
         board.unmake_move();
 
         if (first_eval >= beta) {
@@ -268,14 +270,14 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         board.make_move(it);
         if (USE_PV_SEARCH && do_pvs) {
             // null window search
-            eval = -negamax(depth - 1, -alpha - 1, -alpha, ply_from_root + 1, true);
+            eval = -negamax(depth - 1, -alpha - 1, -alpha, ply_from_root + 1, ply_extended, true);
             // Check if within bounds
             if (eval > alpha && eval < beta) {
                 // If so, research with full window
-                eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+                eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
             }
         } else {
-            eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, true);
+            eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
         }
         board.unmake_move();
 
@@ -469,7 +471,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
 
                 board.make_move(first_move);
                 try {
-                    first_eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                    first_eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
                 } catch (SearchTimeout& e) {
                     search_finished_message(best_move, depth - 1, max_eval);
                     time_handler.stop();
@@ -502,14 +504,14 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                 try {
                     if (USE_PV_SEARCH) {
                         // null window search
-                        eval = -negamax(depth - 1, -alpha - 1, -alpha, 1, true);
+                        eval = -negamax(depth - 1, -alpha - 1, -alpha, 1, 0, true);
                         // Check if within bounds
                         if (eval > alpha && eval < beta) {
                             // If so, research with full window
-                            eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                            eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
                         }
                     } else {
-                        eval = -negamax(depth - 1, -beta, -alpha, 1, true);
+                        eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
                     }
                 } catch (SearchTimeout& e) {
                     Move m;

@@ -1587,6 +1587,11 @@ U64 Board::calculate_rook_pins(int *pinners, U64 occ, U64 friendly_pieces) {
     return pinned;
 }
 
+bool Board::is_in_check() {
+    return is_attacked(bitscan_forward(Bitboards[Kings] & Bitboards[current_turn]),
+                       Bitboards[WhitePieces] | Bitboards[BlackPieces]);
+}
+
 
 void Board::make_move(Move move) {
     move_data m = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside,
