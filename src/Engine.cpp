@@ -28,15 +28,35 @@ void Engine::loop() {
                 if (cmd.at(1) == "perft") {
                     int perft_depth = std::stoi(cmd.at(2));
 
-                    Search search(board, tt, opening_book, inf_time);
+                    MoveList moves;
+                    board.generate_moves(moves);
+
+                    long perft_sum = 0;
+
                     auto t1 = std::chrono::high_resolution_clock::now();
-                    long perft_score = search.perft(perft_depth);
+
+                    for (int i = 0; i < moves.size(); i++) {
+
+                        board.make_move(moves[i]);
+
+                        Search search(board, tt, opening_book, inf_time);
+                        long perft_score = search.perft(perft_depth - 1);
+                        perft_sum += perft_score;
+                        std::ostringstream buffer;
+                        buffer << move_to_str(moves[i], true) << ": ";
+                        buffer << perft_score << '\n';
+                        get_synced_cout().print(buffer.str());
+
+                        board.unmake_move();
+
+                    }
                     auto t2 = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double, std::milli> ms_double = t2 - t1;
                     std::ostringstream buffer;
-                    buffer << perft_score;
-                    buffer << "\nTime: " << ms_double.count() << "ms\n";
+                    buffer << "\nNodes Searched: " << perft_sum << '\n';
+                    buffer << "Time: " << ms_double.count() << "ms\n\n";
                     get_synced_cout().print(buffer.str());
+
                 } else if (cmd.at(1) == "infinite") {
                     Search search(board, tt, opening_book, inf_time);
                     search.find_best_move(64);

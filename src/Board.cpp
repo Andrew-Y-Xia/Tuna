@@ -866,16 +866,7 @@ Board::generate_pawn_movesW(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 do {
                     int to_index = bitscan_forward(east_promotion_attacks);
                     auto piece_captured = find_piece_captured_without_occ(to_index);
-                    moves.push_back(
-                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(to_index - 9, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                    serialize_promotion(moves, to_index - 9, to_index, piece_captured);
                 } while (east_promotion_attacks &= east_promotion_attacks - 1);
 
             if (west_regular_attacks)
@@ -889,16 +880,7 @@ Board::generate_pawn_movesW(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 do {
                     int to_index = bitscan_forward(west_promotion_attacks);
                     auto piece_captured = find_piece_captured_without_occ(to_index);
-                    moves.push_back(
-                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(to_index - 7, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                    serialize_promotion(moves, to_index - 7, to_index, piece_captured);
                 } while (west_promotion_attacks &= west_promotion_attacks - 1);
         } else if (serialize_type == COUNT_MOVES) {
             move_count += pop_count(east_regular_attacks);
@@ -947,10 +929,7 @@ Board::generate_pawn_movesW(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 if (pawn_promotion_pushes)
                     do {
                         int to_index = bitscan_forward(pawn_promotion_pushes);
-                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
-                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
-                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
-                        moves.push_back(Move(to_index - 8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
+                        serialize_promotion(moves, to_index - 8, to_index, 0);
                     } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
             } else if (serialize_type == COUNT_MOVES) {
                 move_count += pop_count(pawn_regular_pushes | pawn_double_pushes);
@@ -976,18 +955,7 @@ Board::generate_pawn_movesW(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 auto piece_captured = find_piece_captured_without_occ(to_index);
                 if (from_index >= 48) {
                     if (serialize_type == SERIALIZE_MOVES) {
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                     piece_captured));
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
-                                     piece_captured));
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                     piece_captured));
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                     piece_captured));
+                        serialize_promotion(moves, from_index, to_index,0);
                     } else if (serialize_type == COUNT_MOVES) {
                         move_count += 4;
                     }
@@ -1087,16 +1055,7 @@ Board::generate_pawn_movesB(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 do {
                     int to_index = bitscan_forward(east_promotion_attacks);
                     auto piece_captured = find_piece_captured_without_occ(to_index);
-                    moves.push_back(
-                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(to_index + 7, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                    serialize_promotion(moves, to_index + 7, to_index,piece_captured);
                 } while (east_promotion_attacks &= east_promotion_attacks - 1);
 
             if (west_regular_attacks)
@@ -1110,16 +1069,7 @@ Board::generate_pawn_movesB(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 do {
                     int to_index = bitscan_forward(west_promotion_attacks);
                     auto piece_captured = find_piece_captured_without_occ(to_index);
-                    moves.push_back(
-                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
-                                 piece_captured));
-                    moves.push_back(
-                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, piece_captured));
-                    moves.push_back(
-                            Move(to_index + 9, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, piece_captured));
+                    serialize_promotion(moves, to_index + 9, to_index, piece_captured);
                 } while (west_promotion_attacks &= west_promotion_attacks - 1);
         } else if (serialize_type == COUNT_MOVES) {
             move_count += pop_count(east_regular_attacks);
@@ -1161,10 +1111,7 @@ Board::generate_pawn_movesB(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 if (pawn_promotion_pushes)
                     do {
                         int to_index = bitscan_forward(pawn_promotion_pushes);
-                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN, 0));
-                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN, 0));
-                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN, 0));
-                        moves.push_back(Move(to_index + 8, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN, 0));
+                        serialize_promotion(moves, to_index + 8, to_index, 0);
                     } while (pawn_promotion_pushes &= pawn_promotion_pushes - 1);
             } else if (serialize_type == COUNT_MOVES) {
                 move_count += pop_count(pawn_regular_pushes | pawn_double_pushes);
@@ -1187,20 +1134,9 @@ Board::generate_pawn_movesB(MoveList &moves, U64 block_check_masks, U64 occ, U64
             if (move_targets) {
                 int to_index = bitscan_forward(move_targets);
                 auto piece_captured = find_piece_captured_without_occ(to_index);
-                if (from_index <= 7) {
+                if (from_index <= 15) {
                     if (serialize_type == SERIALIZE_MOVES) {
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                     piece_captured));
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
-                                     piece_captured));
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                     piece_captured));
-                        moves.push_back(
-                                Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
-                                     piece_captured));
+                        serialize_promotion(moves, from_index, to_index, piece_captured);
                     } else if (serialize_type == COUNT_MOVES) {
                         move_count += 4;
                     }
@@ -1258,6 +1194,21 @@ Board::generate_pawn_movesB(MoveList &moves, U64 block_check_masks, U64 occ, U64
         }
     }
     return move_count;
+}
+
+void Board::serialize_promotion(MoveList &moves, int from_index, int to_index, unsigned int piece_captured) const {
+    moves.push_back(
+            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_KNIGHT, PIECE_PAWN,
+                 piece_captured));
+    moves.push_back(
+            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_BISHOP, PIECE_PAWN,
+                 piece_captured));
+    moves.push_back(
+            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_ROOK, PIECE_PAWN,
+                 piece_captured));
+    moves.push_back(
+            Move(from_index, to_index, MOVE_PROMOTION, PROMOTE_TO_QUEEN, PIECE_PAWN,
+                 piece_captured));
 }
 
 

@@ -100,6 +100,7 @@ int main() {
     init_zobrist_bitstrings();
     init_opening_book();
 
+//    tests();
 
     // Synchronization utils
     Thread::SafeQueue<std::vector<std::string>> cmd_queue;

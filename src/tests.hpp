@@ -11,7 +11,7 @@
 #include "Opening_book.hpp"
 #include "Time_handler.hpp"
 
-void perft_tests();
+void test_perft(std::string fen, unsigned int depth, long result);
 
 void tests();
 

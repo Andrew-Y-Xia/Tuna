@@ -194,6 +194,8 @@ public:
     std::vector<move_data> get_move_stack();
 
     bool get_reg_starting_pos();
+
+    void serialize_promotion(MoveList &moves, int from_index, int to_index, unsigned int piece_captured) const;
 };
 
 
