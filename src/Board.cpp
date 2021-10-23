@@ -658,7 +658,7 @@ Board::generate_moves_inner(MoveList &moves, bool &is_in_check) {
     U64 king_attackers; // Holds opponent pieces attacking the king
     U64 bishop_pinned, rook_pinned; // These hold the pieces pinned by the opponent. 'rook' and 'bishop' indicate the way they are pinned
     int num_attackers; // Number of attackers attacking the king
-    U64 block_masks = UniverseBoard; // Holds which squares pieces must go to in order to nullify a check (capture attacker, block check if attacker is Q, B, or R.
+    U64 block_masks = UniverseBoard; // Holds which squares pieces must go to in order to nullify a check (capture attacker, block check if attacker is Q, B, or R).
 
     int pinners[8]; // Since the king can only be pinned from the eight directions, hold the index of the possible pinners in this array (use Directions enum to look up with)
 
@@ -671,7 +671,7 @@ Board::generate_moves_inner(MoveList &moves, bool &is_in_check) {
     num_attackers = pop_count(king_attackers); // Count the number of attackers
 
     // During the search it may be useful to know whether the player is under check
-    // Since we want to avoid a recaculation, we'd like to save the info
+    // Since we want to avoid a recalculation, we'd like to save the info
     is_in_check = num_attackers >= 1;
 
     // Generate king moves first
@@ -955,7 +955,7 @@ Board::generate_pawn_movesW(MoveList &moves, U64 block_check_masks, U64 occ, U64
                 auto piece_captured = find_piece_captured_without_occ(to_index);
                 if (from_index >= 48) {
                     if (serialize_type == SERIALIZE_MOVES) {
-                        serialize_promotion(moves, from_index, to_index,0);
+                        serialize_promotion(moves, from_index, to_index, piece_captured);
                     } else if (serialize_type == COUNT_MOVES) {
                         move_count += 4;
                     }
@@ -1807,6 +1807,8 @@ void Board::make_move(Move move) {
     // Increment halfmove counter
     halfmove_counter++;
 
+    assert(verify_bitboard());
+
 }
 
 void Board::unmake_move() {
@@ -1948,6 +1950,8 @@ void Board::unmake_move() {
     }
 
     move_stack.pop_back();
+
+    assert(verify_bitboard());
 }
 
 
@@ -1972,6 +1976,8 @@ void Board::make_null_move() {
 
     // Should halfmove_counter be updated?
     halfmove_counter = 0;
+
+    assert(verify_bitboard());
 }
 
 void Board::unmake_null_move() {
@@ -1988,6 +1994,8 @@ void Board::unmake_null_move() {
 
     // Should halfmove_counter be updated?
     halfmove_counter = last_move.halfmove_counter;
+
+    assert(verify_bitboard());
 }
 
 
