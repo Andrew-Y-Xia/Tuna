@@ -2045,6 +2045,10 @@ int Board::static_exchange_eval(Move move) {
     return gain[0];
 }
 
+int Board::mvv_lva(Move move) {
+    return piece_to_value[move.get_piece_captured()] - piece_to_value[move.get_piece_moved()];
+}
+
 
 // MOVE ORDERING END
 

@@ -128,6 +128,7 @@ void Move::set_piece_captured(unsigned int piece) {
 }
 
 void Move::set_move_score(unsigned int score) {
+    assert(score <= 1023);
     move_data &= ~(0x3FF << 22);
     move_data |= (score & 0x3FF) << 22;
 }

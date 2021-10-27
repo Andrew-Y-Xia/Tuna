@@ -32,6 +32,8 @@ private:
 public:
     MovePicker(MoveList& init_moves);
 
+    bool filter_for_pruning();
+
     int finished();
 
     Move operator++();
@@ -59,6 +61,8 @@ public:
 
     template <bool use_history_heuristic = false>
     void assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]);
+
+    void assign_move_scores_quiescent(MoveList &moves);
 
     std::vector<Move> get_pv();
 

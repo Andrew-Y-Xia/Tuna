@@ -17,8 +17,20 @@ int type2collision;
 
 MovePicker::MovePicker(MoveList& init_moves) : moves(init_moves) {
     size = init_moves.size();
-
     visit_count = 0;
+}
+
+bool MovePicker::filter_for_pruning() {
+    // Tells MovePicker to not iterate over moves designated for pruning
+    // Returns whether any move has been pruned
+    int index = 0;
+    bool non_pruned = true;
+    for (auto it = moves.begin(); it != moves.end(); ++it, ++index) {
+        bool should_be_skipped = it->get_move_score() != 0;
+        visited[index] = should_be_skipped;
+        non_pruned = non_pruned && should_be_skipped;
+    }
+    return !non_pruned;
 }
 
 inline int MovePicker::finished() {
@@ -87,6 +99,32 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
          }
          */
 
+
+        assert(score <= 1023);
+        it->set_move_score(score);
+    }
+}
+
+void Search::assign_move_scores_quiescent(MoveList &moves) {
+    unsigned int score;
+
+    // Score all the moves
+    for (auto it = moves.begin(); it != moves.end(); ++it) {
+        score = 512;
+
+        int mvv_lva_result = Board::mvv_lva(*it) / 8;
+
+        if (mvv_lva_result >= 0) {
+            score += mvv_lva_result;
+        } else {
+            int see_result = board.static_exchange_eval(*it) / 8;
+            if (see_result >= 0) {
+                score += see_result;
+            }
+            else {
+                score = 0;
+            }
+        }
 
         assert(score <= 1023);
         it->set_move_score(score);
@@ -323,7 +361,7 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     MoveList moves; bool is_in_check;
     board.generate_moves<CAPTURES_ONLY>(moves, is_in_check);
 
-    int stand_pat = moves.size() != 0 && is_in_check ? -MAXMATE + ply_from_root : board.static_eval();
+    int stand_pat = moves.size() == 0 && is_in_check ? -MAXMATE + ply_from_root : board.static_eval();
     if (ply_from_horizon >= 5) {
         return stand_pat;
     }
@@ -335,10 +373,9 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     }
 
 
-    Move blank[2]; // Blank killer moves (quiescence doesn't use killers because killers are quiet)
-    assign_move_scores(moves, HashMove(), blank);
-
+    assign_move_scores_quiescent(moves);
     MovePicker move_picker(moves);
+    move_picker.filter_for_pruning();
 
     while (!move_picker.finished()) {
         int eval;

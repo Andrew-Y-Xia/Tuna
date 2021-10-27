@@ -160,6 +160,8 @@ public:
 
     int static_exchange_eval(Move move);
 
+    static int mvv_lva(Move move);
+
     // Evaluations utils
 
     void calculate_piece_values();
