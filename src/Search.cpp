@@ -24,13 +24,16 @@ bool MovePicker::filter_for_pruning() {
     // Tells MovePicker to not iterate over moves designated for pruning
     // Returns whether any move has been pruned
     int index = 0;
-    bool non_pruned = true;
+    bool any_pruned = false;
     for (auto it = moves.begin(); it != moves.end(); ++it, ++index) {
-        bool should_be_skipped = it->get_move_score() != 0;
-        visited[index] = should_be_skipped;
-        non_pruned = non_pruned && should_be_skipped;
+        bool should_be_skipped = it->get_move_score() == 0;
+        if (should_be_skipped) {
+            visited[index] = true;
+            any_pruned = true;
+            visit_count++;
+        }
     }
-    return !non_pruned;
+    return any_pruned;
 }
 
 inline int MovePicker::finished() {
