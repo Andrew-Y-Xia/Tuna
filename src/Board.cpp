@@ -2079,6 +2079,10 @@ void Board::calculate_piece_values() {
                                 + QUEEN_VALUE * pop_count(Bitboards[Queens] & black_pieces);
 }
 
+int* Board::get_piece_values() {
+    return piece_values;
+}
+
 void Board::print_piece_values() {
     std::cout << "\nWhite Piece Values: " << piece_values[WhitePieces];
     std::cout << "\nBlack Piece Values: " << piece_values[BlackPieces] << '\n';

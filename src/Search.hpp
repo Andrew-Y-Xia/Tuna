@@ -15,12 +15,17 @@
 #include "Time_handler.hpp"
 
 #define MAX_DEPTH 64
+#define MAXMATE 2000000
+#define MINMATE 1999000
+#define PRUNE_MOVE_SCORE 0
+
 #define USE_NULL_MOVE_PRUNING 1
 #define USE_ASPIRATION_WINDOWS 1
 #define USE_PV_SEARCH 1
 #define USE_KILLERS 1
 #define USE_HIST_HEURISTIC 1
 #define EXTENSION_LIMIT 5
+#define USE_DELTA_PRUNING 1
 #define USE_BOOK 0
 #define R 2
 
@@ -62,7 +67,8 @@ public:
     template <bool use_history_heuristic = false>
     void assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]);
 
-    void assign_move_scores_quiescent(MoveList &moves);
+    template <bool use_delta_pruning>
+    void assign_move_scores_quiescent(MoveList &moves, int eval, int alpha);
 
     std::vector<Move> get_pv();
 

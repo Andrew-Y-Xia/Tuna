@@ -166,6 +166,8 @@ public:
 
     void calculate_piece_values();
 
+    int* get_piece_values();
+
     void print_piece_values();
 
     void calculate_piece_square_values();

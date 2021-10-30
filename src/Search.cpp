@@ -9,8 +9,6 @@
 #include "Search.hpp"
 
 
-#define MAXMATE 2000000
-#define MINMATE 1999000
 
 
 int type2collision;
@@ -26,7 +24,7 @@ bool MovePicker::filter_for_pruning() {
     int index = 0;
     bool any_pruned = false;
     for (auto it = moves.begin(); it != moves.end(); ++it, ++index) {
-        bool should_be_skipped = it->get_move_score() == 0;
+        bool should_be_skipped = it->get_move_score() == PRUNE_MOVE_SCORE;
         if (should_be_skipped) {
             visited[index] = true;
             any_pruned = true;
@@ -108,24 +106,29 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
     }
 }
 
-void Search::assign_move_scores_quiescent(MoveList &moves) {
+template <bool use_delta_pruning>
+void Search::assign_move_scores_quiescent(MoveList &moves, int eval, int alpha) {
     unsigned int score;
 
     // Score all the moves
     for (auto it = moves.begin(); it != moves.end(); ++it) {
         score = 512;
 
-        int mvv_lva_result = Board::mvv_lva(*it) / 8;
+        int mvv_lva_result = Board::mvv_lva(*it);
 
         if (mvv_lva_result >= 0) {
-            score += mvv_lva_result;
+            if (!use_delta_pruning || eval + mvv_lva_result + 2*PAWN_VALUE > alpha) {
+                score += mvv_lva_result / 8;
+            } else {
+                score = PRUNE_MOVE_SCORE;
+            }
         } else {
-            int see_result = board.static_exchange_eval(*it) / 8;
-            if (see_result >= 0) {
-                score += see_result;
+            int see_result = board.static_exchange_eval(*it);
+            if (see_result >= 0 && (!use_delta_pruning || eval + see_result + 2*PAWN_VALUE > alpha)) {
+                score += see_result / 8;
             }
             else {
-                score = 0;
+                score = PRUNE_MOVE_SCORE;
             }
         }
 
@@ -364,6 +367,7 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     MoveList moves; bool is_in_check;
     board.generate_moves<CAPTURES_ONLY>(moves, is_in_check);
 
+    // If in check and there are no capture-evasions, do not allow quiescent search to stand_pat
     int stand_pat = moves.size() == 0 && is_in_check ? -MAXMATE + ply_from_root : board.static_eval();
     if (ply_from_horizon >= 5) {
         return stand_pat;
@@ -375,8 +379,14 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
         alpha = stand_pat;
     }
 
-
-    assign_move_scores_quiescent(moves);
+    bool is_late_endgame = board.get_piece_values()[board.get_current_turn()] < KNIGHT_VALUE + BISHOP_VALUE;
+    if (is_late_endgame) {
+        // Switch off delta pruning for late endgame
+        assign_move_scores_quiescent<false>(moves, stand_pat, alpha);
+        ASDF;
+    } else {
+        assign_move_scores_quiescent<true>(moves, stand_pat, alpha);
+    }
     MovePicker move_picker(moves);
     move_picker.filter_for_pruning();
 
