@@ -380,10 +380,9 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     }
 
     bool is_late_endgame = board.get_piece_values()[board.get_current_turn()] < KNIGHT_VALUE + BISHOP_VALUE;
-    if (is_late_endgame) {
+    if (is_late_endgame || !USE_DELTA_PRUNING) {
         // Switch off delta pruning for late endgame
         assign_move_scores_quiescent<false>(moves, stand_pat, alpha);
-        ASDF;
     } else {
         assign_move_scores_quiescent<true>(moves, stand_pat, alpha);
     }
