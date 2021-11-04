@@ -296,6 +296,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     HashMove move_to_assign;
     if (tt_result.is_hit) {
         move_to_assign = tt_result.tt_entry.hash_move;
+        assert(move_to_assign.get_raw_data() != 0);
     }
     assign_move_scores<true>(moves, move_to_assign, &killer_moves[depth][0]);
 
@@ -317,6 +318,8 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         board.unmake_move();
 
         if (first_eval >= beta) {
+            best_move = first_move;
+            assert(best_move.get_raw_data() != 0);
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             register_killers(ply_from_root, first_move);
             register_history_move(depth, first_move);
@@ -336,71 +339,74 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         int eval;
         unsigned int effective_depth = depth;
         auto it = ++move_picker;
+        unsigned int depth_reduction_value = *lmr_value_ptr;
         lmr_value_ptr++;
 
         nodes_searched++;
 
         board.make_move(it);
 
-        // Don't do lmr if move is tactical (capture, promotion)
-        // Don't reduce when move gives check
-        if (USE_LATE_MOVE_REDUCTION && do_lmr && !it.is_capture() && it.get_special_flag() == MOVE_NORMAL &&
-            !board.is_in_check()) {
-            effective_depth = std::max((effective_depth - *lmr_value_ptr) * (effective_depth >= *lmr_value_ptr), 1U);
-        }
+        effective_depth = determine_depth(effective_depth, depth_reduction_value, it, do_lmr);
 
-        pvs_core(alpha, beta, ply_from_root, ply_extended, do_pvs, eval, effective_depth);
+        pvs_lmr_core(alpha, beta, ply_from_root, ply_extended, do_pvs, eval, effective_depth, depth);
+
         board.unmake_move();
 
         if (eval >= beta) {
+            best_move = it;
+            assert(best_move.get_raw_data() != 0);
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
             register_killers(ply_from_root, it);
             register_history_move(depth, it);
             return beta;
         }
         if (eval > alpha) {
-            if (USE_LATE_MOVE_REDUCTION && effective_depth != depth) {
-                // If reduced move ended up raising alpha, do a re-search with full depth
-                pvs_core(alpha, beta, ply_from_root, ply_extended, do_pvs, eval, depth);
-                if (eval >= beta) {
-                    store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
-                    register_killers(ply_from_root, it);
-                    register_history_move(depth, it);
-                    return beta;
-                }
-                if (eval > alpha) {
-                    node_type = NODE_EXACT;
-                    best_move = it;
-                    alpha = eval;
-                }
-            } else {
-                node_type = NODE_EXACT;
-                best_move = it;
-                alpha = eval;
-            }
+            node_type = NODE_EXACT;
+            best_move = it;
+            alpha = eval;
         }
     }
 
 
     // Write search data to transposition table
+    assert(best_move.get_raw_data() != 0 || node_type == NODE_UPPERBOUND);
     store_pos_result(best_move, depth, node_type, alpha, ply_from_root);
 
     return alpha;
 }
 
+unsigned int Search::determine_depth(unsigned int effective_depth, unsigned int depth_reduction_value, Move move, bool do_lmr) {
+    // Don't do lmr if move is tactical (capture, promotion)
+    // Don't reduce when move gives check
+    if (USE_LATE_MOVE_REDUCTION && do_lmr && !move.is_capture() && move.get_special_flag() == MOVE_NORMAL &&
+        !board.is_in_check()) {
+        effective_depth = std::max((effective_depth - depth_reduction_value) * (effective_depth >= depth_reduction_value), 1U);
+    }
+    return effective_depth;
+}
+
 void
-Search::pvs_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
-                 unsigned int effective_depth) {
+Search::pvs_lmr_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
+                     unsigned int effective_depth, unsigned int depth) {
+    // Both PVS and LMR
     if (USE_PV_SEARCH && do_pvs) {
-        // null window search
+        // null window search with reduced depth
         eval = -negamax(effective_depth - 1, -alpha - 1, -alpha, ply_from_root + 1, ply_extended, true);
         // Check if within bounds
         if (eval > alpha && eval < beta) {
-            // If so, research with full window
-            eval = -negamax(effective_depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
+            // If so, research with full window with normal depth
+            eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
         }
-    } else {
+    }
+    // LMR only
+    else {
+        // Search with reduced depth
         eval = -negamax(effective_depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
+        // Nodes that raise alpha must be re-searched if depth was reduced
+        if (eval > alpha && eval < beta && effective_depth != depth) {
+            // Research with full window with normal depth
+            eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
+        }
     }
 }
 
@@ -524,8 +530,9 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
     Move best_move; // Best verified move
     int max_eval; // Best verified score
 
+    bool is_in_check;
     MoveList moves;
-    board.generate_moves(moves);
+    board.generate_moves(moves, is_in_check);
 
     // Don't bother searching if there's one legal move
     if (moves.size() == 1) {
@@ -541,6 +548,8 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
 
         HashMove best_move_temp;
         best_move_temp = best_move;
+
+        bool do_pvs = depth > 2;
 
 
         int upper_bound = 25;
@@ -571,7 +580,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
             assign_move_scores<true>(moves, best_move_temp, &killer_moves[0][0]);
             MovePicker move_picker(moves);
 
-            if (USE_PV_SEARCH) {
+            if (USE_PV_SEARCH && do_pvs) {
                 int first_eval;
                 auto first_move = ++move_picker;
                 nodes_searched++;
@@ -602,26 +611,26 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                 }
             }
 
+            unsigned int* lmr_value_ptr = lmr_values;
+            const bool do_lmr = !is_in_check && depth > 2;
             while (!move_picker.finished()) {
                 int eval;
+                unsigned int effective_depth = depth;
                 auto it = ++move_picker;
+                unsigned int depth_reduction_value = *lmr_value_ptr;
+                lmr_value_ptr++;
 
                 nodes_searched++;
                 board.make_move(it);
+
+                effective_depth = determine_depth(effective_depth, depth_reduction_value, it, do_lmr);
+
                 try {
-                    if (USE_PV_SEARCH) {
-                        // null window search
-                        eval = -negamax(depth - 1, -alpha - 1, -alpha, 1, 0, true);
-                        // Check if within bounds
-                        if (eval > alpha && eval < beta) {
-                            // If so, research with full window
-                            eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
-                        }
-                    } else {
-                        eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
-                    }
+                    pvs_lmr_core(alpha, beta, 0, 0, do_pvs, eval, effective_depth, depth);
                 } catch (SearchTimeout& e) {
                     Move m;
+                    // Check if alpha is currently in aspiration window
+                    // If it is, take the current best move; else take the last confirmed best move
                     if (alpha <= expected_eval - lower_bound || alpha >= expected_eval + upper_bound) {
                         m = best_move;
                     } else {

@@ -26,7 +26,7 @@
 #define USE_HIST_HEURISTIC 1
 #define EXTENSION_LIMIT 5
 #define USE_DELTA_PRUNING 0
-#define USE_LATE_MOVE_REDUCTION 1
+#define USE_LATE_MOVE_REDUCTION 0
 #define USE_BOOK 0
 #define R 2
 
@@ -105,8 +105,10 @@ public:
 
     long capture_perft(unsigned int depth);
 
-    void pvs_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
-                  unsigned int effective_depth);
+    void pvs_lmr_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
+                      unsigned int effective_depth, unsigned int depth);
+
+    unsigned int determine_depth(unsigned int effective_depth, unsigned int depth_reduction_value, Move move, bool do_lmr);
 };
 
 #endif /* Search_hpp */
