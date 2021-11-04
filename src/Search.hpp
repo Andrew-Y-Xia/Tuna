@@ -25,9 +25,15 @@
 #define USE_KILLERS 1
 #define USE_HIST_HEURISTIC 1
 #define EXTENSION_LIMIT 5
-#define USE_DELTA_PRUNING 1
+#define USE_DELTA_PRUNING 0
+#define USE_LATE_MOVE_REDUCTION 1
 #define USE_BOOK 0
 #define R 2
+
+
+extern unsigned int lmr_values[256];
+
+void init_search();
 
 class MovePicker {
 private:
@@ -98,6 +104,9 @@ public:
     long hash_perft_internal(unsigned int depth);
 
     long capture_perft(unsigned int depth);
+
+    void pvs_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
+                  unsigned int effective_depth);
 };
 
 #endif /* Search_hpp */

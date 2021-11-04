@@ -98,6 +98,8 @@ int main() {
     init_eval_utils();
     init_ray_gen();
     init_zobrist_bitstrings();
+    init_search();
+
 #if USE_BOOK
         init_opening_book();
 #endif

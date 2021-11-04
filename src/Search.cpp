@@ -8,12 +8,30 @@
 
 #include "Search.hpp"
 
-
-
+unsigned int lmr_values[256];
 
 int type2collision;
 
-MovePicker::MovePicker(MoveList& init_moves) : moves(init_moves) {
+void init_search() {
+    for (unsigned int i = 0; i < 256; i++) {
+        if (i < 2) {
+            lmr_values[i] = 0;
+        } else if (i >= 2 && i < 16) {
+            lmr_values[i] = i / 4;
+        } else {
+            lmr_values[i] = 4;
+        }
+    }
+
+    /*
+    for (unsigned int i = 0; i < 256; i++) {
+        std::cout << lmr_values[i] << '\n';
+    }
+    */
+
+}
+
+MovePicker::MovePicker(MoveList &init_moves) : moves(init_moves) {
     size = init_moves.size();
     visit_count = 0;
 }
@@ -60,11 +78,11 @@ inline Move MovePicker::operator++() {
 }
 
 
-Search::Search(Board b, TT& t, OpeningBook& ob, TimeHandler& th) : board(b), tt(t), opening_book(ob), time_handler(th) {
+Search::Search(Board b, TT &t, OpeningBook &ob, TimeHandler &th) : board(b), tt(t), opening_book(ob), time_handler(th) {
     nodes_searched = 0;
 }
 
-template <bool use_history_heuristic>
+template<bool use_history_heuristic>
 void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]) {
     unsigned int score;
 
@@ -80,11 +98,9 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
         if (it->is_capture()) {
             score += 70;
             score += board.static_exchange_eval(*it) / 8;
-        }
-        else if (killers[0] == (*it) || killers[1] == (*it)) {
+        } else if (killers[0] == (*it) || killers[1] == (*it)) {
             score += 65;
-        }
-        else if (use_history_heuristic) {
+        } else if (use_history_heuristic) {
             unsigned int hist_lookup = history_moves[board.get_current_turn()][it->get_from()][it->get_to()];
             score += bitscan_reverse(hist_lookup) * !!hist_lookup; // Takes a base2 log of hist_lookup
         }
@@ -106,7 +122,7 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
     }
 }
 
-template <bool use_delta_pruning>
+template<bool use_delta_pruning>
 void Search::assign_move_scores_quiescent(MoveList &moves, int eval, int alpha) {
     unsigned int score;
 
@@ -118,7 +134,7 @@ void Search::assign_move_scores_quiescent(MoveList &moves, int eval, int alpha) 
 
         if (mvv_lva_result >= 0) {
             // Delta Pruning
-            if (!use_delta_pruning || eval + mvv_lva_result + 2*PAWN_VALUE > alpha) {
+            if (!use_delta_pruning || eval + mvv_lva_result + 2 * PAWN_VALUE > alpha) {
                 score += mvv_lva_result / 8;
             } else {
                 score = PRUNE_MOVE_SCORE;
@@ -127,8 +143,7 @@ void Search::assign_move_scores_quiescent(MoveList &moves, int eval, int alpha) 
             int see_result = board.static_exchange_eval(*it);
             if (see_result >= 0 /*&& (!use_delta_pruning || eval + see_result + 2*PAWN_VALUE > alpha)*/) {
                 score += see_result / 8;
-            }
-            else {
+            } else {
                 score = PRUNE_MOVE_SCORE;
             }
         }
@@ -142,7 +157,8 @@ std::vector<Move> Search::get_pv() {
     std::vector<Move> pv;
     while (true) {
         TT_result tt_result = tt.get(board.get_z_key());
-        if (!tt_result.is_hit || tt_result.tt_entry.hash_move.get_node_type() != NODE_EXACT || board.has_repeated_once()) {
+        if (!tt_result.is_hit || tt_result.tt_entry.hash_move.get_node_type() != NODE_EXACT ||
+            board.has_repeated_once()) {
             break;
         }
         Move m = tt_result.tt_entry.hash_move.to_move();
@@ -180,8 +196,11 @@ void Search::store_pos_result(HashMove best_move, unsigned int depth, unsigned i
 }
 
 
-int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_null_move) {
+int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended,
+                    bool do_null_move) {
 //    tt.prefetch(board.get_z_key());
+
+//    unsigned int original_depth = depth;
 
     if (board.has_repeated_once() || board.has_drawn_by_fifty_move_rule()) {
         bool is_in_check_pre;
@@ -306,26 +325,28 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
     }
 
-
+    // For tactical stability, do not reduce moves when in check
+    const bool do_lmr = !is_in_check && depth > 2;
+    unsigned int *lmr_value_ptr = lmr_values;
     while (!move_picker.finished()) {
         int eval;
+        unsigned int effective_depth = depth;
         auto it = ++move_picker;
+        lmr_value_ptr++;
+
         nodes_searched++;
 
         board.make_move(it);
-        if (USE_PV_SEARCH && do_pvs) {
-            // null window search
-            eval = -negamax(depth - 1, -alpha - 1, -alpha, ply_from_root + 1, ply_extended, true);
-            // Check if within bounds
-            if (eval > alpha && eval < beta) {
-                // If so, research with full window
-                eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
-            }
-        } else {
-            eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
-        }
-        board.unmake_move();
 
+        // Don't do lmr if move is tactical (capture, promotion)
+        // Don't reduce when move gives check
+        if (USE_LATE_MOVE_REDUCTION && do_lmr && !it.is_capture() && it.get_special_flag() == MOVE_NORMAL &&
+            !board.is_in_check()) {
+            effective_depth = std::max((effective_depth - *lmr_value_ptr) * (effective_depth >= *lmr_value_ptr), 1U);
+        }
+
+        pvs_core(alpha, beta, ply_from_root, ply_extended, do_pvs, eval, effective_depth);
+        board.unmake_move();
 
         if (eval >= beta) {
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
@@ -334,9 +355,25 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             return beta;
         }
         if (eval > alpha) {
-            node_type = NODE_EXACT;
-            best_move = it;
-            alpha = eval;
+            if (USE_LATE_MOVE_REDUCTION && effective_depth != depth) {
+                // If reduced move ended up raising alpha, do a re-search with full depth
+                pvs_core(alpha, beta, ply_from_root, ply_extended, do_pvs, eval, depth);
+                if (eval >= beta) {
+                    store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
+                    register_killers(ply_from_root, it);
+                    register_history_move(depth, it);
+                    return beta;
+                }
+                if (eval > alpha) {
+                    node_type = NODE_EXACT;
+                    best_move = it;
+                    alpha = eval;
+                }
+            } else {
+                node_type = NODE_EXACT;
+                best_move = it;
+                alpha = eval;
+            }
         }
     }
 
@@ -345,6 +382,21 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     store_pos_result(best_move, depth, node_type, alpha, ply_from_root);
 
     return alpha;
+}
+
+void Search::pvs_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
+                      unsigned int effective_depth) {
+    if (USE_PV_SEARCH && do_pvs) {
+        // null window search
+        eval = -negamax(effective_depth - 1, -alpha - 1, -alpha, ply_from_root + 1, ply_extended, true);
+        // Check if within bounds
+        if (eval > alpha && eval < beta) {
+            // If so, research with full window
+            eval = -negamax(effective_depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
+        }
+    } else {
+        eval = -negamax(effective_depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
+    }
 }
 
 void Search::register_killers(unsigned int ply_from_root, Move move) {
@@ -363,9 +415,9 @@ void Search::register_history_move(unsigned int depth, Move move) {
 }
 
 
-
 int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta, unsigned int ply_from_root) {
-    MoveList moves; bool is_in_check;
+    MoveList moves;
+    bool is_in_check;
     board.generate_moves<CAPTURES_ONLY>(moves, is_in_check);
 
     // If in check and there are no capture-evasions, do not allow quiescent search to stand_pat
@@ -522,7 +574,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                 board.make_move(first_move);
                 try {
                     first_eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
-                } catch (SearchTimeout& e) {
+                } catch (SearchTimeout &e) {
                     search_finished_message(best_move, depth - 1, max_eval);
                     time_handler.stop();
                     return best_move;
@@ -563,12 +615,11 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     } else {
                         eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
                     }
-                } catch (SearchTimeout& e) {
+                } catch (SearchTimeout &e) {
                     Move m;
                     if (alpha <= expected_eval - lower_bound || alpha >= expected_eval + upper_bound) {
                         m = best_move;
-                    }
-                    else {
+                    } else {
                         m = local_best_move;
                     }
                     search_finished_message(m, depth - 1, max_eval);
