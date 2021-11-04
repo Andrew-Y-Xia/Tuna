@@ -16,10 +16,14 @@ void init_search() {
     for (unsigned int i = 0; i < 256; i++) {
         if (i < 2) {
             lmr_values[i] = 0;
-        } else if (i >= 2 && i < 16) {
+        }
+        /*
+        else if (i >= 2 && i < 8) {
             lmr_values[i] = i / 4;
-        } else {
-            lmr_values[i] = 4;
+        }
+            */
+        else {
+            lmr_values[i] = 1;
         }
     }
 
@@ -31,7 +35,7 @@ void init_search() {
 
 }
 
-MovePicker::MovePicker(MoveList &init_moves) : moves(init_moves) {
+MovePicker::MovePicker(MoveList& init_moves) : moves(init_moves) {
     size = init_moves.size();
     visit_count = 0;
 }
@@ -78,12 +82,12 @@ inline Move MovePicker::operator++() {
 }
 
 
-Search::Search(Board b, TT &t, OpeningBook &ob, TimeHandler &th) : board(b), tt(t), opening_book(ob), time_handler(th) {
+Search::Search(Board b, TT& t, OpeningBook& ob, TimeHandler& th) : board(b), tt(t), opening_book(ob), time_handler(th) {
     nodes_searched = 0;
 }
 
 template<bool use_history_heuristic>
-void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killers[2]) {
+void Search::assign_move_scores(MoveList& moves, HashMove hash_move, Move killers[2]) {
     unsigned int score;
 
     // Score all the moves
@@ -123,7 +127,7 @@ void Search::assign_move_scores(MoveList &moves, HashMove hash_move, Move killer
 }
 
 template<bool use_delta_pruning>
-void Search::assign_move_scores_quiescent(MoveList &moves, int eval, int alpha) {
+void Search::assign_move_scores_quiescent(MoveList& moves, int eval, int alpha) {
     unsigned int score;
 
     // Score all the moves
@@ -327,7 +331,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     // For tactical stability, do not reduce moves when in check
     const bool do_lmr = !is_in_check && depth > 2;
-    unsigned int *lmr_value_ptr = lmr_values;
+    unsigned int* lmr_value_ptr = lmr_values;
     while (!move_picker.finished()) {
         int eval;
         unsigned int effective_depth = depth;
@@ -384,8 +388,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     return alpha;
 }
 
-void Search::pvs_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
-                      unsigned int effective_depth) {
+void
+Search::pvs_core(int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_pvs, int& eval,
+                 unsigned int effective_depth) {
     if (USE_PV_SEARCH && do_pvs) {
         // null window search
         eval = -negamax(effective_depth - 1, -alpha - 1, -alpha, ply_from_root + 1, ply_extended, true);
@@ -574,7 +579,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                 board.make_move(first_move);
                 try {
                     first_eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
-                } catch (SearchTimeout &e) {
+                } catch (SearchTimeout& e) {
                     search_finished_message(best_move, depth - 1, max_eval);
                     time_handler.stop();
                     return best_move;
@@ -615,7 +620,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     } else {
                         eval = -negamax(depth - 1, -beta, -alpha, 1, 0, true);
                     }
-                } catch (SearchTimeout &e) {
+                } catch (SearchTimeout& e) {
                     Move m;
                     if (alpha <= expected_eval - lower_bound || alpha >= expected_eval + upper_bound) {
                         m = best_move;
