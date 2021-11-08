@@ -14,7 +14,7 @@ int type2collision;
 
 void init_search() {
     for (unsigned int i = 0; i < 256; i++) {
-        if (i < 2) {
+        if (i < 3) {
             lmr_values[i] = 0;
         }
         /*
@@ -308,10 +308,15 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     unsigned int node_type = NODE_UPPERBOUND;
 
+    // For tactical stability, do not reduce moves when in check
+    const bool do_lmr = !is_in_check && depth > 2 && beta-alpha <= 1;
+    unsigned int* lmr_value_ptr = lmr_values;
+
     if (USE_PV_SEARCH && do_pvs) {
         int first_eval;
         auto first_move = ++move_picker;
         nodes_searched++;
+        lmr_value_ptr++;
 
         board.make_move(first_move);
         first_eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
@@ -332,9 +337,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
     }
 
-    // For tactical stability, do not reduce moves when in check
-    const bool do_lmr = !is_in_check && depth > 2;
-    unsigned int* lmr_value_ptr = lmr_values;
     while (!move_picker.finished()) {
         int eval;
         unsigned int effective_depth = depth;
@@ -580,10 +582,15 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
             assign_move_scores<true>(moves, best_move_temp, &killer_moves[0][0]);
             MovePicker move_picker(moves);
 
+
+            unsigned int* lmr_value_ptr = lmr_values;
+            const bool do_lmr = !is_in_check && depth > 2 && beta-alpha <= 1;
+
             if (USE_PV_SEARCH && do_pvs) {
                 int first_eval;
                 auto first_move = ++move_picker;
                 nodes_searched++;
+                lmr_value_ptr++;
 
                 board.make_move(first_move);
                 try {
@@ -611,8 +618,6 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                 }
             }
 
-            unsigned int* lmr_value_ptr = lmr_values;
-            const bool do_lmr = !is_in_check && depth > 2;
             while (!move_picker.finished()) {
                 int eval;
                 unsigned int effective_depth = depth;
