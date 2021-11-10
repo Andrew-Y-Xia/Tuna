@@ -40,21 +40,6 @@ MovePicker::MovePicker(MoveList& init_moves) : moves(init_moves) {
     visit_count = 0;
 }
 
-bool MovePicker::filter_for_pruning() {
-    // Tells MovePicker to not iterate over moves designated for pruning
-    // Returns whether any move has been pruned
-    int index = 0;
-    bool any_pruned = false;
-    for (auto it = moves.begin(); it != moves.end(); ++it, ++index) {
-        bool should_be_skipped = it->get_move_score() == PRUNE_MOVE_SCORE;
-        if (should_be_skipped) {
-            visited[index] = true;
-            any_pruned = true;
-            visit_count++;
-        }
-    }
-    return any_pruned;
-}
 
 inline int MovePicker::finished() {
     return visit_count == size;
@@ -62,23 +47,17 @@ inline int MovePicker::finished() {
 
 inline Move MovePicker::operator++() {
     unsigned int highest_score = 0;
-    int current_index = 0;
-    int found_index = 0;
+    int highest_index = 0;
 
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
-        unsigned int ms = it->get_move_score();
-        if (!visited[current_index] && ms > highest_score) {
-            found_index = current_index;
-            highest_score = ms;
+    for (int i = visit_count; i < size; i++) {
+        if (moves[i].get_move_score() > highest_score) {
+             highest_index = i;
+             highest_score = moves[i].get_move_score();
         }
-        current_index++;
     }
 
-//    std::cout << found_index << '\n';
-    visit_count++;
-    visited[found_index] = true;
-
-    return moves[found_index];
+    std::swap(moves[visit_count], moves[highest_index]);
+    return moves[visit_count++];
 }
 
 
@@ -453,11 +432,15 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
         assign_move_scores_quiescent<true>(moves, stand_pat, alpha);
     }
     MovePicker move_picker(moves);
-    move_picker.filter_for_pruning();
 
     while (!move_picker.finished()) {
         int eval;
         auto it = ++move_picker;
+
+        // Skip moves marked for pruning
+        if (it.get_move_score() == 0) {
+            continue;
+        }
 
         nodes_searched++;
         board.make_move(it);

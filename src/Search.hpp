@@ -38,12 +38,9 @@ void init_search();
 class MovePicker {
 private:
     MoveList& moves;
-    bool visited[256] = {false};
     int size, visit_count;
 public:
     MovePicker(MoveList& init_moves);
-
-    bool filter_for_pruning();
 
     int finished();
 
