@@ -1,5 +1,7 @@
 # Bitboard-Chess
 
+Bitboard Chess is an UCI-compatible Chess Engine. It uses a search centered around the Alpha-Beta algorithm and a hand-crafted (and minimal) positional evaluation based off material balance in order to play a decent game of chess.
+
 ### **Compiling from source**
 #### Unix-like
 ```
@@ -14,42 +16,41 @@ Move Generation:
 - Magic Bitboards
 
 Search:
-- Quiescence search
-- Iterative deepening
+- Principal Variation Search
+- Iterative Deepening
 - Aspiration Windows
-- Null move pruning
+- Null Move Pruning
+- Late Move Reductions
+- Check Extensions
+- Quiescence Search
 
 Move Ordering:
+- Static Exchange Evaluation
 - MVV/LVA
-- Hash move
+- Hash moves
+- Killer moves
+- History heuristic
 
 Evaluation:
 - Piece-Square tables
 - Mobility
-- Rudimentary king safety
-- Tapered evaluation
+- Rudimentary King Safety
+- Tapered Eval
 
+Miscellaneous:
 - Transposition Table
-- Rudimentary Opening book
+- Opening book
+- UCI Compatibility
 
 
 ### **Requirements:**
 - ~270 mb of memory
 - POPCNT and LZCNT instructions
-    - If your processor is from Intel or AMD and made during the last decade, you should be fine
-    - Otherwise, build from source (unfortunately, there isn't a build system in place, so you'll need to find a way to compile SFML)
+    - If not, build from source
 
 
 ### **Future changes:**
-- Graphical interface will be removed and engine will be converted to follow UCI protocol
-    - Compiling cross platform and building from source with SFML is a tedious (although I could use CMake or something)
-    - UCI needs to be implemented for engine vs engine testing anyway
-    - I don't want to keep adding features to the GUI (i.e. time control)
-    - The GUI code is objectively bad and I am not particularly proud of it
-- PV search
-- Pawn structure
-- Futility pruning
-- More move ordering heuristics
+- NNUE?
 
-
-
+## Acknowledgements
+This project would not have been possible without the [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page). Additional thanks to open source engines such as [Crafty](https://craftychess.com) and [Stockfish](https://stockfishchess.org).
