@@ -7,7 +7,7 @@ FILE(COPY Resources DESTINATION "${CMAKE_BINARY_DIR}")
 
 add_compile_options(
     -Wall -Werror
-    $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:RELEASE>:-flto>
+    $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:RELEASE>:-flto> $<$<CONFIG:RELEASE>:-march=native>
     $<$<CONFIG:DEBUG>:-O1>
     $<$<CONFIG:DEBUG>:-ggdb3>
 )
