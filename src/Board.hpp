@@ -186,6 +186,8 @@ public:
 
     bool has_drawn_by_fifty_move_rule();
 
+    bool possible_zugzwang();
+
 
     // UI:
     Move request_move(Move move);

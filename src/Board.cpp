@@ -2257,6 +2257,12 @@ bool Board::has_drawn_by_fifty_move_rule() {
 }
 
 
+bool Board::possible_zugzwang() {
+    // If side to move has only pawns, chance of zugzwang increases
+    return (Bitboards[current_turn] & (Bitboards[PIECE_PAWN] | Bitboards[PIECE_KING])) == Bitboards[current_turn];
+}
+
+
 // USER INTERFACE BEGIN:
 // These are implementation specific functions
 

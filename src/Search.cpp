@@ -198,9 +198,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     const TT_result tt_result = tt.get(board.get_z_key());
 
     if (tt_result.is_hit && tt_result.tt_entry.hash_move.get_depth() >= depth) {
-//        if (tt_result.sanity_check != board.tt_sanity_check()) {
-//            std::cout << "Transposition table type 1 collision\n";
-//        }
 
         int score = tt_result.tt_entry.score;
         unsigned int node_type = tt_result.tt_entry.hash_move.get_node_type();
@@ -260,7 +257,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
 
     // Null move pruning
-    if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check) {
+    if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check && !board.possible_zugzwang()) {
         if (depth > R) {
             board.make_null_move();
             int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
