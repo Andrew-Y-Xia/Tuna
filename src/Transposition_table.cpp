@@ -151,7 +151,7 @@ void TT::set(U64 key, Move best_move, unsigned int depth, unsigned int node_type
             if (entry.hash_move.get_node_type() != NODE_EXACT) {
                 set_tt_entry(entry, upper_key, best_move, depth, node_type, score);
                 return;
-            } else if (entry.age >= 0) {
+            } else if (entry.age > 0) {
                 set_tt_entry(entry, upper_key, best_move, depth, node_type, score);
                 return;
             }
