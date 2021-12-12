@@ -274,7 +274,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         move_to_assign = tt_result.tt_entry.hash_move;
         assert(move_to_assign.get_raw_data() != 0);
     }
-    assign_move_scores<true>(moves, move_to_assign, &killer_moves[depth][0]);
+    assign_move_scores<true>(moves, move_to_assign, &killer_moves[ply_from_root][0]);
 
     bool do_pvs = depth > 2;
 
