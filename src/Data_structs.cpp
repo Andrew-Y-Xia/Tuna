@@ -88,9 +88,6 @@ unsigned int Move::get_piece_captured() const {
     return (move_data >> 19) & 0x7;
 }
 
-unsigned int Move::get_move_score() const {
-    return (move_data >> 22) & 0x3FF;
-}
 
 void Move::set_from(unsigned int from) {
     move_data &= ~(0x3F);
@@ -127,11 +124,6 @@ void Move::set_piece_captured(unsigned int piece) {
     move_data |= (piece & 0x7) << 19;
 }
 
-void Move::set_move_score(unsigned int score) {
-    assert(score <= 1023);
-    move_data &= ~(0x3FF << 22);
-    move_data |= (score & 0x3FF) << 22;
-}
 
 
 bool Move::is_capture() {
@@ -181,9 +173,8 @@ Move& MoveList::operator[](int index) {
     return moves[index];
 }
 
-
-bool move_cmp(Move first, Move second) {
-    return first.get_move_score() > second.get_move_score();
+unsigned int& MoveList::get_move_score(int index) {
+    return scores[index];
 }
 
 bool Move::first_twelfth_eq(Move& a) {

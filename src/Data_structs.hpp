@@ -143,8 +143,6 @@ public:
 
     unsigned int get_piece_captured() const;
 
-    unsigned int get_move_score() const;
-
 
     void set_from(unsigned int from);
 
@@ -159,8 +157,6 @@ public:
     void set_piece_moved(unsigned int piece);
 
     void set_piece_captured(unsigned int piece);
-
-    void set_move_score(unsigned int score);
 
 
     bool is_capture();
@@ -177,6 +173,7 @@ public:
 class MoveList {
 private:
     Move moves[256];
+    unsigned int scores[256];
     int back_index;
 public:
     MoveList();
@@ -192,6 +189,8 @@ public:
     bool contains(Move move);
 
     Move& operator[](int index);
+
+    unsigned int& get_move_score(int index);
 };
 
 bool move_cmp(Move first, Move second);

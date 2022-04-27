@@ -137,7 +137,7 @@ void print_move(Move move, bool reg) {
         std::cout << "Promote to piece: " << move.get_promote_to() << '\n';
         std::cout << "Piece moved: " << move.get_piece_moved() << '\n';
         std::cout << "Piece captured: " << move.get_piece_captured() << '\n';
-        std::cout << "Move score: " << move.get_move_score() << '\n';
+//        std::cout << "Move score: " << move.get_move_score() << '\n';
     } else {
         Cords from_c = index_to_cords(move.get_from());
         Cords to_c = index_to_cords(move.get_to());
@@ -170,7 +170,7 @@ std::string move_to_str(Move move, bool reg) {
         buffer << "Promote to piece: " << move.get_promote_to() << '\n';
         buffer << "Piece moved: " << move.get_piece_moved() << '\n';
         buffer << "Piece captured: " << move.get_piece_captured() << '\n';
-        buffer << "Move score: " << move.get_move_score() << '\n';
+//        buffer << "Move score: " << move.get_move_score() << '\n';
     } else {
         Cords from_c = index_to_cords(move.get_from());
         Cords to_c = index_to_cords(move.get_to());

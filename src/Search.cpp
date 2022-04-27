@@ -45,19 +45,23 @@ inline int MovePicker::finished() {
     return visit_count == size;
 }
 
-inline Move MovePicker::operator++() {
+inline MoveReturn MovePicker::operator++() {
     unsigned int highest_score = 0;
     int highest_index = 0;
 
     for (int i = visit_count; i < size; i++) {
-        if (moves[i].get_move_score() > highest_score) {
+        if (moves.get_move_score(i) > highest_score) {
              highest_index = i;
-             highest_score = moves[i].get_move_score();
+             highest_score = moves.get_move_score(i);
         }
     }
 
     std::swap(moves[visit_count], moves[highest_index]);
-    return moves[visit_count++];
+    std::swap(moves.get_move_score(visit_count), moves.get_move_score(highest_index));
+    Move move = moves[visit_count];
+    bool should_skip = !!moves.get_move_score(visit_count);
+    visit_count++;
+    return MoveReturn { move, should_skip };
 }
 
 
@@ -69,27 +73,28 @@ template<bool use_history_heuristic>
 void Search::assign_move_scores(MoveList& moves, HashMove hash_move, Move killers[2]) {
     unsigned int score;
 
+    int index = 0;
     // Score all the moves
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
-        score = 512;
+    for (auto it = moves.begin(); it != moves.end(); ++it, ++index) {
+        score = 200000000;
 
         if (hash_move == (*it)) {
-            it->set_move_score(1000);
+            moves.get_move_score(index) = UINT32_MAX;
             continue;
         }
 
         if (it->is_capture()) {
-            score += 70;
-            score += board.static_exchange_eval(*it) / 8;
+            score += 70 * 1000000;
+            score += (board.static_exchange_eval(*it) / 8) * 1000000;
         } else if (killers[0] == (*it) || killers[1] == (*it)) {
-            score += 65;
+            score += 65 * 1000000;
         } else if (use_history_heuristic) {
             unsigned int hist_lookup = history_moves[board.get_current_turn()][it->get_from()][it->get_to()];
-            score += bitscan_reverse(hist_lookup) * !!hist_lookup; // Takes a base2 log of hist_lookup
+            score += hist_lookup; // Takes a base2 log of hist_lookup
         }
 
         if (it->get_special_flag() == MOVE_PROMOTION) {
-            score += 100;
+            score += 100 * 1000000;
         }
 
         // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
@@ -100,8 +105,8 @@ void Search::assign_move_scores(MoveList& moves, HashMove hash_move, Move killer
          */
 
 
-        assert(score <= 1023);
-        it->set_move_score(score);
+//        assert(score <= 1023);
+        moves.get_move_score(index) = score;
     }
 }
 
@@ -109,8 +114,9 @@ template<bool use_delta_pruning>
 void Search::assign_move_scores_quiescent(MoveList& moves, int eval, int alpha) {
     unsigned int score;
 
+    int index = 0;
     // Score all the moves
-    for (auto it = moves.begin(); it != moves.end(); ++it) {
+    for (auto it = moves.begin(); it != moves.end(); ++it, ++index) {
         score = 512;
 
         int mvv_lva_result = Board::mvv_lva(*it);
@@ -132,7 +138,7 @@ void Search::assign_move_scores_quiescent(MoveList& moves, int eval, int alpha) 
         }
 
         assert(score <= 1023);
-        it->set_move_score(score);
+        moves.get_move_score(index) = score;
     }
 }
 
@@ -290,7 +296,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     if (USE_PV_SEARCH && do_pvs) {
         int first_eval;
-        auto first_move = ++move_picker;
+        auto first_move = (++move_picker).move;
         nodes_searched++;
         lmr_value_ptr++;
 
@@ -316,7 +322,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     while (!move_picker.finished()) {
         int eval;
         unsigned int effective_depth = depth;
-        auto it = ++move_picker;
+        auto it = (++move_picker).move;
         unsigned int depth_reduction_value = *lmr_value_ptr;
         lmr_value_ptr++;
 
@@ -432,10 +438,11 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
 
     while (!move_picker.finished()) {
         int eval;
-        auto it = ++move_picker;
+        auto move_info = ++move_picker;
+        auto it = move_info.move;
 
         // Skip moves marked for pruning
-        if (it.get_move_score() == 0) {
+        if (move_info.should_skip) {
             continue;
         }
 
@@ -568,7 +575,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
 
             if (USE_PV_SEARCH && do_pvs) {
                 int first_eval;
-                auto first_move = ++move_picker;
+                auto first_move = (++move_picker).move;
                 nodes_searched++;
                 lmr_value_ptr++;
 
@@ -601,7 +608,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
             while (!move_picker.finished()) {
                 int eval;
                 unsigned int effective_depth = depth;
-                auto it = ++move_picker;
+                auto it = (++move_picker).move;
                 unsigned int depth_reduction_value = *lmr_value_ptr;
                 lmr_value_ptr++;
 
@@ -731,7 +738,7 @@ long Search::sort_perft(unsigned int depth) {
 
     MovePicker move_picker(moves);
     while (!move_picker.finished()) {
-        auto it = ++move_picker;
+        auto it = (++move_picker).move;
 
         board.make_move(it);
         nodes += sort_perft(depth - 1);

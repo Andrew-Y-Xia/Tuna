@@ -35,6 +35,12 @@ extern unsigned int lmr_values[256];
 
 void init_search();
 
+
+struct MoveReturn {
+    Move move;
+    bool should_skip;
+};
+
 class MovePicker {
 private:
     MoveList& moves;
@@ -44,7 +50,7 @@ public:
 
     int finished();
 
-    Move operator++();
+    MoveReturn operator++();
 };
 
 
