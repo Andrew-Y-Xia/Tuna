@@ -1,6 +1,6 @@
-# Bitboard-Chess
+# TUNA
 
-Bitboard Chess is an UCI-compatible Chess Engine. It uses a search centered around the Alpha-Beta algorithm and a hand-crafted (and minimal) positional evaluation based off material balance in order to play a decent game of chess.
+Tuna is an UCI-compatible Chess Engine. It uses a search centered around the Alpha-Beta algorithm and a hand-crafted (and minimal) positional evaluation based off material balance in order to play a decent game of chess.
 
 ### **Compiling from source**
 #### Unix-like
