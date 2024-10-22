@@ -1,0 +1,3 @@
+[submodule "NNUE"]
+	path = NNUE
+	url = https://github.com/Andrew-Y-Xia/NNUE
