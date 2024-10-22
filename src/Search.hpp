@@ -28,7 +28,7 @@
 #define USE_DELTA_PRUNING 0
 #define USE_LATE_MOVE_REDUCTION 1
 #define USE_BOOK 0
-#define R 2
+#define R 3
 
 
 extern unsigned int lmr_values[256];

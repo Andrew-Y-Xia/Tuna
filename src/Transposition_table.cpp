@@ -43,7 +43,7 @@ void HashMove::set_node_type(unsigned int node_type) {
     move_data |= (node_type & 0xF) << 28;
 }
 
-Move HashMove::to_move() {
+const Move HashMove::to_move() const {
     return Move(move_data);
 }
 
