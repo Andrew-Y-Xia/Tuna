@@ -13,16 +13,15 @@
 #include "Data_structs.hpp"
 #include "Utility.hpp"
 
-#define PAWN_VALUE 100
-#define KNIGHT_VALUE 400
-#define BISHOP_VALUE 400
-#define ROOK_VALUE 600
-#define QUEEN_VALUE 1200
+#define PAWN_VALUE 82
+#define KNIGHT_VALUE 337
+#define BISHOP_VALUE 365
+#define ROOK_VALUE 477
+#define QUEEN_VALUE 1025
 
-#define MOBILITY_WEIGHT 2
+#define MOBILITY_WEIGHT 0
 
 extern int piece_to_value[8];
-extern int piece_to_value_small[8];
 
 extern int pawn_ps_m[64];
 extern int pawn_ps_e[64];
