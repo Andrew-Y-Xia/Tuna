@@ -202,9 +202,9 @@ std::string move_to_str(Move move, bool reg) {
 std::vector<std::string> split(const std::string& line) {
     // equivalent of python's str.split()
     std::istringstream iss(line);
-    std::__1::vector<std::string> move_strs;
-    std::copy(std::__1::istream_iterator<std::string>(iss),
-              std::__1::istream_iterator<std::string>(),
+    std::vector<std::string> move_strs;
+    std::copy(std::istream_iterator<std::string>(iss),
+              std::istream_iterator<std::string>(),
               std::back_inserter(move_strs));
     return move_strs;
 }

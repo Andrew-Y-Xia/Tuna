@@ -13,6 +13,7 @@
 #include "Data_structs.hpp"
 
 #include <sstream>
+#include <iterator>
 
 // Math function: sign
 template<typename T>

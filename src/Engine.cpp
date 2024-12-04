@@ -66,7 +66,9 @@ void Engine::loop() {
                     TimerType t_type = constant_time;
                     int wtime = 0;
                     int btime = 0;
-                    int moves_to_go = 0;
+                    int winc  = 0;
+                    int binc  = 0;
+                    int moves_to_go = -1;
 
                     for (int i = 1; i < cmd.size(); i += 2) {
                         if (cmd.at(i) == "movetime") {
@@ -78,10 +80,19 @@ void Engine::loop() {
                             btime = std::stoi(cmd.at(i + 1));
                         } else if (cmd.at(i) == "movestogo") {
                             moves_to_go = std::stoi(cmd.at(i + 1));
+                        } else if (cmd.at(i) == "winc") {
+                            winc = std::stoi(cmd.at(i + 1));
+                        } else if (cmd.at(i) == "binc") {
+                            binc = std::stoi(cmd.at(i + 1));
                         }
                     }
 
+                    if (moves_to_go == -1) {
+                        moves_to_go = 40;
+                    }
+
                     int current_turn_time = board.get_current_turn() == WHITE ? wtime : btime;
+                    int current_inc = board.get_current_turn() == WHITE ? winc : binc;
                     if (current_turn_time && moves_to_go) {
                         double calc_time = ((double) current_turn_time) / (moves_to_go + 2);
                         if (time_ms != 0) {
@@ -89,6 +100,7 @@ void Engine::loop() {
                         }
                         time_ms = calc_time;
                     }
+                    time_ms += current_inc * 0.5;
 
                     TimeHandler time_handler(should_end_search, t_type, time_ms);
                     Search search(board, tt, opening_book, time_handler);

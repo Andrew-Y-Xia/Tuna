@@ -456,19 +456,21 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     return alpha;
 }
 
-void Search::log_search_info(int depth, int eval) {
+void Search::log_search_info(int depth, int eval, bool book_move) {
     std::ostringstream buffer;
     buffer << "info ";
     buffer << "score cp " << eval;
     buffer << " depth " << depth;
     buffer << " nodes " << nodes_searched;
-    buffer << " pv " << print_move_vector(get_pv());
+    if (!book_move) {
+        buffer << " pv " << print_move_vector(get_pv());
+    }
     buffer << '\n';
     get_synced_cout().print(buffer.str());
 }
 
-void Search::search_finished_message(Move best_move, int depth, int eval) {
-    log_search_info(depth, eval);
+void Search::search_finished_message(Move best_move, int depth, int eval, bool book_move) {
+    log_search_info(depth, eval, book_move);
     std::ostringstream buffer;
     buffer << "bestmove " << move_to_str(best_move, true);
     buffer << '\n';
@@ -504,7 +506,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
         Move book_move = opening_book.request(board.get_move_stack());
         if (!book_move.is_illegal()) {
             time_handler.stop();
-            search_finished_message(book_move, 0, 0);
+            search_finished_message(book_move, 0, 0, true);
             return book_move;
         }
     }

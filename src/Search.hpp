@@ -27,7 +27,7 @@
 #define EXTENSION_LIMIT 5
 #define USE_DELTA_PRUNING 0
 #define USE_LATE_MOVE_REDUCTION 1
-#define USE_BOOK 0
+#define USE_BOOK 1
 #define R 2
 
 
@@ -78,9 +78,9 @@ public:
     void store_pos_result(HashMove best_move, unsigned int depth, unsigned int node_type, int score,
                           unsigned int ply_from_root);
 
-    void log_search_info(int depth, int eval);
+    void log_search_info(int depth, int eval, bool book_move = false);
 
-    void search_finished_message(Move best_move, int depth, int eval);
+    void search_finished_message(Move best_move, int depth, int eval, bool book_move = false);
 
     int negamax(unsigned int depth, int alpha, int beta, unsigned int ply_from_root, unsigned int ply_extended, bool do_null_move);
 

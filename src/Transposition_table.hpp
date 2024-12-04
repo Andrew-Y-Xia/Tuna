@@ -10,6 +10,7 @@
 #define Transposition_table_hpp
 
 #include <algorithm>
+#include <cstring>
 
 #include "depend.hpp"
 #include "Data_structs.hpp"

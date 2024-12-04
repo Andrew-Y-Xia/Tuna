@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
-project(Bitboard_Chess)
+project(Tuna)
 
 set(CMAKE_CXX_STANDARD 14)
 
 FILE(COPY Resources DESTINATION "${CMAKE_BINARY_DIR}")
 
 add_compile_options(
-    -Wall -Werror
+    -Wall  
     $<$<CONFIG:RELEASE>:-O3> $<$<CONFIG:RELEASE>:-flto> $<$<CONFIG:RELEASE>:-march=native>
     $<$<CONFIG:DEBUG>:-O1>
     $<$<CONFIG:DEBUG>:-ggdb3>
@@ -18,7 +18,7 @@ add_compile_definitions(
 
 include_directories(src)
 
-add_executable(Bitboard_Chess
+add_executable(Tuna
         src/Bitboard.cpp
         src/Bitboard.hpp
         src/Board.cpp

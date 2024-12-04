@@ -72,14 +72,23 @@ std::string resource_path() {
 #   error "Incompatible Apple platform"
 #endif
 #elif __linux__
+
+#include <libgen.h>         // dirname
+#include <unistd.h>         // readlink
+#include <linux/limits.h>   // PATH_MAX
+
+
 std::string resource_path() {
-    int bytes = MIN(readlink("/proc/self/exe", pBuf, len), len - 1);
-    if(bytes >= 0) {
-        pBuf[bytes] = '\0';
-        std::string str = std::string(pBuf);
-        str = directory_from_file(str);
-        str += "Resources/";
-        return str;
+    char pBuf[1024];
+    size_t len = sizeof(pBuf);
+
+
+    char result[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+    const char *path;
+    if (count != -1) {
+        path = dirname(result);
+	return std::string(path) + "/Resources/";
     }
     else {
         std::cout << "Buffer too small\n";
