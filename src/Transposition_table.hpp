@@ -37,7 +37,7 @@ public:
 
     void set_node_type(unsigned int node_type);
 
-    Move to_move();
+    const Move to_move() const;
 };
 
 
