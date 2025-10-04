@@ -27,7 +27,7 @@
 #define EXTENSION_LIMIT 5
 #define USE_DELTA_PRUNING 0
 #define USE_LATE_MOVE_REDUCTION 1
-#define USE_BOOK 1
+#define USE_BOOK 0
 #define R 2
 
 

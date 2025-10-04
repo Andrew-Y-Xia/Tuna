@@ -158,6 +158,7 @@ std::vector<Move> Search::get_pv() {
 }
 
 std::string print_move_vector(std::vector<Move> moves) {
+    if (moves.size() == 0) return "";
     std::ostringstream s;
     for (auto it = moves.begin(); it != moves.end(); it++) {
         s << move_to_str(*it, true) << ' ';
@@ -370,9 +371,9 @@ Search::pvs_lmr_core(int alpha, int beta, unsigned int ply_from_root, unsigned i
     if (USE_PV_SEARCH && do_pvs) {
         // null window search with reduced depth
         eval = -negamax(effective_depth - 1, -alpha - 1, -alpha, ply_from_root + 1, ply_extended, true);
-        // Check if within bounds
-        if (eval > alpha && eval < beta) {
-            // If so, research with full window with normal depth
+        // Check if search failed high - need to re-search with full window and full depth
+        if (eval > alpha) {
+            // Research with full window and full depth to get accurate score
             eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
         }
     }
@@ -381,7 +382,7 @@ Search::pvs_lmr_core(int alpha, int beta, unsigned int ply_from_root, unsigned i
         // Search with reduced depth
         eval = -negamax(effective_depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
         // Nodes that raise alpha must be re-searched if depth was reduced
-        if (eval > alpha && eval < beta && effective_depth != depth) {
+        if (eval > alpha && effective_depth != depth) {
             // Research with full window with normal depth
             eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
         }
@@ -463,7 +464,8 @@ void Search::log_search_info(int depth, int eval, bool book_move) {
     buffer << " depth " << depth;
     buffer << " nodes " << nodes_searched;
     if (!book_move) {
-        buffer << " pv " << print_move_vector(get_pv());
+        auto pv = get_pv();
+        if (pv.size() > 0) buffer << " pv " << print_move_vector(pv);
     }
     buffer << '\n';
     get_synced_cout().print(buffer.str());

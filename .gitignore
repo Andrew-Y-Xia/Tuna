@@ -1,6 +1,50 @@
-.idea
+# IDE directories
+.idea/
+.vscode/
+.vs/
+
+# CMake build directories
 cmake-build-debug/
 cmake-build-release/
+build/
+out/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+.cmake/
+
+# Build artifacts
+Tuna
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+
+# Testing artifacts
+Testing/
+CTestTestfile.cmake
+
+# Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+
+# macOS
 *.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build output
 Binaries/
