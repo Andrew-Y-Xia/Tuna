@@ -11,6 +11,7 @@
 
 unsigned int lmr_table[64][64];
 int futility_margin[64];
+int reverse_futility_margin[64];
 
 int type2collision;
 
@@ -44,6 +45,12 @@ void init_search() {
     // Margin scales with depth - deeper nodes need larger margins
     for (int depth = 0; depth < 64; depth++) {
         futility_margin[depth] = depth * PAWN_VALUE + PAWN_VALUE;
+    }
+
+    // Initialize reverse futility margin table
+    // RFP uses slightly larger margins than regular futility pruning
+    for (int depth = 0; depth < 64; depth++) {
+        reverse_futility_margin[depth] = depth * (PAWN_VALUE + PAWN_VALUE / 2);
     }
 
 }
@@ -296,6 +303,26 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
     }
 
+    int static_eval = INT32_MIN; // For futility pruning and reverse futility pruning
+
+    // Reverse Futility Pruning (Static Null Move Pruning)
+    // If our position is so good that even with a margin, we're above beta, return early
+    if (USE_REVERSE_FUTILITY_PRUNING &&
+        depth <= 6 &&
+        !is_in_check &&
+        beta-alpha <= 1 && // Not a PV node
+        beta < MINMATE && beta > -MINMATE) { // Not near mate scores
+        
+        // Get static evaluation (lazy - only compute once)
+        if (static_eval == INT32_MIN) {
+            static_eval = board.static_eval();
+        }
+        // If static eval minus margin is still >= beta, position is too good
+        if (static_eval - reverse_futility_margin[depth] >= beta) {
+            return beta; // fail-hard
+        }
+    }
+
     HashMove move_to_assign;
     if (tt_result.is_hit) {
         move_to_assign = tt_result.tt_entry.hash_move;
@@ -361,15 +388,15 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             !is_in_check && 
             !it.is_capture() && 
             it.get_special_flag() != MOVE_PROMOTION &&
-            alpha <= MINMATE && alpha >= -MINMATE) { // Not near mate scores
+            alpha < MINMATE && alpha > -MINMATE) { // Not near mate scores
             
             // Get static evaluation (lazy - only compute once)
-            if (static_eval_futility == -1) {
-                static_eval_futility = board.static_eval();
+            if (static_eval == INT32_MIN) {
+                static_eval = board.static_eval();
             }
             
             // If static eval + margin can't beat alpha, skip this move
-            if (static_eval_futility + futility_margin[depth] <= alpha) {
+            if (static_eval + futility_margin[depth] <= alpha) {
                 do_futility_pruning = true;
             }
         }
