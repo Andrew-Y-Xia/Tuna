@@ -7,32 +7,37 @@
 //
 
 #include "Search.hpp"
+#include <cmath>
 
-unsigned int lmr_values[256];
+unsigned int lmr_table[64][64];
 
 int type2collision;
 
 void init_search() {
-    for (unsigned int i = 0; i < 256; i++) {
-        if (i < 3) {
-            lmr_values[i] = 0;
-        }
-        /*
-        else if (i >= 2 && i < 8) {
-            lmr_values[i] = i / 4;
-        }
-            */
-        else {
-            lmr_values[i] = 1;
+    // Initialize entire table to 0 first
+    for (int d = 0; d < 64; d++) {
+        for (int m = 0; m < 64; m++) {
+            lmr_table[d][m] = 0;
         }
     }
-
-    /*
-    for (unsigned int i = 0; i < 256; i++) {
-        std::cout << lmr_values[i] << '\n';
+    
+    // Initialize LMR reduction table with logarithmic formula
+    // Reduction increases with both depth and move number
+    for (int depth = 1; depth < 64; depth++) {
+        for (int moves = 3; moves < 64; moves++) {
+            // Base formula: log(depth) * log(moves) / divisor
+            // Divisor of 2.5 is aggressive but effective
+            double base = log((double)depth) * log((double)moves) / 2.5;
+            
+            // Add small offset to ensure we don't reduce too little
+            lmr_table[depth][moves] = (unsigned int)(0.75 + base);
+            
+            // Clamp to reasonable values - never reduce more than depth-1
+            if (lmr_table[depth][moves] > (unsigned int)(depth - 1)) {
+                lmr_table[depth][moves] = depth - 1;
+            }
+        }
     }
-    */
-
 }
 
 MovePicker::MovePicker(MoveList& init_moves) : moves(init_moves) {
@@ -89,7 +94,20 @@ void Search::assign_move_scores(MoveList& moves, HashMove hash_move, Move killer
         }
 
         if (it->get_special_flag() == MOVE_PROMOTION) {
-            score += 100;
+            switch (it->get_promote_to()) {
+                case PROMOTE_TO_QUEEN:
+                    score += 105;
+                    break;
+                case PROMOTE_TO_ROOK:
+                    score += 104;
+                    break;
+                case PROMOTE_TO_BISHOP:
+                    score += 103;
+                    break;
+                case PROMOTE_TO_KNIGHT:
+                    score += 102;
+                    break;
+            }
         }
 
         // Placing piece at square attacked by pawn is stupid, so subtract from score if that happens
@@ -117,7 +135,7 @@ void Search::assign_move_scores_quiescent(MoveList& moves, int eval, int alpha) 
 
         if (mvv_lva_result >= 0) {
             // Delta Pruning
-            if (!use_delta_pruning || eval + mvv_lva_result + 2 * PAWN_VALUE > alpha) {
+            if (!use_delta_pruning || eval + mvv_lva_result + KNIGHT_VALUE > alpha) {
                 score += mvv_lva_result / 8;
             } else {
                 score = PRUNE_MOVE_SCORE;
@@ -287,13 +305,13 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     // For tactical stability, do not reduce moves when in check
     const bool do_lmr = !is_in_check && depth > 2 && beta-alpha <= 1;
-    unsigned int* lmr_value_ptr = lmr_values;
+    int move_count = 0;
 
     if (USE_PV_SEARCH && do_pvs) {
         int first_eval;
         auto first_move = ++move_picker;
         nodes_searched++;
-        lmr_value_ptr++;
+        move_count++;
 
         board.make_move(first_move);
         first_eval = -negamax(depth - 1, -beta, -alpha, ply_from_root + 1, ply_extended, true);
@@ -318,8 +336,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         int eval;
         unsigned int effective_depth = depth;
         auto it = ++move_picker;
-        unsigned int depth_reduction_value = *lmr_value_ptr;
-        lmr_value_ptr++;
+        move_count++;
+        // Look up reduction from table, clamping to table bounds
+        unsigned int depth_reduction_value = lmr_table[std::min(depth, 63U)][std::min(move_count, 63)];
 
         nodes_searched++;
 
@@ -436,7 +455,7 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
         auto it = ++move_picker;
 
         // Skip moves marked for pruning
-        if (it.get_move_score() == 0) {
+        if (it.get_move_score() == PRUNE_MOVE_SCORE) {
             continue;
         }
 
@@ -567,14 +586,14 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
             MovePicker move_picker(moves);
 
 
-            unsigned int* lmr_value_ptr = lmr_values;
+            int move_count = 0;
             const bool do_lmr = !is_in_check && depth > 2 && beta-alpha <= 1;
 
             if (USE_PV_SEARCH && do_pvs) {
                 int first_eval;
                 auto first_move = ++move_picker;
                 nodes_searched++;
-                lmr_value_ptr++;
+                move_count++;
 
                 board.make_move(first_move);
                 try {
@@ -606,8 +625,9 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                 int eval;
                 unsigned int effective_depth = depth;
                 auto it = ++move_picker;
-                unsigned int depth_reduction_value = *lmr_value_ptr;
-                lmr_value_ptr++;
+                move_count++;
+                // Look up reduction from table, clamping to table bounds
+                unsigned int depth_reduction_value = lmr_table[std::min((unsigned int)depth, 63U)][std::min(move_count, 63)];
 
                 nodes_searched++;
                 board.make_move(it);

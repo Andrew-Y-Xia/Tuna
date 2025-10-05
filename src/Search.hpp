@@ -31,7 +31,7 @@
 #define R 2
 
 
-extern unsigned int lmr_values[256];
+extern unsigned int lmr_table[64][64];
 
 void init_search();
 
