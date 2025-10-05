@@ -313,6 +313,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     // Null move pruning
     if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check && !board.possible_zugzwang()) {
+        // TODO: make more aggressive
         if (depth > R) {
             board.make_null_move();
             int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
@@ -323,7 +324,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             }
         }
     }
-    
+
     
 
     HashMove move_to_assign;
@@ -362,8 +363,13 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             best_move = first_move;
             assert(best_move.get_raw_data() != 0);
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
-            register_killers(ply_from_root, first_move);
-            register_history_move(depth, first_move);
+            
+            // Only register quiet moves (non-captures, non-promotions)
+            if (!first_move.is_capture() && first_move.get_special_flag() != MOVE_PROMOTION) {
+                register_killers(ply_from_root, first_move);
+                register_history_move(depth, first_move);
+            }
+            
             return beta;
         }
         if (first_eval > alpha) {
@@ -425,8 +431,13 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
             best_move = it;
             assert(best_move.get_raw_data() != 0);
             store_pos_result(best_move, depth, NODE_LOWERBOUND, beta, ply_from_root);
-            register_killers(ply_from_root, it);
-            register_history_move(depth, it);
+            
+            // Only register quiet moves (non-captures, non-promotions)
+            if (!it.is_capture() && it.get_special_flag() != MOVE_PROMOTION) {
+                register_killers(ply_from_root, it);
+                register_history_move(depth, it);
+            }
+            
             return beta;
         }
         if (eval > alpha) {
@@ -490,7 +501,9 @@ void Search::register_killers(unsigned int ply_from_root, Move move) {
 void Search::register_history_move(unsigned int depth, Move move) {
     assert(move.get_raw_data());
     if (USE_HIST_HEURISTIC) {
-        history_moves[board.get_current_turn()][move.get_from()][move.get_to()] += depth * depth;
+        unsigned int& entry = history_moves[board.get_current_turn()][move.get_from()][move.get_to()];
+        // Add bonus with overflow protection - cap at 16384 to prevent overflow
+        entry = std::min(entry + depth * depth, 16384u);
     }
 }
 
