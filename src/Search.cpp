@@ -10,6 +10,7 @@
 #include <cmath>
 
 unsigned int lmr_table[64][64];
+int futility_margin[64];
 
 int type2collision;
 
@@ -38,6 +39,13 @@ void init_search() {
             }
         }
     }
+
+    // Initialize futility margin table
+    // Margin scales with depth - deeper nodes need larger margins
+    for (int depth = 0; depth < 64; depth++) {
+        futility_margin[depth] = depth * PAWN_VALUE + PAWN_VALUE;
+    }
+
 }
 
 MovePicker::MovePicker(MoveList& init_moves) : moves(init_moves) {
@@ -306,6 +314,9 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     // For tactical stability, do not reduce moves when in check
     const bool do_lmr = !is_in_check && depth > 2 && beta-alpha <= 1;
     int move_count = 0;
+    
+    // Static eval for futility pruning (computed lazily)
+    int static_eval_futility = -1;
 
     if (USE_PV_SEARCH && do_pvs) {
         int first_eval;
@@ -340,9 +351,39 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         // Look up reduction from table, clamping to table bounds
         unsigned int depth_reduction_value = lmr_table[std::min(depth, 63U)][std::min(move_count, 63)];
 
-        nodes_searched++;
+
+        bool do_futility_pruning = false;
+
+        // Futility Pruning
+        // Skip quiet moves that cannot raise alpha in shallow positions
+        if (USE_FUTILITY_PRUNING && 
+            depth <= 6 && 
+            !is_in_check && 
+            !it.is_capture() && 
+            it.get_special_flag() != MOVE_PROMOTION &&
+            alpha <= MINMATE && alpha >= -MINMATE) { // Not near mate scores
+            
+            // Get static evaluation (lazy - only compute once)
+            if (static_eval_futility == -1) {
+                static_eval_futility = board.static_eval();
+            }
+            
+            // If static eval + margin can't beat alpha, skip this move
+            if (static_eval_futility + futility_margin[depth] <= alpha) {
+                do_futility_pruning = true;
+            }
+        }
+
 
         board.make_move(it);
+
+        // Last check to make sure we prune a checking move!
+        if (do_futility_pruning && !board.is_in_check()) {
+            board.unmake_move();
+            continue;
+        }
+
+        nodes_searched++;
 
         effective_depth = determine_depth(effective_depth, depth_reduction_value, it, do_lmr);
 

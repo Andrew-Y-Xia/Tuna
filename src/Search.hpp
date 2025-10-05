@@ -27,11 +27,13 @@
 #define EXTENSION_LIMIT 5
 #define USE_DELTA_PRUNING 0
 #define USE_LATE_MOVE_REDUCTION 1
+#define USE_FUTILITY_PRUNING 1
 #define USE_BOOK 0
 #define R 2
 
 
 extern unsigned int lmr_table[64][64];
+extern int futility_margin[64];
 
 void init_search();
 
