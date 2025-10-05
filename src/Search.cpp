@@ -290,19 +290,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     }
 
 
-    // Null move pruning
-    if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check && !board.possible_zugzwang()) {
-        if (depth > R) {
-            board.make_null_move();
-            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
-            board.unmake_null_move();
-
-            if (null_eval >= beta) {
-                return beta;
-            }
-        }
-    }
-
     int static_eval = INT32_MIN; // For futility pruning and reverse futility pruning
 
     // Reverse Futility Pruning (Static Null Move Pruning)
@@ -319,9 +306,25 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         }
         // If static eval minus margin is still >= beta, position is too good
         if (static_eval - reverse_futility_margin[depth] >= beta) {
-            return beta; // fail-hard
+            return beta; // fail
         }
     }
+
+
+    // Null move pruning
+    if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check && !board.possible_zugzwang()) {
+        if (depth > R) {
+            board.make_null_move();
+            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
+            board.unmake_null_move();
+
+            if (null_eval >= beta) {
+                return beta;
+            }
+        }
+    }
+    
+    
 
     HashMove move_to_assign;
     if (tt_result.is_hit) {
