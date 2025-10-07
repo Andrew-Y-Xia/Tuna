@@ -297,7 +297,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     if (USE_REVERSE_FUTILITY_PRUNING &&
         depth <= 6 &&
         !is_in_check &&
-        beta-alpha <= 1 && // Not a PV node
+        beta-alpha <= 1 && // Not a PV node TODO: change?
         beta < MINMATE && beta > -MINMATE) { // Not near mate scores
         
         // Get static evaluation (lazy - only compute once)
@@ -332,6 +332,17 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         move_to_assign = tt_result.tt_entry.hash_move;
         assert(move_to_assign.get_raw_data() != 0);
     }
+    
+    // Internal Iterative Reductions (IIR)
+    // If we don't have a hash move at a deep node, the position is probably not important
+    // Reduce depth to search faster - if it's actually important, we'll re-search later
+    int iir_reduction = 0;
+    if (USE_INTERNAL_ITERATIVE_REDUCTIONS && 
+        depth >= 4 && 
+        !tt_result.is_hit) {
+        iir_reduction = 1;
+    }
+    
     assign_move_scores<true>(moves, move_to_assign, &killer_moves[ply_from_root][0]);
 
     bool do_pvs = depth > 2;
@@ -345,9 +356,6 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     // For tactical stability, do not reduce moves when in check
     const bool do_lmr = !is_in_check && depth > 2 && beta-alpha <= 1;
     int move_count = 0;
-    
-    // Static eval for futility pruning (computed lazily)
-    int static_eval_futility = -1;
 
     if (USE_PV_SEARCH && do_pvs) {
         int first_eval;
@@ -385,7 +393,7 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
         auto it = ++move_picker;
         move_count++;
         // Look up reduction from table, clamping to table bounds
-        unsigned int depth_reduction_value = lmr_table[std::min(depth, 63U)][std::min(move_count, 63)];
+        unsigned int depth_reduction_value = lmr_table[std::min(depth, 63U)][std::min(move_count, 63)] + iir_reduction;
 
 
         bool do_futility_pruning = false;
@@ -513,8 +521,18 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     bool is_in_check;
     board.generate_moves<CAPTURES_ONLY>(moves, is_in_check);
 
-    // If in check and there are no capture-evasions, do not allow quiescent search to stand_pat
-    int stand_pat = moves.size() == 0 && is_in_check ? -MAXMATE + ply_from_root : board.static_eval();
+    // Check for checkmate when in check
+    // We need to verify there are no legal moves at all, not just no captures
+    if (is_in_check) {
+        MoveList all_moves;
+        board.generate_moves(all_moves);
+        if (all_moves.size() == 0) {
+            // Checkmate
+            return -MAXMATE + ply_from_root;
+        }
+    }
+    
+    int stand_pat = board.static_eval();
     if (ply_from_horizon >= 5) {
         return stand_pat;
     }
@@ -696,8 +714,12 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     while (!move_picker.finished()) {
                         ++move_picker;
                     }
-                    register_killers(0, first_move);
-                    register_history_move(depth, first_move);
+                    
+                    // Only register quiet moves (non-captures, non-promotions)
+                    if (!first_move.is_capture() && first_move.get_special_flag() != MOVE_PROMOTION) {
+                        register_killers(0, first_move);
+                        register_history_move(depth, first_move);
+                    }
                 }
                 if (first_eval > alpha) {
                     local_best_move = first_move;
@@ -739,8 +761,13 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     // In case of fail-high break loop early
                     assert(USE_ASPIRATION_WINDOWS); // beta cutoff should only occur in aspirated search
                     alpha = eval;
-                    register_killers(0, it);
-                    register_history_move(depth, it);
+                    
+                    // Only register quiet moves (non-captures, non-promotions)
+                    if (!it.is_capture() && it.get_special_flag() != MOVE_PROMOTION) {
+                        register_killers(0, it);
+                        register_history_move(depth, it);
+                    }
+                    
                     break;
                 }
                 if (eval > alpha) {
