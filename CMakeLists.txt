@@ -41,6 +41,8 @@ add_executable(Tuna
         src/Thread.hpp
         src/Transposition_table.cpp
         src/Transposition_table.hpp
+        src/Tuning_parameters.cpp
+        src/Tuning_parameters.hpp
         src/UCI.cpp
         src/UCI.hpp
         src/Utility.cpp

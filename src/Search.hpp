@@ -31,7 +31,6 @@
 #define USE_REVERSE_FUTILITY_PRUNING 1
 #define USE_INTERNAL_ITERATIVE_REDUCTIONS 1
 #define USE_BOOK 0
-#define R 2
 
 
 extern unsigned int lmr_table[64][64];

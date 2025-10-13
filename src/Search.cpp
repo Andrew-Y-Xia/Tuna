@@ -7,6 +7,7 @@
 //
 
 #include "Search.hpp"
+#include "Tuning_parameters.hpp"
 #include <cmath>
 
 unsigned int lmr_table[64][64];
@@ -16,6 +17,9 @@ int reverse_futility_margin[64];
 int type2collision;
 
 void init_search() {
+    // Get tuning parameters
+    auto& params = TuningParameters::instance();
+    
     // Initialize entire table to 0 first
     for (int d = 0; d < 64; d++) {
         for (int m = 0; m < 64; m++) {
@@ -28,11 +32,9 @@ void init_search() {
     for (int depth = 1; depth < 64; depth++) {
         for (int moves = 3; moves < 64; moves++) {
             // Base formula: log(depth) * log(moves) / divisor
-            // Divisor of 2.5 is aggressive but effective
-            double base = log((double)depth) * log((double)moves) / 2.5;
+            double base = log((double)depth) * log((double)moves) / params.lmr_base_divisor;
             
-            // Add small offset to ensure we don't reduce too little
-            lmr_table[depth][moves] = (unsigned int)(0.75 + base);
+            lmr_table[depth][moves] = (unsigned int)(params.lmr_offset + base);
             
             // Clamp to reasonable values - never reduce more than depth-1
             if (lmr_table[depth][moves] > (unsigned int)(depth - 1)) {
@@ -42,15 +44,13 @@ void init_search() {
     }
 
     // Initialize futility margin table
-    // Margin scales with depth - deeper nodes need larger margins
     for (int depth = 0; depth < 64; depth++) {
-        futility_margin[depth] = depth * PAWN_VALUE + PAWN_VALUE;
+        futility_margin[depth] = depth * params.futility_margin_multiplier + params.futility_margin_base;
     }
 
     // Initialize reverse futility margin table
-    // RFP uses slightly larger margins than regular futility pruning
     for (int depth = 0; depth < 64; depth++) {
-        reverse_futility_margin[depth] = depth * (PAWN_VALUE + PAWN_VALUE / 2);
+        reverse_futility_margin[depth] = depth * params.rfp_margin_multiplier;
     }
 
 }
@@ -258,7 +258,8 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     if (depth == 0) {
         // Extension part
-        if (EXTENSION_LIMIT && ply_extended < EXTENSION_LIMIT && board.is_in_check()) {
+        auto& search_params = TuningParameters::instance();
+        if (search_params.check_extension_limit && ply_extended < search_params.check_extension_limit && board.is_in_check()) {
             return negamax(1, alpha, beta, ply_from_root, ply_extended + 1, false);
         }
         return quiescence_search(0, alpha, beta, ply_from_root);
@@ -313,10 +314,10 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
 
     // Null move pruning
     if (USE_NULL_MOVE_PRUNING && do_null_move && !is_in_check && !board.possible_zugzwang()) {
-        // TODO: make more aggressive
-        if (depth > R) {
+        auto& search_params = TuningParameters::instance();
+        if (depth > search_params.null_move_reduction) {
             board.make_null_move();
-            int null_eval = -negamax(depth - 1 - R, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
+            int null_eval = -negamax(depth - 1 - search_params.null_move_reduction, -beta, -beta + 1, ply_from_root + 1, ply_extended, false);
             board.unmake_null_move();
 
             if (null_eval >= beta) {
@@ -336,11 +337,12 @@ int Search::negamax(unsigned int depth, int alpha, int beta, unsigned int ply_fr
     // Internal Iterative Reductions (IIR)
     // If we don't have a hash move at a deep node, the position is probably not important
     // Reduce depth to search faster - if it's actually important, we'll re-search later
+    auto& search_params = TuningParameters::instance();
     int iir_reduction = 0;
     if (USE_INTERNAL_ITERATIVE_REDUCTIONS && 
-        depth >= 4 && 
+        depth >= search_params.iir_depth_threshold && 
         !tt_result.is_hit) {
-        iir_reduction = 1;
+        iir_reduction = search_params.iir_reduction;
     }
     
     assign_move_scores<true>(moves, move_to_assign, &killer_moves[ply_from_root][0]);
@@ -649,6 +651,9 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
 
     int expected_eval = 0;
 
+    // Get tuning parameters for aspiration windows
+    auto& search_params = TuningParameters::instance();
+
     // Iterative deepening loop
     int depth;
     for (depth = 1; depth <= max_depth; depth++) {
@@ -659,8 +664,8 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
         bool do_pvs = depth > 2;
 
 
-        int upper_bound = 25;
-        int lower_bound = 25;
+        int upper_bound = search_params.aspiration_window_initial;
+        int lower_bound = search_params.aspiration_window_initial;
 
 
         unsigned int times_researched = 0;
@@ -786,7 +791,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     upper_bound = MAXMATE + 1;
                     lower_bound = MAXMATE + 1;
                 } else {
-                    upper_bound *= 4;
+                    upper_bound *= search_params.aspiration_window_multiplier;
                 }
             } else if (alpha <= expected_eval - lower_bound) {
                 assert(USE_ASPIRATION_WINDOWS); // Should not fail when not using asp_windows
@@ -795,7 +800,7 @@ Move Search::find_best_move(unsigned int max_depth = MAX_DEPTH) {
                     upper_bound = MAXMATE + 1;
                     lower_bound = MAXMATE + 1;
                 } else {
-                    lower_bound *= 4;
+                    lower_bound *= search_params.aspiration_window_multiplier;
                 }
             } else {
                 // Search didn't fail high or fail low, so continue on to next stage of iterative deepening
