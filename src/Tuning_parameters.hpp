@@ -50,6 +50,8 @@ public:
     
     int rfp_margin_multiplier = 123;         // Base: depth * 1.5 * PAWN_VALUE
     
+    int big_delta = 1025;                    // Delta pruning margin (typically QUEEN_VALUE)
+    
     int null_move_reduction = 2;             // R value for null move pruning
     
     int aspiration_window_initial = 25;      // Initial window size

@@ -21,6 +21,8 @@ void TuningParameters::init_registry() {
     
     register_param("rfp_margin_multiplier", &rfp_margin_multiplier, 80, 200);
     
+    register_param("big_delta", &big_delta, 800, 1200);
+    
     register_param("null_move_reduction", &null_move_reduction, 1, 4);
     
     register_param("aspiration_window_initial", &aspiration_window_initial, 10, 50);

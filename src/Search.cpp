@@ -541,11 +541,21 @@ int Search::quiescence_search(unsigned int ply_from_horizon, int alpha, int beta
     if (stand_pat >= beta) {
         return beta;
     }
+
+
+    // Big Delta Pruning - check if ANY capture can improve alpha
+    auto& search_params = TuningParameters::instance();
+    bool is_late_endgame = board.get_piece_values()[board.get_current_turn()] < KNIGHT_VALUE + BISHOP_VALUE;
+    if (USE_DELTA_PRUNING && !is_late_endgame && !is_in_check) {
+        if (stand_pat + search_params.big_delta < alpha) {
+            return alpha;
+        }
+    }
+    
     if (alpha < stand_pat) {
         alpha = stand_pat;
     }
 
-    bool is_late_endgame = board.get_piece_values()[board.get_current_turn()] < KNIGHT_VALUE + BISHOP_VALUE;
     if (is_late_endgame || !USE_DELTA_PRUNING || is_in_check) {
         // Switch off delta pruning for late endgame
         assign_move_scores_quiescent<false>(moves, stand_pat, alpha);
