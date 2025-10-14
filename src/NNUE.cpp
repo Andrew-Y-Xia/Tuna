@@ -122,29 +122,51 @@ namespace NNUE {
             // Determine piece color (0 = white, 1 = black)
             int color = board.is_white_piece(square) ? 0 : 1;
             
-            // Convert piece type to 0-based index
-            int piece_type = piece - 2;  // King=0, Queen=1, ..., Pawn=5
+            // Convert piece type to Chess768 format (0-11)
+            // Board piece enum: PIECE_KING=2, PIECE_QUEEN=3, PIECE_ROOK=4, PIECE_BISHOP=5, PIECE_KNIGHT=6, PIECE_PAWN=7
+            // Chess768 format: White P,N,B,R,Q,K (0-5), Black p,n,b,r,q,k (6-11)
+            int piece_type;
+            if (piece == 7) {        // PIECE_PAWN
+                piece_type = color == 0 ? 0 : 6;
+            } else if (piece == 6) { // PIECE_KNIGHT
+                piece_type = color == 0 ? 1 : 7;
+            } else if (piece == 5) { // PIECE_BISHOP
+                piece_type = color == 0 ? 2 : 8;
+            } else if (piece == 4) { // PIECE_ROOK
+                piece_type = color == 0 ? 3 : 9;
+            } else if (piece == 3) { // PIECE_QUEEN
+                piece_type = color == 0 ? 4 : 10;
+            } else if (piece == 2) { // PIECE_KING
+                piece_type = color == 0 ? 5 : 11;
+            } else {
+                continue; // Should not happen
+            }
             
-            // each perspective sees their OWN pieces at their actual squares,
+            // Chess768: each perspective sees their OWN pieces at their actual squares,
             // and OPPONENT pieces flipped vertically (square ^ 56)
+            // Feature index: piece_type * 64 + square
             
             // For White's perspective:
-            //   - White pieces: indices 0-383, square as-is (not flipped)
-            //   - Black pieces: indices 384-767, square ^ 56 (flipped)
+            //   - White pieces (types 0-5): square as-is (not flipped)
+            //   - Black pieces (types 6-11): square ^ 56 (flipped)
             // For Black's perspective:
-            //   - Black pieces: indices 0-383, square as-is (not flipped)
-            //   - White pieces: indices 384-767, square ^ 56 (flipped)
+            //   - Black pieces (types 6-11 become 0-5): square as-is (not flipped)  
+            //   - White pieces (types 0-5 become 6-11): square ^ 56 (flipped)
             
             int white_feature, black_feature;
-            if (color == 0) {
-                // White piece
-                white_feature = piece_type * 64 + square;              // White sees white pieces normally
-                black_feature = 384 + piece_type * 64 + (square ^ 56); // Black sees white pieces (opponent) flipped
+            
+            // From white's perspective
+            white_feature = piece_type * 64 + square;
+            
+            // From black's perspective: flip square and swap piece colors
+            int flipped_sq = square ^ 56;
+            int flipped_piece_type;
+            if (piece_type < 6) {
+                flipped_piece_type = piece_type + 6;  // White piece -> Black piece
             } else {
-                // Black piece  
-                white_feature = 384 + piece_type * 64 + (square ^ 56); // White sees black pieces (opponent) flipped
-                black_feature = piece_type * 64 + square;              // Black sees black pieces normally
+                flipped_piece_type = piece_type - 6;  // Black piece -> White piece
             }
+            black_feature = flipped_piece_type * 64 + flipped_sq;
             
             // Add this feature's contribution to the hidden layer
             for (int i = 0; i < HIDDEN_SIZE; i++) {

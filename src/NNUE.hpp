@@ -60,31 +60,19 @@ namespace NNUE {
     bool is_loaded();
     
     // Feature indexing for piece-square representation (Chess768 format)
-    // Format: 768 features organized as:
-    // - White pieces: 0-383 (King=0-63, Queen=64-127, Rook=128-191, Bishop=192-255, Knight=256-319, Pawn=320-383)
-    // - Black pieces: 384-767 (King=384-447, Queen=448-511, ..., Pawn=704-767)
-    // From STM perspective: piece at its actual position
-    // From NTM perspective: vertically flipped (rank flipped)
-    inline int feature_index_stm(int piece, int square, int color) {
-        // piece: PIECE_KING=2, PIECE_QUEEN=3, ..., PIECE_PAWN=7
-        // Convert to 0-based: King=0, Queen=1, Rook=2, Bishop=3, Knight=4, Pawn=5
-        int piece_type = piece - 2;
-        
-        // Chess768 format: color * 384 + piece_type * 64 + square
-        return color * 384 + piece_type * 64 + square;
-    }
-    
-    inline int feature_index_ntm(int piece, int square, int color) {
-        // piece: PIECE_KING=2, PIECE_QUEEN=3, ..., PIECE_PAWN=7
-        int piece_type = piece - 2;
-        
-        // For NTM perspective: swap colors and flip square vertically
-        int ntm_color = 1 - color;
-        int flipped_square = square ^ 56;  // Flip rank (XOR with 56)
-        
-        // Chess768 format: color * 384 + piece_type * 64 + square
-        return ntm_color * 384 + piece_type * 64 + flipped_square;
-    }
+    // Format: 768 features = 12 piece types × 64 squares
+    // Piece types: White P,N,B,R,Q,K (0-5), Black p,n,b,r,q,k (6-11)
+    // Feature index = piece_type * 64 + square
+    // 
+    // White Pawn: 0-63, White Knight: 64-127, White Bishop: 128-191,
+    // White Rook: 192-255, White Queen: 256-319, White King: 320-383,
+    // Black Pawn: 384-447, Black Knight: 448-511, Black Bishop: 512-575,
+    // Black Rook: 576-639, Black Queen: 640-703, Black King: 704-767
+    //
+    // Dual perspective:
+    // - From white's perspective: white pieces at actual squares, black pieces flipped
+    // - From black's perspective: black pieces at actual squares, white pieces flipped
+    // Square numbering: 0=a1, 1=b1, ..., 7=h1, 8=a2, ..., 63=h8
     
     // Non-incremental evaluation (recalculates from scratch)
     // Returns evaluation in centipawns from the perspective of the side to move

@@ -53,3 +53,6 @@ Binaries/
 src/NNUE_embedded.hpp
 
 reference/
+
+test_tuning_params
+test_nnue_complex

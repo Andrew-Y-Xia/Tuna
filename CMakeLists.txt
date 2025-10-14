@@ -19,7 +19,7 @@ add_compile_definitions(
 include_directories(src)
 
 # Generate embedded NNUE network header at build time
-set(NNUE_NETWORK_FILE "${CMAKE_SOURCE_DIR}/NNUE/checkpoints/tuna-60/quantised.bin")
+set(NNUE_NETWORK_FILE "${CMAKE_SOURCE_DIR}/NNUE/checkpoints/tuna-100/quantised.bin")
 set(NNUE_EMBEDDED_HEADER "${CMAKE_SOURCE_DIR}/src/NNUE_embedded.hpp")
 set(EMBED_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/embed_network.py")
 
@@ -76,3 +76,31 @@ add_executable(Tuna
 
 # Make sure the embedded header is generated before building Tuna
 add_dependencies(Tuna generate_embedded_network)
+
+# Test executables
+# Create a library with common source files to avoid recompilation
+add_library(TunaCore STATIC
+        src/Bitboard.cpp
+        src/Board.cpp
+        src/Data_structs.cpp
+        src/Evaluation.cpp
+        src/Opening_book.cpp
+        src/Ray_gen.cpp
+        src/Search.cpp
+        src/Transposition_table.cpp
+        src/Tuning_parameters.cpp
+        src/Utility.cpp
+        src/Zobrist.cpp
+        src/Time_handler.cpp
+        src/NNUE.cpp
+        ${NNUE_EMBEDDED_HEADER})
+
+add_dependencies(TunaCore generate_embedded_network)
+
+# Test: NNUE Complex Positions
+add_executable(test_nnue_complex test_nnue_complex.cpp)
+target_link_libraries(test_nnue_complex TunaCore)
+
+# Test: Tuning Parameters
+add_executable(test_tuning_params test_tuning_params.cpp)
+target_link_libraries(test_tuning_params TunaCore)

@@ -16,7 +16,7 @@ int main() {
     init_eval_utils();
     
     // Load NNUE network
-    std::string nnue_path = "NNUE/checkpoints/tuna-60/quantised.bin";
+    std::string nnue_path = "NNUE/checkpoints/tuna-100/quantised.bin";
     
     std::cout << "Loading NNUE network from: " << nnue_path << std::endl;
     
