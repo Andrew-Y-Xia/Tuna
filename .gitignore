@@ -49,5 +49,7 @@ Desktop.ini
 # Build output
 Binaries/
 
+# Auto-generated embedded NNUE network
+src/NNUE_embedded.hpp
 
 reference/

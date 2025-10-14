@@ -8,7 +8,12 @@
 
 #include "Evaluation.hpp"
 #include "NNUE.hpp"
+#include "depend.hpp"
+#include "Data_structs.hpp"
 #include "Board.hpp"
+#include "Utility.hpp"
+#include "Tuning_parameters.hpp"
+#include "NNUE.hpp"
 
 int piece_to_value[8];
 int piece_to_value_small[8];
@@ -221,6 +226,9 @@ void init_piece_square_tables() {
 void init_eval_utils() {
     init_piece_to_value();
     init_piece_square_tables();
+    
+    // Initialize embedded NNUE network
+    NNUE::init_embedded();
 }
 
 void index_remap(int* array) {

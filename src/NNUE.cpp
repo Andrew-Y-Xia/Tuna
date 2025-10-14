@@ -6,6 +6,7 @@
 //
 
 #include "NNUE.hpp"
+#include "NNUE_embedded.hpp"
 #include "Board.hpp"
 #include <fstream>
 #include <iostream>
@@ -15,8 +16,37 @@ namespace NNUE {
     Network network;
     bool network_loaded = false;
     
+    bool init_embedded() {
+        // Copy embedded weights into network structure
+        std::memcpy(network.l0_weights, Embedded::l0_weights, 
+                    INPUT_SIZE * HIDDEN_SIZE * sizeof(int16_t));
+        std::memcpy(network.l0_bias, Embedded::l0_bias, 
+                    HIDDEN_SIZE * sizeof(int16_t));
+        std::memcpy(network.l1_weights, Embedded::l1_weights, 
+                    2 * HIDDEN_SIZE * sizeof(int16_t));
+        network.l1_bias = Embedded::l1_bias;
+        
+        network_loaded = true;
+        std::cout << "Successfully loaded embedded NNUE network" << std::endl;
+        return true;
+    }
+    
     bool init(const std::string& path) {
-        return load_network(path);
+        // If path is empty or default, try to use embedded network first
+        if (path.empty() || path == "embedded") {
+            return init_embedded();
+        }
+        
+        // Otherwise try to load from file
+        bool success = load_network(path);
+        
+        // If file loading fails, fall back to embedded
+        if (!success) {
+            std::cout << "Failed to load network from file, trying embedded network..." << std::endl;
+            return init_embedded();
+        }
+        
+        return success;
     }
     
     bool load_network(const std::string& path) {

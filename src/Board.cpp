@@ -6,6 +6,7 @@
 //  Copyright © 2021 Andy. All rights reserved.
 //
 #include "Board.hpp"
+#include "NNUE.hpp"
 
 
 template void Board::generate_moves<ALL_MOVES>(MoveList &moves, bool &is_in_check);
@@ -2179,6 +2180,16 @@ int Board::calculate_pawn_shield_bonus() {
 
 int Board::static_eval() {
     // Returns eval in terms of side to play
+    
+    // Try to use NNUE evaluation first
+    int nnue_eval = nnue_evaluate(*this);
+    if (nnue_eval != 0 || NNUE::is_loaded()) {
+        // NNUE evaluation is available, use it
+        // nnue_evaluate already returns score from STM perspective
+        return nnue_eval;
+    }
+    
+    // Fallback to classical evaluation if NNUE is not loaded
     int eval = 0;
 
     eval += piece_values[WHITE] - piece_values[BLACK];

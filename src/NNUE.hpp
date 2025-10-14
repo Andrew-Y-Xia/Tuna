@@ -47,6 +47,9 @@ namespace NNUE {
     extern Network network;
     extern bool network_loaded;
     
+    // Initialize NNUE from embedded weights (compiled-in)
+    bool init_embedded();
+    
     // Initialize NNUE from file
     bool init(const std::string& path);
     

@@ -18,6 +18,23 @@ add_compile_definitions(
 
 include_directories(src)
 
+# Generate embedded NNUE network header at build time
+set(NNUE_NETWORK_FILE "${CMAKE_SOURCE_DIR}/NNUE/checkpoints/tuna-60/quantised.bin")
+set(NNUE_EMBEDDED_HEADER "${CMAKE_SOURCE_DIR}/src/NNUE_embedded.hpp")
+set(EMBED_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/embed_network.py")
+
+# Custom command to generate the embedded header whenever the network file changes
+add_custom_command(
+    OUTPUT ${NNUE_EMBEDDED_HEADER}
+    COMMAND python3 ${EMBED_SCRIPT} ${NNUE_NETWORK_FILE} ${NNUE_EMBEDDED_HEADER}
+    DEPENDS ${NNUE_NETWORK_FILE} ${EMBED_SCRIPT}
+    COMMENT "Generating embedded NNUE network header from ${NNUE_NETWORK_FILE}"
+    VERBATIM
+)
+
+# Create a custom target that depends on the generated header
+add_custom_target(generate_embedded_network DEPENDS ${NNUE_EMBEDDED_HEADER})
+
 add_executable(Tuna
         src/Bitboard.cpp
         src/Bitboard.hpp
@@ -54,4 +71,8 @@ add_executable(Tuna
         src/tests.cpp 
         src/tests.hpp
         src/NNUE.cpp
-        src/NNUE.hpp)
+        src/NNUE.hpp
+        ${NNUE_EMBEDDED_HEADER})
+
+# Make sure the embedded header is generated before building Tuna
+add_dependencies(Tuna generate_embedded_network)
