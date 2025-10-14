@@ -48,4 +48,10 @@ add_executable(Tuna
         src/Utility.cpp
         src/Utility.hpp
         src/Zobrist.cpp
-        src/Zobrist.hpp src/Time_handler.cpp src/Time_handler.hpp src/tests.cpp src/tests.hpp)
+        src/Zobrist.hpp 
+        src/Time_handler.cpp 
+        src/Time_handler.hpp 
+        src/tests.cpp 
+        src/tests.hpp
+        src/NNUE.cpp
+        src/NNUE.hpp)

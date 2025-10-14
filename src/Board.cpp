@@ -503,7 +503,7 @@ void Board::hash() {
     }
 }
 
-bool Board::get_current_turn() {
+bool Board::get_current_turn() const {
     return current_turn;
 }
 
@@ -557,7 +557,7 @@ bool Board::verify_bitboard() {
 }
 
 
-unsigned int Board::find_piece_occupying_sq(int index) {
+unsigned int Board::find_piece_occupying_sq(int index) const {
     // Finds what piece occupies a square
     // This sort of lookup is inherently slow for bitboards
 
@@ -587,6 +587,11 @@ unsigned int Board::find_piece_occupying_sq(int index) {
     }
 }
 
+bool Board::is_white_piece(int index) const {
+    // Returns true if the piece at the given square is white
+    U64 bit = C64(1) << index;
+    return (Bitboards[WhitePieces] & bit) != 0;
+}
 
 unsigned int Board::find_piece_captured(int index) {
     // Similar routine to the above

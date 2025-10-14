@@ -13,6 +13,9 @@
 #include "Data_structs.hpp"
 #include "Utility.hpp"
 
+// Forward declaration
+class Board;
+
 #define PAWN_VALUE 82
 #define KNIGHT_VALUE 337
 #define BISHOP_VALUE 365
@@ -58,5 +61,10 @@ void index_remap(int* array);
 int lookup_ps_table_m(unsigned int index, unsigned int piece, int current_turn);
 
 int lookup_ps_table_e(unsigned int index, unsigned int piece, int current_turn);
+
+// NNUE evaluation
+// Returns evaluation from perspective of side to move in centipawns
+// Returns 0 if NNUE network is not loaded
+int nnue_evaluate(const Board& board);
 
 #endif /* Evaluation_hpp */

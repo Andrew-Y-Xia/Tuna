@@ -71,7 +71,7 @@ public:
 
     void hash();
 
-    bool get_current_turn();
+    bool get_current_turn() const;
 
     void print_board();
 
@@ -79,7 +79,9 @@ public:
 
     bool verify_bitboard();
 
-    unsigned int find_piece_occupying_sq(int index);
+    unsigned int find_piece_occupying_sq(int index) const;
+    
+    bool is_white_piece(int index) const;
 
     unsigned int find_piece_captured(int index);
 

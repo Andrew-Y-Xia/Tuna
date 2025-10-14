@@ -7,6 +7,8 @@
 //
 
 #include "Evaluation.hpp"
+#include "NNUE.hpp"
+#include "Board.hpp"
 
 int piece_to_value[8];
 int piece_to_value_small[8];
@@ -250,4 +252,12 @@ int lookup_ps_table_e(unsigned int index, unsigned int piece, int current_turn) 
     }
 
     return ps_e[piece][index];
+}
+
+int nnue_evaluate(const Board& board) {
+    // Wrapper function to call NNUE evaluation
+    if (!NNUE::is_loaded()) {
+        return 0;
+    }
+    return NNUE::evaluate(board);
 }
