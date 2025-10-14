@@ -1,0 +1,17 @@
+# NNUE Evaluations for Test Positions
+# Format: FEN|Description|Evaluation_CP
+#
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1|Starting position|51.27
+rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1|After 1.e4|-76.51
+rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 4 3|Petrov Defense|43.41
+r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3|Two Knights Defense|22.29
+rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2|After 1.e4 e5|48.22
+rnbqkb1r/pppp1ppp/5n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R b KQkq - 0 3|Philidor Defense|22.21
+r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3|Ruy Lopez|47.19
+rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2|Sicilian Defense|133.47
+rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 1 2|After 1.d4 Nf6|58.18
+8/8/8/4k3/8/8/4K3/8 w - - 0 1|King endgame (equal)|-54.18
+8/8/8/4k3/8/8/4KP2/8 w - - 0 1|K+P vs K|16.80
+4k3/8/8/8/8/8/PPPPPPPP/4K3 w - - 0 1|K+8P vs K|1952.64
+rnbqk2r/pppp1ppp/5n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4|Italian Game|43.08
+r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3|After 1.e4 e5 2.Nf3 Nc6|22.29

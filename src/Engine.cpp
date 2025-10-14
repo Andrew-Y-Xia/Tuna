@@ -129,6 +129,12 @@ void Engine::loop() {
                 }
             } else if (cmd.at(0) == "printboard") {
                 board.print_board();
+            } else if (cmd.at(0) == "nnue") {
+                int eval = nnue_evaluate(board);
+                std::ostringstream buffer;
+                buffer << "NNUE evaluation: " << eval << " centipawns";
+                buffer << " (from " << (board.get_current_turn() == WHITE ? "white" : "black") << "'s perspective)\n";
+                get_synced_cout().print(buffer.str());
             } else if (cmd.at(0) == "ucinewgame") {
                 board = Board();
                 tt.clear();
