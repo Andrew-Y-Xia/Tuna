@@ -197,6 +197,11 @@ public:
 bool move_cmp(Move first, Move second);
 
 
+// Forward declaration for NNUE::Accumulator
+namespace NNUE {
+    struct Accumulator;
+}
+
 struct move_data {
     Move move;
 
@@ -212,6 +217,9 @@ struct move_data {
     bool is_null_move;
 
     int halfmove_counter;
+    
+    // NNUE accumulator state (for undo)
+    NNUE::Accumulator* nnue_acc_backup;
 };
 
 

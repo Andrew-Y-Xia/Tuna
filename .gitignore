@@ -56,3 +56,4 @@ reference/
 
 test_tuning_params
 test_nnue_complex
+test_nnue_incremental

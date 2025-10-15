@@ -19,7 +19,7 @@ add_compile_definitions(
 include_directories(src)
 
 # Generate embedded NNUE network header at build time
-set(NNUE_NETWORK_FILE "${CMAKE_SOURCE_DIR}/NNUE/checkpoints/tuna-100/quantised.bin")
+set(NNUE_NETWORK_FILE "${CMAKE_SOURCE_DIR}/NNUE/checkpoints/tuna-60/quantised.bin")
 set(NNUE_EMBEDDED_HEADER "${CMAKE_SOURCE_DIR}/src/NNUE_embedded.hpp")
 set(EMBED_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/embed_network.py")
 
@@ -104,3 +104,7 @@ target_link_libraries(test_nnue_complex TunaCore)
 # Test: Tuning Parameters
 add_executable(test_tuning_params test_tuning_params.cpp)
 target_link_libraries(test_tuning_params TunaCore)
+
+# Test: NNUE Incremental Accumulator
+add_executable(test_nnue_incremental test_nnue_incremental.cpp)
+target_link_libraries(test_nnue_incremental TunaCore)

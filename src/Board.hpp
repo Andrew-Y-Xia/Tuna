@@ -19,6 +19,10 @@
 #include "Ray_gen.hpp"
 #include "Zobrist.hpp"
 
+// Forward declarations for NNUE
+namespace NNUE {
+    struct Accumulator;
+}
 
 class Board {
 private:
@@ -49,6 +53,8 @@ private:
 
 //    int piece_count[2][6];
 
+    // NNUE accumulator for incremental updates
+    NNUE::Accumulator* nnue_accumulator;
 
     std::vector<move_data> move_stack;
 
@@ -202,6 +208,10 @@ public:
     std::vector<move_data> get_move_stack();
 
     bool get_reg_starting_pos();
+    
+    // NNUE accumulator access
+    NNUE::Accumulator* get_nnue_accumulator() const;
+    void refresh_nnue_accumulator();
 
     void serialize_promotion(MoveList &moves, int from_index, int to_index, unsigned int piece_captured) const;
 };

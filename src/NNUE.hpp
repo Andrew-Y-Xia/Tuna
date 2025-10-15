@@ -32,6 +32,15 @@ namespace NNUE {
     // Evaluation scale (centipawns)
     constexpr int SCALE = 400;
     
+    // Enable/disable incremental updates (set to false to always recalculate from scratch)
+    constexpr bool USE_INCREMENTAL = true;
+    
+    // Accumulator structure for incremental updates
+    struct Accumulator {
+        int32_t white_hidden[HIDDEN_SIZE];  // White's perspective accumulator
+        int32_t black_hidden[HIDDEN_SIZE];  // Black's perspective accumulator
+    };
+    
     // Network weights (quantized to int16)
     struct alignas(64) Network {
         // Layer 0: Feature transformer (768 -> 128)
@@ -77,6 +86,22 @@ namespace NNUE {
     // Non-incremental evaluation (recalculates from scratch)
     // Returns evaluation in centipawns from the perspective of the side to move
     int evaluate(const Board& board);
+    
+    // Incremental evaluation using pre-computed accumulator
+    // Returns evaluation in centipawns from the perspective of the side to move
+    int evaluate_incremental(const Accumulator& acc, int side_to_move);
+    
+    // Refresh accumulator from scratch by computing all active features
+    void refresh_accumulator(Accumulator& acc, const Board& board);
+    
+    // Get feature index for a piece on a square from a given perspective
+    // perspective: 0 = white's view, 1 = black's view
+    int get_feature_index(int piece, int square, int perspective);
+    
+    // Update accumulator for piece movement (handles both perspectives)
+    // piece: Board piece type (2-7), square: 0-63, color: 0=white 1=black
+    void add_piece_to_accumulator(Accumulator& acc, int piece, int square, int color);
+    void remove_piece_from_accumulator(Accumulator& acc, int piece, int square, int color);
     
     // SCReLU activation function (Squared Clipped ReLU)
     // SCReLU(x) = min(max(x, 0), 1)^2
