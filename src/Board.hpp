@@ -18,11 +18,8 @@
 #include "Transposition_table.hpp"
 #include "Ray_gen.hpp"
 #include "Zobrist.hpp"
-
-// Forward declarations for NNUE
-namespace NNUE {
-    struct Accumulator;
-}
+#include "NNUE.hpp"
+#include <memory>
 
 class Board {
 private:
@@ -54,7 +51,7 @@ private:
 //    int piece_count[2][6];
 
     // NNUE accumulator for incremental updates
-    NNUE::Accumulator* nnue_accumulator;
+    std::unique_ptr<NNUE::Accumulator> nnue_accumulator;
 
     std::vector<move_data> move_stack;
 
@@ -66,6 +63,10 @@ public:
     Board();
 
     Board(std::string str);
+    
+    Board(const Board& other);
+    
+    Board& operator=(const Board& other);
 
     void read_FEN(std::string str);
 

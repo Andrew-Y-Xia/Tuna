@@ -217,9 +217,6 @@ struct move_data {
     bool is_null_move;
 
     int halfmove_counter;
-    
-    // NNUE accumulator state (for undo)
-    NNUE::Accumulator* nnue_acc_backup;
 };
 
 

@@ -44,6 +44,73 @@ Board::Board(std::string str) {
     standard_setup();
 }
 
+Board::Board(const Board& other) {
+    // Copy all bitboards and state
+    for (int i = 0; i < 8; i++) {
+        Bitboards[i] = other.Bitboards[i];
+    }
+    current_turn = other.current_turn;
+    white_can_castle_queenside = other.white_can_castle_queenside;
+    white_can_castle_kingside = other.white_can_castle_kingside;
+    black_can_castle_queenside = other.black_can_castle_queenside;
+    black_can_castle_kingside = other.black_can_castle_kingside;
+    en_passant_square = other.en_passant_square;
+    halfmove_counter = other.halfmove_counter;
+    fullmove_counter = other.fullmove_counter;
+    piece_values[0] = other.piece_values[0];
+    piece_values[1] = other.piece_values[1];
+    piece_square_values_m[0] = other.piece_square_values_m[0];
+    piece_square_values_m[1] = other.piece_square_values_m[1];
+    piece_square_values_e[0] = other.piece_square_values_e[0];
+    piece_square_values_e[1] = other.piece_square_values_e[1];
+    
+    // Deep copy the accumulator if it exists
+    if (other.nnue_accumulator) {
+        nnue_accumulator = std::make_unique<NNUE::Accumulator>(*other.nnue_accumulator);
+    } else {
+        nnue_accumulator = nullptr;
+    }
+    
+    move_stack = other.move_stack;
+    reg_starting_pos = other.reg_starting_pos;
+    z_key = other.z_key;
+}
+
+Board& Board::operator=(const Board& other) {
+    if (this != &other) {
+        // Copy all bitboards and state
+        for (int i = 0; i < 8; i++) {
+            Bitboards[i] = other.Bitboards[i];
+        }
+        current_turn = other.current_turn;
+        white_can_castle_queenside = other.white_can_castle_queenside;
+        white_can_castle_kingside = other.white_can_castle_kingside;
+        black_can_castle_queenside = other.black_can_castle_queenside;
+        black_can_castle_kingside = other.black_can_castle_kingside;
+        en_passant_square = other.en_passant_square;
+        halfmove_counter = other.halfmove_counter;
+        fullmove_counter = other.fullmove_counter;
+        piece_values[0] = other.piece_values[0];
+        piece_values[1] = other.piece_values[1];
+        piece_square_values_m[0] = other.piece_square_values_m[0];
+        piece_square_values_m[1] = other.piece_square_values_m[1];
+        piece_square_values_e[0] = other.piece_square_values_e[0];
+        piece_square_values_e[1] = other.piece_square_values_e[1];
+        
+        // Deep copy the accumulator if it exists
+        if (other.nnue_accumulator) {
+            nnue_accumulator = std::make_unique<NNUE::Accumulator>(*other.nnue_accumulator);
+        } else {
+            nnue_accumulator = nullptr;
+        }
+        
+        move_stack = other.move_stack;
+        reg_starting_pos = other.reg_starting_pos;
+        z_key = other.z_key;
+    }
+    return *this;
+}
+
 
 void Board::read_FEN(std::string str) {
     // Takes in a FEN and sets up the board accordingly
@@ -444,7 +511,7 @@ void Board::standard_setup() {
     
     // Initialize NNUE accumulator
     if (NNUE::USE_INCREMENTAL && NNUE::is_loaded()) {
-        nnue_accumulator = new NNUE::Accumulator();
+        nnue_accumulator = std::make_unique<NNUE::Accumulator>();
         NNUE::refresh_accumulator(*nnue_accumulator, *this);
     } else {
         nnue_accumulator = nullptr;
@@ -1563,14 +1630,8 @@ bool Board::is_in_check() {
 
 
 void Board::make_move(Move move) {
-    // Save accumulator state for undo
-    NNUE::Accumulator* acc_backup = nullptr;
-    if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
-        acc_backup = new NNUE::Accumulator(*nnue_accumulator);
-    }
-    
     move_data m = {move, white_can_castle_queenside, white_can_castle_kingside, black_can_castle_queenside,
-                   black_can_castle_kingside, en_passant_square, z_key, false, halfmove_counter, acc_backup};
+                   black_can_castle_kingside, en_passant_square, z_key, false, halfmove_counter};
     move_stack.push_back(m);
     
 
@@ -1896,7 +1957,7 @@ void Board::unmake_move() {
     halfmove_counter = last_move.halfmove_counter;
 
 
-    // Actual act of making move:
+    // Actual act of unmaking move:
     int move_from_index = move.get_from();
     int move_to_index = move.get_to();
     U64 from_bb = C64(1) << move_from_index;
@@ -1915,10 +1976,15 @@ void Board::unmake_move() {
         // Update piece_count
 //        piece_count[!current_turn][move.get_piece_captured() - 2] += 1;
 
-        piece_square_values_m[!current_turn] += lookup_ps_table_m(move_to_index, move.get_piece_captured(),
-                                                                  !current_turn);
-        piece_square_values_e[!current_turn] += lookup_ps_table_e(move_to_index, move.get_piece_captured(),
-                                                                  !current_turn);
+        // NNUE: Add captured piece back
+        if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
+            NNUE::add_piece_to_accumulator(*nnue_accumulator, move.get_piece_captured(), move_to_index, !current_turn);
+        } else {
+            piece_square_values_m[!current_turn] += lookup_ps_table_m(move_to_index, move.get_piece_captured(),
+                                                                      !current_turn);
+            piece_square_values_e[!current_turn] += lookup_ps_table_e(move_to_index, move.get_piece_captured(),
+                                                                      !current_turn);
+        }
     }
 
 
@@ -1927,11 +1993,17 @@ void Board::unmake_move() {
     Bitboards[current_turn] ^= from_bb | to_bb;
     Bitboards[move.get_piece_moved()] ^= from_bb | to_bb;
 
-    piece_square_values_m[current_turn] += lookup_ps_table_m(move_from_index, move.get_piece_moved(), current_turn);
-    piece_square_values_e[current_turn] += lookup_ps_table_e(move_from_index, move.get_piece_moved(), current_turn);
+    // NNUE: Remove piece from destination square, add back to source square
+    if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
+        NNUE::remove_piece_from_accumulator(*nnue_accumulator, move.get_piece_moved(), move_to_index, current_turn);
+        NNUE::add_piece_to_accumulator(*nnue_accumulator, move.get_piece_moved(), move_from_index, current_turn);
+    } else {
+        piece_square_values_m[current_turn] += lookup_ps_table_m(move_from_index, move.get_piece_moved(), current_turn);
+        piece_square_values_e[current_turn] += lookup_ps_table_e(move_from_index, move.get_piece_moved(), current_turn);
 
-    piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, move.get_piece_moved(), current_turn);
-    piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, move.get_piece_moved(), current_turn);
+        piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, move.get_piece_moved(), current_turn);
+        piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, move.get_piece_moved(), current_turn);
+    }
 
 
 
@@ -1959,11 +2031,17 @@ void Board::unmake_move() {
             Bitboards[current_turn] ^= rook_bits;
             Bitboards[Rooks] ^= rook_bits;
 
-            piece_square_values_m[current_turn] += lookup_ps_table_m(rook_from_index, PIECE_ROOK, current_turn);
-            piece_square_values_e[current_turn] += lookup_ps_table_e(rook_from_index, PIECE_ROOK, current_turn);
+            // NNUE: Move rook back to original square
+            if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
+                NNUE::remove_piece_from_accumulator(*nnue_accumulator, PIECE_ROOK, rook_to_index, current_turn);
+                NNUE::add_piece_to_accumulator(*nnue_accumulator, PIECE_ROOK, rook_from_index, current_turn);
+            } else {
+                piece_square_values_m[current_turn] += lookup_ps_table_m(rook_from_index, PIECE_ROOK, current_turn);
+                piece_square_values_e[current_turn] += lookup_ps_table_e(rook_from_index, PIECE_ROOK, current_turn);
 
-            piece_square_values_m[current_turn] -= lookup_ps_table_m(rook_to_index, PIECE_ROOK, current_turn);
-            piece_square_values_e[current_turn] -= lookup_ps_table_e(rook_to_index, PIECE_ROOK, current_turn);
+                piece_square_values_m[current_turn] -= lookup_ps_table_m(rook_to_index, PIECE_ROOK, current_turn);
+                piece_square_values_e[current_turn] -= lookup_ps_table_e(rook_to_index, PIECE_ROOK, current_turn);
+            }
 
             break;
         }
@@ -1980,15 +2058,19 @@ void Board::unmake_move() {
             Bitboards[!current_turn] ^= delete_square;
             Bitboards[Pawns] ^= delete_square;
 
-            // Take away the piece values for the side that pieces were captured
+            // Add back the piece values for the captured pawn
             piece_values[!current_turn] += piece_to_value[PIECE_PAWN];
 
             // Update piece_count
 //            piece_count[!current_turn][PIECE_PAWN - 2] += 1;
 
-            // Take away piece square value for captured piece
-            piece_square_values_m[!current_turn] += lookup_ps_table_m(delete_index, PIECE_PAWN, !current_turn);
-            piece_square_values_e[!current_turn] += lookup_ps_table_e(delete_index, PIECE_PAWN, !current_turn);
+            // NNUE: Add en passant captured pawn back
+            if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
+                NNUE::add_piece_to_accumulator(*nnue_accumulator, PIECE_PAWN, delete_index, !current_turn);
+            } else {
+                piece_square_values_m[!current_turn] += lookup_ps_table_m(delete_index, PIECE_PAWN, !current_turn);
+                piece_square_values_e[!current_turn] += lookup_ps_table_e(delete_index, PIECE_PAWN, !current_turn);
+            }
             break;
         }
         case MOVE_PROMOTION: {
@@ -2002,25 +2084,21 @@ void Board::unmake_move() {
 //            piece_count[current_turn][PIECE_PAWN - 2] += 1;
 //            piece_count[current_turn][move.get_promote_to() + 1] -= 1;
 
-            // Take away piece square value for captured piece
-            piece_square_values_m[current_turn] += lookup_ps_table_m(move_to_index, PIECE_PAWN, current_turn);
-            piece_square_values_e[current_turn] += lookup_ps_table_e(move_to_index, PIECE_PAWN, current_turn);
+            // NNUE: Remove promoted piece, add pawn back
+            if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
+                NNUE::remove_piece_from_accumulator(*nnue_accumulator, move.get_promote_to() + 3, move_to_index, current_turn);
+                NNUE::add_piece_to_accumulator(*nnue_accumulator, PIECE_PAWN, move_to_index, current_turn);
+            } else {
+                piece_square_values_m[current_turn] += lookup_ps_table_m(move_to_index, PIECE_PAWN, current_turn);
+                piece_square_values_e[current_turn] += lookup_ps_table_e(move_to_index, PIECE_PAWN, current_turn);
 
-            piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, move.get_promote_to() + 3,
-                                                                     current_turn);
-            piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, move.get_promote_to() + 3,
-                                                                     current_turn);
+                piece_square_values_m[current_turn] -= lookup_ps_table_m(move_to_index, move.get_promote_to() + 3,
+                                                                         current_turn);
+                piece_square_values_e[current_turn] -= lookup_ps_table_e(move_to_index, move.get_promote_to() + 3,
+                                                                         current_turn);
+            }
             break;
         }
-    }
-    
-    // Restore NNUE accumulator from backup
-    if (NNUE::USE_INCREMENTAL && last_move.nnue_acc_backup) {
-        if (nnue_accumulator) {
-            *nnue_accumulator = *last_move.nnue_acc_backup;
-        }
-        *nnue_accumulator = *last_move.nnue_acc_backup;
-        delete last_move.nnue_acc_backup;
     }
 
     move_stack.pop_back();
@@ -2250,11 +2328,12 @@ int Board::static_eval() {
     // Returns eval in terms of side to play
     
     // Try to use NNUE evaluation first
-    int nnue_eval = nnue_evaluate(*this);
-    if (nnue_eval != 0 || NNUE::is_loaded()) {
-        // NNUE evaluation is available, use it
-        // nnue_evaluate already returns score from STM perspective
-        return nnue_eval;
+    if (NNUE::USE_INCREMENTAL && NNUE::is_loaded() && nnue_accumulator) {
+        // Use incremental NNUE evaluation with pre-computed accumulator
+        return NNUE::evaluate_incremental(*nnue_accumulator, current_turn);
+    } else if (NNUE::is_loaded()) {
+        // Fallback to non-incremental NNUE evaluation
+        return NNUE::evaluate(*this);
     }
     
     // Fallback to classical evaluation if NNUE is not loaded
@@ -2410,13 +2489,13 @@ bool Board::get_reg_starting_pos() {
 }
 
 NNUE::Accumulator* Board::get_nnue_accumulator() const {
-    return nnue_accumulator;
+    return nnue_accumulator.get();
 }
 
 void Board::refresh_nnue_accumulator() {
     if (NNUE::USE_INCREMENTAL && NNUE::is_loaded()) {
         if (!nnue_accumulator) {
-            nnue_accumulator = new NNUE::Accumulator();
+            nnue_accumulator = std::make_unique<NNUE::Accumulator>();
         }
         NNUE::refresh_accumulator(*nnue_accumulator, *this);
     }
