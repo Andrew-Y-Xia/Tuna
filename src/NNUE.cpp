@@ -285,6 +285,9 @@ namespace NNUE {
                 acc.black_hidden[i] += network.l0_weights[black_feature * HIDDEN_SIZE + i];
             }
         }
+        
+        // Invalidate cached evaluations since accumulator was refreshed
+        invalidate_cache(acc);
     }
     
     void add_piece_to_accumulator(Accumulator& acc, int piece, int square, int color) {
@@ -313,6 +316,9 @@ namespace NNUE {
             acc.white_hidden[i] += network.l0_weights[white_feature * HIDDEN_SIZE + i];
             acc.black_hidden[i] += network.l0_weights[black_feature * HIDDEN_SIZE + i];
         }
+        
+        // Invalidate cached evaluations since accumulator changed
+        invalidate_cache(acc);
     }
     
     void remove_piece_from_accumulator(Accumulator& acc, int piece, int square, int color) {
@@ -341,12 +347,23 @@ namespace NNUE {
             acc.white_hidden[i] -= network.l0_weights[white_feature * HIDDEN_SIZE + i];
             acc.black_hidden[i] -= network.l0_weights[black_feature * HIDDEN_SIZE + i];
         }
+        
+        // Invalidate cached evaluations since accumulator changed
+        invalidate_cache(acc);
     }
     
-    int evaluate_incremental(const Accumulator& acc, int side_to_move) {
+    int evaluate_incremental(Accumulator& acc, int side_to_move) {
         if (!network_loaded) {
             std::cerr << "NNUE network not loaded!" << std::endl;
             return 0;
+        }
+        
+        // Check if we have a cached result for this side to move
+        if (side_to_move == 0 && acc.white_cache_valid) {
+            return acc.cached_eval_white;
+        }
+        if (side_to_move == 1 && acc.black_cache_valid) {
+            return acc.cached_eval_black;
         }
         
         // Apply SCReLU activation
@@ -378,6 +395,16 @@ namespace NNUE {
         }
         
         int eval = (output * SCALE) / (QA * QA * QB);
+        
+        // Cache the result
+        if (side_to_move == 0) {
+            acc.cached_eval_white = static_cast<int16_t>(eval);
+            acc.white_cache_valid = true;
+        } else {
+            acc.cached_eval_black = static_cast<int16_t>(eval);
+            acc.black_cache_valid = true;
+        }
+        
         return eval;
     }
 }

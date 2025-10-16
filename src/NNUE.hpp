@@ -39,6 +39,16 @@ namespace NNUE {
     struct Accumulator {
         int32_t white_hidden[HIDDEN_SIZE];  // White's perspective accumulator
         int32_t black_hidden[HIDDEN_SIZE];  // Black's perspective accumulator
+        
+        // Cached evaluation results (avoid recomputing if accumulator unchanged)
+        int16_t cached_eval_white;  // Cached eval when white to move
+        int16_t cached_eval_black;  // Cached eval when black to move
+        bool white_cache_valid;     // Is white cache valid?
+        bool black_cache_valid;     // Is black cache valid?
+        
+        // Constructor to initialize cache as invalid
+        Accumulator() : cached_eval_white(0), cached_eval_black(0), 
+                       white_cache_valid(false), black_cache_valid(false) {}
     };
     
     // Network weights (quantized to int16)
@@ -89,7 +99,8 @@ namespace NNUE {
     
     // Incremental evaluation using pre-computed accumulator
     // Returns evaluation in centipawns from the perspective of the side to move
-    int evaluate_incremental(const Accumulator& acc, int side_to_move);
+    // NOTE: Takes non-const reference to cache evaluation results
+    int evaluate_incremental(Accumulator& acc, int side_to_move);
     
     // Refresh accumulator from scratch by computing all active features
     void refresh_accumulator(Accumulator& acc, const Board& board);
@@ -102,6 +113,12 @@ namespace NNUE {
     // piece: Board piece type (2-7), square: 0-63, color: 0=white 1=black
     void add_piece_to_accumulator(Accumulator& acc, int piece, int square, int color);
     void remove_piece_from_accumulator(Accumulator& acc, int piece, int square, int color);
+    
+    // Invalidate cached evaluation (call after updating accumulator)
+    inline void invalidate_cache(Accumulator& acc) {
+        acc.white_cache_valid = false;
+        acc.black_cache_valid = false;
+    }
     
     // SCReLU activation function (Squared Clipped ReLU)
     // SCReLU(x) = min(max(x, 0), 1)^2
